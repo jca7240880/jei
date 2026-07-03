@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>제이컴퓨터학원 출결패드</title>
+<style>
+  :root{
+    --green:#196B24; --green-dark:#0f4a18; --green-light:#e6f3e8;
+    --ink:#1a1a1a; --sub:#777; --line:#d8d8d8; --bg:#f4f6f4; --red:#c0392b;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;background:#fff;color:var(--ink);-webkit-user-select:none;user-select:none;}
+  .kioskfull{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#fff;color:var(--ink);padding:24px;position:relative;}
+  .klock{position:absolute;top:14px;right:14px;background:var(--bg);color:var(--sub);border:1px solid var(--line);border-radius:8px;padding:7px 13px;font-size:12px;cursor:pointer;font-family:inherit;}
+  .ksync{position:absolute;top:14px;left:14px;font-size:12px;color:var(--sub);}
+  .khead{margin-bottom:8px;}
+  .klogo{margin-bottom:10px;min-height:70px;display:flex;align-items:center;justify-content:center;}
+  .klogo img{max-height:70px;max-width:240px;object-fit:contain;}
+  .kmono{width:66px;height:66px;border-radius:16px;background:var(--green);color:#fff;font-size:24px;font-weight:900;display:flex;align-items:center;justify-content:center;letter-spacing:1px;}
+  .kdots{display:flex;gap:12px;justify-content:center;margin:8px 0 4px;}
+  .kdot{width:52px;height:62px;border:2px solid var(--line);border-radius:12px;font-size:32px;font-weight:800;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--ink);}
+  .kdot.on{border-color:var(--green);background:var(--green-light);color:var(--green-dark);}
+  .kmsg{min-height:28px;font-size:18px;font-weight:700;margin:6px 0;color:var(--green);}
+  .kpad{display:grid;grid-template-columns:repeat(3,86px);gap:12px;margin-top:6px;}
+  .kkey{height:72px;font-size:26px;font-weight:700;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .kkey:active{background:var(--green-light);transform:scale(.97);}
+  .kkey.del{background:var(--bg);color:var(--sub);font-size:18px;}
+  .kkey.go{background:var(--green);border:none;color:#fff;font-size:20px;}
+  .kbig{font-size:24px;font-weight:800;padding:28px 40px;border-radius:18px;border:none;cursor:pointer;font-family:inherit;min-width:150px;box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .kbig.in{background:var(--green);color:#fff;}
+  .kbig.out{background:var(--red);color:#fff;}
+  .kbig:active{transform:scale(.96);}
+  .choice{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
+  .btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:15px;cursor:pointer;font-family:inherit;}
+  .btn.sm{padding:7px 13px;font-size:13px;background:var(--bg);color:var(--sub);border:1px solid var(--line);}
+  .setup{max-width:480px;margin:60px auto;padding:24px;}
+  .setup h1{font-size:20px;color:var(--green-dark);}
+  .setup input{width:100%;padding:12px;font-size:14px;border:1px solid var(--line);border-radius:8px;margin:8px 0;font-family:inherit;}
+  .setup label{font-size:13px;color:var(--sub);font-weight:600;}
+  .note{font-size:12px;color:var(--sub);line-height:1.6;}
+  @media (max-width:420px){ .kpad{grid-template-columns:repeat(3,30vw);} .kkey{height:64px;} .kdot{width:46px;height:56px;} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   제이컴퓨터학원 출결패드 (독립 버전 v1.0)
+   - 이 파일은 출결 체크 전용입니다.
+   - 관리시스템과 같은 구글 시트(GAS URL)에 연결합니다.
+   - 관리시스템을 업데이트해도 이 파일은 수정할 필요가 없습니다.
+   ═══════════════════════════════════════════════════ */
+
+const PAD_VERSION="출결패드 v2.1 Supabase";
+
+/* 저장된 Supabase URL·키 (localStorage) */
+let GAS = (function(){try{return localStorage.getItem("jei_pad_supa_url")||"";}catch(e){return "";}})();
+let SUPA_KEY = (function(){try{return localStorage.getItem("jei_pad_supa_key")||"";}catch(e){return "";}})();
+/* 관리자 암호 (기본 1234, localStorage에 저장) */
+let ADMIN_PW = (function(){try{return localStorage.getItem("jei_pad_pw")||"1234";}catch(e){return "1234";}})();
+
+let STUDENTS=[];      // 수강생 명단 (시트에서 읽음)
+let SETTINGS=[];      // 로고 등
+let ATTENDANCE=[];    // 출결 기록 (관리자 모드에서 오늘 현황 보기용)
+let ui={input:"",msg:"",choices:null,action:null,screen:"kiosk",adminPwInput:""};
+let loaded=false;
+
+/* ───── 공통 헬퍼 ───── */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nowTime=()=>new Date().toTimeString().slice(0,5);
+const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+const digits=s=>String(s||"").replace(/\D/g,"");
+const uid=()=>"a"+Date.now().toString(36)+Math.floor(Math.random()*1000);
+function setSync(t){const el=$("ksync");if(el)el.textContent=t;}
+function normDate(v){if(!v)return"";const s=String(v);const m=s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);return m?m[1]+"-"+("0"+m[2]).slice(-2)+"-"+("0"+m[3]).slice(-2):s;}
+function findStu(id){return STUDENTS.find(s=>String(s.id)===String(id));}
+
+/* ───── 화면 그리기 ───── */
+function render(){
+  // 관리자 암호 입력 화면
+  if(ui.screen==="adminPw"){ $("app").innerHTML=adminPwView(); return; }
+  // 관리자 모드 화면
+  if(ui.screen==="admin"){ $("app").innerHTML=adminView(); return; }
+  if(!GAS){ $("app").innerHTML=setupView(); return; }
+  if(!loaded){ $("app").innerHTML=`<div style="text-align:center;margin-top:30vh;color:var(--sub)">⟳ 수강생 명단 불러오는 중…</div>`; return; }
+  $("app").innerHTML=kioskView();
+}
+
+/* ───── 관리자 암호 입력 ───── */
+function adminPwView(){
+  const inp=ui.adminPwInput||"";
+  const dots=Array.from({length:4},(_,i)=>`<span class="kdot ${i<inp.length?'on':''}">${inp[i]?"●":""}</span>`).join("");
+  const keys=["1","2","3","4","5","6","7","8","9","지움","0","확인"];
+  return `<div class="kioskfull">
+    <button class="klock" onclick="exitAdmin()">← 출결화면으로</button>
+    <div style="font-size:18px;font-weight:700;color:var(--green-dark);margin-bottom:6px">🔒 관리자 모드</div>
+    <div style="font-size:14px;color:var(--sub);margin-bottom:12px">관리자 암호 4자리를 입력하세요</div>
+    <div class="kdots">${dots}</div>
+    <div class="kmsg" style="color:var(--red)">${esc(ui.msg||"")}</div>
+    <div class="kpad">${keys.map(k=>`<button class="kkey ${k==='확인'?'go':(k==='지움'?'del':'')}" onclick="adminPwKey('${k}')">${k}</button>`).join("")}</div>
+  </div>`;
+}
+function adminPwKey(k){
+  ui.msg="";
+  if(k==="지움"){ui.adminPwInput=(ui.adminPwInput||"").slice(0,-1);render();return;}
+  if(k==="확인"){
+    if((ui.adminPwInput||"")===ADMIN_PW){ui.screen="admin";ui.adminPwInput="";ui.msg="";render();}
+    else{ui.msg="암호가 틀렸습니다.";ui.adminPwInput="";render();}
+    return;
+  }
+  if((ui.adminPwInput||"").length>=4)return;
+  ui.adminPwInput=(ui.adminPwInput||"")+k;
+  render();
+}
+function enterAdminPw(){ui.screen="adminPw";ui.adminPwInput="";ui.msg="";render();}
+function exitAdmin(){ui.screen="kiosk";ui.adminPwInput="";ui.msg="";render();}
+
+/* ───── 관리자 모드 화면 ───── */
+function adminView(){
+  return `<div class="setup">
+    <button class="btn sm" onclick="exitAdmin()" style="margin-bottom:14px">← 출결화면으로</button>
+    <h1>🔒 관리자 모드</h1>
+
+    ${todayAttView()}
+
+    <div style="margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:10px">
+      <label>Supabase Project URL</label>
+      <input id="adminSupaUrl" value="${esc(GAS)}" placeholder="https://xxxxx.supabase.co">
+      <label style="margin-top:10px;display:block">Publishable Key</label>
+      <input id="adminSupaKey" value="${esc(SUPA_KEY)}" placeholder="sb_publishable_...">
+      <button class="btn" style="width:100%;margin-top:8px" onclick="adminSaveSupa()">연결 정보 변경하고 다시 연결</button>
+      <p class="note" style="margin-top:8px">※ 관리시스템 설정에 입력한 것과 같은 두 값. Supabase 프로젝트를 새로 만들었으면 새 값으로 바꾸면 됩니다.</p>
+    </div>
+
+    <div style="margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:10px">
+      <label>관리자 암호 변경</label>
+      <input id="adminNewPw" type="tel" maxlength="4" placeholder="새 암호 4자리 (숫자)">
+      <button class="btn sm" style="margin-top:8px" onclick="adminChangePw()">암호 변경</button>
+      <p class="note" style="margin-top:8px">※ 현재 암호로 들어와 있는 상태에서만 바꿀 수 있습니다. 기본 암호는 1234입니다.</p>
+    </div>
+
+    <div style="margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:10px">
+      <button class="btn sm" onclick="reconnect()">⟳ 새로고침 (명단·출결)</button>
+      <p class="note" style="margin-top:8px">${PAD_VERSION} · 연결 ${GAS?"됨":"안 됨"} · 명단 ${STUDENTS.length}명</p>
+    </div>
+  </div>`;
+}
+function todayAttView(){
+  const today=todayStr();
+  // 오늘 출결만, 입실 시간순 정렬
+  const list=ATTENDANCE.filter(a=>normDate(a.date)===today)
+    .map(a=>{
+      const s=findStu(a.sid);
+      return {name:a.name||(s?s.name:"(이름없음)"), inTime:a.inTime||"", outTime:a.outTime||""};
+    })
+    .sort((x,y)=>(x.inTime||"99").localeCompare(y.inTime||"99"));
+  const inCnt=list.filter(x=>x.inTime).length;
+  const outCnt=list.filter(x=>x.outTime).length;
+  return `<div style="margin:18px 0;padding:16px;border:2px solid var(--green);border-radius:10px;background:var(--green-light)">
+    <div style="font-size:16px;font-weight:700;color:var(--green-dark);margin-bottom:4px">📋 오늘 출결 현황 <span style="font-size:13px;font-weight:400;color:var(--sub)">(${today})</span></div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:10px">등원 ${inCnt}명 · 하원 ${outCnt}명</div>
+    ${list.length?`<div style="max-height:340px;overflow:auto;background:#fff;border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead><tr style="background:var(--green);color:#fff;position:sticky;top:0">
+          <th style="padding:8px;text-align:left">성명</th><th style="padding:8px">등원</th><th style="padding:8px">하원</th>
+        </tr></thead>
+        <tbody>${list.map(x=>`<tr style="border-bottom:1px solid var(--line)">
+          <td style="padding:8px;font-weight:600">${esc(x.name)}</td>
+          <td style="padding:8px;text-align:center;color:var(--green)">${x.inTime||"-"}</td>
+          <td style="padding:8px;text-align:center;color:var(--red)">${x.outTime||"-"}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>`:`<div style="padding:18px;text-align:center;color:var(--sub);background:#fff;border-radius:8px">오늘 출결 기록이 없습니다.</div>`}
+    <button class="btn sm" style="margin-top:10px" onclick="reconnect()">⟳ 출결 새로고침</button>
+  </div>`;
+}
+function adminSaveSupa(){
+  const u=($("adminSupaUrl").value||"").trim().replace(/\/+$/,'');
+  const k=($("adminSupaKey").value||"").trim();
+  if(!/^https:\/\/[a-z0-9]+\.supabase\.co$/i.test(u)){alert("Project URL이 올바르지 않습니다.\n형태: https://xxxxx.supabase.co");return;}
+  if(!k.startsWith("sb_publishable_")&&!k.startsWith("eyJ")){alert("Publishable Key가 올바르지 않습니다.");return;}
+  GAS=u;SUPA_KEY=k;
+  try{localStorage.setItem("jei_pad_supa_url",u);localStorage.setItem("jei_pad_supa_key",k);}catch(e){}
+  alert("연결 정보를 변경했습니다. 다시 연결합니다.");
+  loaded=false;ui.screen="kiosk";render();loadStudents();
+}
+function adminChangePw(){
+  const np=($("adminNewPw").value||"").trim();
+  if(!/^\d{4}$/.test(np)){alert("새 암호는 숫자 4자리여야 합니다.");return;}
+  ADMIN_PW=np;
+  try{localStorage.setItem("jei_pad_pw",np);}catch(e){}
+  alert("관리자 암호를 변경했습니다.");
+  render();
+}
+
+function setupView(){
+  return `<div class="setup">
+    <h1>출결패드 연결 설정</h1>
+    <p class="note">관리시스템과 <b>같은 Supabase 정보</b>를 입력하세요.</p>
+    <label>Project URL (https://xxxxx.supabase.co)</label>
+    <input id="supaUrl" placeholder="https://xxxxx.supabase.co">
+    <label style="margin-top:10px;display:block">Publishable Key (sb_publishable_...)</label>
+    <input id="supaKey" placeholder="sb_publishable_...">
+    <button class="btn" style="width:100%;margin-top:8px" onclick="saveSupa()">연결하고 시작</button>
+    <p class="note" style="margin-top:14px">※ 관리시스템 설정에 입력한 것과 같은 두 값입니다.</p>
+  </div>`;
+}
+function saveSupa(){
+  const u=($("supaUrl").value||"").trim().replace(/\/+$/,'');
+  const k=($("supaKey").value||"").trim();
+  if(!/^https:\/\/[a-z0-9]+\.supabase\.co$/i.test(u)){alert("Project URL이 올바르지 않습니다.\n형태: https://xxxxx.supabase.co");return;}
+  if(!k.startsWith("sb_publishable_")&&!k.startsWith("eyJ")){alert("Publishable Key가 올바르지 않습니다.");return;}
+  GAS=u;SUPA_KEY=k;
+  try{localStorage.setItem("jei_pad_supa_url",u);localStorage.setItem("jei_pad_supa_key",k);}catch(e){}
+  loaded=false;render();loadStudents();
+}
+
+function logoHtml(){
+  const r=SETTINGS.find(x=>x.key==="logoUrl");const u=r?r.value:"";
+  return u?`<img src="${esc(u)}" alt="학원 로고" onerror="this.outerHTML='<div class=kmono>J</div>'">`:`<div class="kmono">J</div>`;
+}
+
+function kioskView(){
+  const today=todayStr();
+  const inp=ui.input||"";
+  const dots=Array.from({length:4},(_,i)=>`<span class="kdot ${i<inp.length?'on':''}">${inp[i]||""}</span>`).join("");
+  const keys=["1","2","3","4","5","6","7","8","9","지움","0","확인"];
+  const choosing=ui.action;
+  return `
+  <div class="kioskfull">
+    <div class="ksync" id="ksync"></div>
+    <button class="klock" onclick="enterAdminPw()">🔒 관리자</button>
+    <div class="klogo">${logoHtml()}</div>
+    <div class="khead">
+      <div style="font-size:16px;color:var(--green-dark);font-weight:700">제이컴퓨터학원 출결 체크</div>
+      <div style="font-size:30px;font-weight:800;color:var(--ink)" id="kClock">${nowTime()}</div>
+      <div style="font-size:13px;color:var(--sub)">${today}</div>
+    </div>
+    ${choosing?`
+      <div style="font-size:20px;font-weight:800;margin:16px 0 4px;color:var(--green-dark)">${esc(choosing.name)} 님</div>
+      <div style="font-size:15px;color:var(--sub);margin-bottom:18px">등원/하원을 선택하세요</div>
+      <div style="display:flex;gap:16px;justify-content:center">
+        <button class="kbig in" onclick="kioskDo('in')">🟢 등원</button>
+        <button class="kbig out" onclick="kioskDo('out')">🔴 하원</button>
+      </div>
+      <button class="btn sm" style="margin-top:18px" onclick="kioskCancel()">취소 (다시 입력)</button>
+    `:`
+      <div style="font-size:16px;margin:10px 0 6px">연락처 <b>뒤 4자리</b>를 누르고 <b>확인</b>을 누르세요</div>
+      <div class="kdots">${dots}</div>
+      <div class="kmsg">${esc(ui.msg||"")}</div>
+      ${ui.choices?`<div class="choice" style="margin-bottom:10px"><div style="width:100%;font-size:13px;opacity:.8">동일 번호가 여러 명입니다. 본인을 선택하세요.</div>${ui.choices.map(c=>`<button class="btn" style="font-size:17px;padding:12px 22px" onclick="kioskPick('${c.id}')">${esc(c.name)}</button>`).join("")}</div>`:""}
+      <div class="kpad">${keys.map(k=>`<button class="kkey ${k==='확인'?'go':(k==='지움'?'del':'')}" onclick="kioskKey('${k}')">${k}</button>`).join("")}</div>
+    `}
+  </div>`;
+}
+
+/* ───── 키패드 입력 ───── */
+function kioskKey(k){
+  ui.msg="";
+  if(k==="지움"){ui.input=(ui.input||"").slice(0,-1);render();return;}
+  if(k==="확인"){kioskCheck();return;}
+  if((ui.input||"").length>=4)return;
+  ui.input=(ui.input||"")+k;
+  render();
+}
+function kioskCheck(){
+  const n=ui.input||"";
+  if(n.length!==4){ui.msg="숫자 4자리를 입력한 뒤 확인을 누르세요.";render();return;}
+  const matches=STUDENTS.filter(s=>s.status!=="퇴원"&&digits(s.phone).endsWith(n));
+  if(!matches.length){ui.msg="일치하는 수강생이 없습니다. 데스크에 문의하세요.";ui.input="";ui.choices=null;render();return;}
+  if(matches.length>1){ui.choices=matches.map(s=>({id:s.id,name:s.name}));render();return;}
+  kioskPick(matches[0].id);
+}
+function kioskPick(sid){
+  const s=findStu(sid);if(!s)return;
+  ui.choices=null;ui.input="";
+  ui.action={id:sid,name:s.name};
+  render();
+}
+function kioskCancel(){ui.action=null;ui.input="";ui.msg="";render();}
+
+function kioskDo(type){
+  const sel=ui.action;if(!sel)return;
+  const s=findStu(sel.id);if(!s){kioskCancel();return;}
+  const today=todayStr(),t=nowTime();
+  // 오늘 이 수강생의 기존 출결이 있으면 그 행을 갱신 (등원+하원 = 하루 1행)
+  let rec=ATTENDANCE.find(a=>String(a.sid)===String(sel.id)&&a.date===today);
+  if(rec){
+    if(type==="in"&&!rec.inTime)rec.inTime=t;
+    else if(type==="in"&&rec.inTime){ui.msg=`이미 등원 처리되어 있습니다 (${rec.inTime}).`;ui.action=null;render();setTimeout(()=>{ui.msg="";render();},4000);return;}
+    if(type==="out")rec.outTime=t;
+  }else{
+    rec={id:uid(),sid:String(sel.id),name:s.name,date:today,inTime:type==="in"?t:"",outTime:type==="out"?t:"",memo:""};
+    ATTENDANCE.push(rec);
+  }
+  ui.msg=type==="in"?`✓ ${s.name}님 등원 (${t}) — 어서오세요!`:`✓ ${s.name}님 하원 (${t}) — 수고하셨습니다!`;
+  ui.action=null;
+  saveAtt(rec);
+  render();
+  setTimeout(()=>{ui.msg="";render();},5000);
+}
+
+/* ───── Supabase 헬퍼 ───── */
+function supaHeaders(){
+  return {
+    "apikey": SUPA_KEY,
+    "Authorization": "Bearer "+SUPA_KEY,
+    "Content-Type": "application/json",
+    "Prefer": "return=minimal"
+  };
+}
+
+/* ───── 출결 저장 (attendance 테이블 upsert) ───── */
+async function saveAtt(rec,_try){
+  if(!GAS||!SUPA_KEY)return;
+  const attempt=_try||1;
+  try{
+    setSync("⟳ 출결 저장…");
+    const url=GAS.replace(/\/+$/,'')+"/rest/v1/attendance?on_conflict=id";
+    const h={...supaHeaders(),"Prefer":"resolution=merge-duplicates,return=minimal"};
+    const res=await fetch(url,{method:"POST",headers:h,body:JSON.stringify([rec])});
+    if(res.ok){setSync("✓ 저장됨 "+nowTime());return;}
+    const t=await res.text();
+    throw new Error(res.status+" "+t);
+  }catch(e){
+    if(attempt<5){
+      setSync(`⚠ 저장 실패 — 재시도 ${attempt}/5`);
+      setTimeout(()=>saveAtt(rec,attempt+1),3000);
+    }else{
+      setSync("⚠ 저장 실패 — 중단");
+      alert("출결 저장이 5회 실패했습니다.\n\n[원인]\n"+(e.message||e)+"\n\n인터넷과 연결 정보(관리자 모드)를 확인한 뒤 다시 찍어주세요.");
+    }
+  }
+}
+
+/* ───── 수강생 명단·설정·출결 불러오기 (Supabase 3개 테이블 병렬) ───── */
+async function supaFetch(table){
+  const url=GAS.replace(/\/+$/,'')+"/rest/v1/"+table+"?select=*";
+  const h={"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY};
+  const res=await fetch(url,{headers:h});
+  if(!res.ok)throw new Error(table+" "+res.status);
+  return await res.json();
+}
+async function loadStudents(_retry){
+  if(!GAS||!SUPA_KEY)return;
+  try{
+    const [students,settings,attendance]=await Promise.all([
+      supaFetch("students"),
+      supaFetch("settings"),
+      supaFetch("attendance")
+    ]);
+    STUDENTS=students||[];
+    SETTINGS=settings||[];
+    ATTENDANCE=attendance||[];
+    loaded=true;
+    render();
+  }catch(e){
+    setTimeout(()=>loadStudents(true),3000);
+    if(!loaded)$("app").innerHTML=`<div style="text-align:center;margin-top:30vh;color:var(--sub)">⟳ 연결 지연 — 다시 시도 중…<br><span style="font-size:12px">계속 안 되면 관리자 모드에서 연결 정보를 확인하세요</span></div>`;
+  }
+}
+function reconnect(){ loadStudents(); }
+
+/* ───── 시계 + 명단 자동 갱신 ───── */
+setInterval(()=>{
+  const el=$("kClock");if(el)el.textContent=nowTime();
+}, 10000);
+// 5분마다 수강생 명단만 조용히 갱신 (새 수강생 반영)
+setInterval(()=>{ if(GAS&&loaded&&!ui.action&&document.visibilityState==="visible")loadStudents(true); }, 300000);
+
+/* ───── 화면 꺼짐 방지 (Wake Lock) ───── */
+let wakeLock=null;
+async function keepAwake(){
+  try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')keepAwake(); });
+
+/* ───── 시작 ───── */
+keepAwake();
+render();
+if(GAS)loadStudents();
+</script>
+</body>
+</html>
