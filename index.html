@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.24 (2026-07-03) Supabase";
+const APP_VERSION="v5.25 (2026-07-03) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -1280,7 +1280,9 @@ function viewCal(){
   }
   const mode=ui.gcalMode||"WEEK";
   const ids=calId.split(",").map(v=>v.trim()).filter(Boolean);
-  const srcParams=ids.map(id=>"&src="+encodeURIComponent(id)).join("");
+  // 캘린더별 색 자동 지정 (순서대로: 초록, 파랑, 주황, 보라, 청록, 갈색)
+  const GCAL_COLORS=["%230B8043","%233F51B5","%23F4511E","%238E24AA","%23009688","%23795548"];
+  const srcParams=ids.map((id,i)=>"&src="+encodeURIComponent(id)+"&color="+GCAL_COLORS[i%GCAL_COLORS.length]).join("");
   const src=`https://calendar.google.com/calendar/embed?ctz=Asia%2FSeoul&hl=ko&mode=${mode}&showTitle=0&showPrint=0&showCalendars=0${srcParams}`;
   return `
   <div class="toolbar">
@@ -1295,7 +1297,7 @@ function viewCal(){
   <div class="panel" style="padding:6px">
     <iframe src="${src}" style="border:0;width:100%;height:72vh;border-radius:10px" frameborder="0" scrolling="no"></iframe>
   </div>
-  <p class="note">※ 연결된 캘린더 ${ids.length}개를 겹쳐 표시 중. 일정이 안 보이면 이 브라우저의 구글 로그인 계정을 확인하세요. ➕ 추가나 수정·삭제 후 [🔄 새로고침]을 누르면 바로 반영됩니다.</p>`;
+  <p class="note">※ 연결된 캘린더 ${ids.length}개를 겹쳐 표시 중 — 입력 순서대로 <b style="color:#0B8043">초록</b>·<b style="color:#3F51B5">파랑</b>·<b style="color:#F4511E">주황</b> 색입니다. 일정이 안 보이면 이 브라우저의 구글 로그인 계정을 확인하세요. ➕ 추가나 수정·삭제 후 [🔄 새로고침]을 누르면 바로 반영됩니다.</p>`;
 }
 function gcalConnect(){
   const v=(document.getElementById("gcal_id").value||"").trim();
