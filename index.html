@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.25 (2026-07-03) Supabase";
+const APP_VERSION="v5.26 (2026-07-03) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -3758,6 +3758,7 @@ setInterval(()=>{
   if(!GAS||!LOADED_OK)return;
   if(PENDING_SAVE||SAVING)return;
   if(isEditingNow())return;
+  if(tab==="cal")return; // 캘린더 보는 중엔 화면 갱신 안 함 (내장 캘린더 깜빡임 방지)
   if(document.visibilityState!=="visible")return;
   loadCloud(true);
 }, 15000);
