@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.19 (2026-07-02) Supabase";
+const APP_VERSION="v5.20 (2026-07-03) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -3668,12 +3668,6 @@ function exportExcel(){
   sheetOf(DB.facilities.map(x=>({점검일:x.date,시설명:x.name,면적:x.area,용도:x.use,점검주기:x.cycle,점검결과:x.result,보수이력:x.repair,담당자:x.manager})),{점검일:"",시설명:"",면적:"",용도:"",점검주기:"",점검결과:"",보수이력:"",담당자:""},"시설관리대장");
   sheetOf(DB.inspections.map(x=>({점검일:x.date,구분:x.kind,대상명칭:x.target,관리번호:x.code,내용:x.content,점검자:x.inspector,비용:x.cost,처리결과:x.result,차기점검일:x.nextDate,비고:x.note})),{점검일:"",구분:"",대상명칭:"",관리번호:"",내용:"",점검자:"",비용:"",처리결과:"",차기점검일:"",비고:""},"점검보수이력");
   sheetOf(DB.leads.map(x=>({상담일:x.date,성명:x.name,연락처:x.phone,문의경로:x.source,관심과정:x.course,상담내용:x.content,상태:x.status,재연락일:x.recallDate,담당자:x.staff,등록전환수강생ID:x.convertedSid,비고:x.note})),{상담일:"",성명:"",연락처:"",문의경로:"",관심과정:"",상담내용:"",상태:"",재연락일:"",담당자:"",등록전환수강생ID:"",비고:""},"상담문의");
-  sheetOf(DB.consults.map(x=>{const s=findStu(x.sid);return{일자:x.date,수강생:s?s.name:"",내용:x.text};}),{일자:"",수강생:"",내용:""},"상담기록");
-  sheetOf(DB.worklogs.map(x=>({일자:x.date,작성자:x.writer,내용:x.text})),{일자:"",작성자:"",내용:""},"업무일지");
-  sheetOf(DB.courses.map(x=>({과정명:x.name})),{과정명:""},"과정목록");
-  sheetOf(DB.methods.map(x=>({구분:x.type,수단명:x.name})),{구분:"",수단명:""},"결제수단");
-  sheetOf(DB.courselogs.map(x=>{const s=findStu(x.sid);return{일자:x.date,수강생:s?s.name:"",이전과정:x.from,변경과정:x.to};}),{일자:"",수강생:"",이전과정:"",변경과정:""},"과정변경이력");
-  sheetOf(DB.lessons.map(x=>({일자:x.date,과정명:x.course,수강생:x.student,지도내용:x.text})),{일자:"",과정명:"",수강생:"",지도내용:""},"학습지도");
   sheetOf(DB.schedules.map(x=>({요일:x.day,시작시간:x.start,종료시간:x.end,과정명:x.course,강사:x.teacher,강의실:x.room,비고:x.note})),{요일:"",시작시간:"",종료시간:"",과정명:"",강사:"",강의실:"",비고:""},"시간표");
   sheetOf(DB.makeups.map(x=>({결석일:x.absentDate,수강생:x.student,과정명:x.course,보강예정일:x.makeupDate,보강시간:x.makeupTime,강사:x.teacher,상태:x.status,비고:x.note})),{결석일:"",수강생:"",과정명:"",보강예정일:"",보강시간:"",강사:"",강의실:"",상태:"",비고:""},"보강관리");
   sheetOf(DB.meetings.map(x=>({일자:x.date,제목:x.title,참석자:x.members,내용:x.content,결정사항:x.decision,작성자:x.writer})),{일자:"",제목:"",참석자:"",내용:"",결정사항:"",작성자:""},"회의록");
