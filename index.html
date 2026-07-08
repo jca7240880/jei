@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.29 (2026-07-04) Supabase";
+const APP_VERSION="v5.30 (2026-07-04) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1875,10 +1875,12 @@ function attMonthlyDates(){
   }
   return out;
 }
-function attMonthlyStudents(){
-  return myStudents()
+function attMonthlyStudents(base){
+  const list=myStudents()
     .filter(s=>s.status!=="퇴원"&&(ui.attTeacher==="전체"||(s.teacher||"")===ui.attTeacher))
     .sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko"));
+  if(base)return list; // 드롭다운 목록용 (이름 선택 무시)
+  return ui.attStuSel?list.filter(s=>String(s.id)===String(ui.attStuSel)):list;
 }
 function attMonthlySetMonth(mo){
   if(!mo)return;
@@ -1925,7 +1927,9 @@ function viewAttMonthly(){
       <label class="fld">월 선택<input type="month" value="${String(ui.attFrom).slice(0,7)}" onchange="attMonthlySetMonth(this.value)"></label>
       <label class="fld">시작일<input type="date" value="${ui.attFrom}" onchange="ui.attFrom=this.value;render()"></label>
       <label class="fld">종료일<input type="date" value="${ui.attTo}" onchange="ui.attTo=this.value;render()"></label>
-      <label class="fld">담임<select onchange="ui.attTeacher=this.value;render()"><option ${ui.attTeacher==='전체'?'selected':''}>전체</option>${getTeachers().map(t=>`<option ${ui.attTeacher===t?'selected':''}>${esc(t)}</option>`).join("")}</select></label>
+      <label class="fld">담임<select onchange="ui.attTeacher=this.value;ui.attStuSel='';render()"><option ${ui.attTeacher==='전체'?'selected':''}>전체</option>${getTeachers().map(t=>`<option ${ui.attTeacher===t?'selected':''}>${esc(t)}</option>`).join("")}</select></label>
+      <label class="fld">이름<select onchange="ui.attStuSel=this.value;render()"><option value="" ${!ui.attStuSel?'selected':''}>전체</option>${attMonthlyStudents(true).map(st=>`<option value="${st.id}" ${String(ui.attStuSel)===String(st.id)?'selected':''}>${esc(st.name)}</option>`).join("")}</select></label>
+      ${ui.attStuSel?`<button class="btn sm" onclick="ui.attStuSel='';render()">↺ 전체 보기</button>`:""}
       <button class="btn sm" onclick="printMonthlyAtt()">🖨 출결표 인쇄 (A4)</button>
     </div>
     <div style="overflow:auto"><table style="font-size:12px;border-collapse:collapse">
