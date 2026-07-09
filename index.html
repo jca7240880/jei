@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.30 (2026-07-04) Supabase";
+const APP_VERSION="v5.32 (2026-07-04) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -1169,7 +1169,7 @@ function viewDash(){
   const salesSum=DB.sales.filter(l=>String(l.date).startsWith(mo)).reduce((a,l)=>a+Number(l.paidAmount),0);
   const incSum=DB.income.filter(l=>String(l.date).startsWith(mo)).reduce((a,l)=>a+Number(l.amount),0);
   const expSum=DB.expense.filter(l=>String(l.date).startsWith(mo)).reduce((a,l)=>a+(Number(l.paidAmount)||Number(l.amount)),0);
-  const active=DB.students.filter(s=>s.status!=="퇴원");
+  const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지");
   const newThisMonth=DB.students.filter(s=>String(s.start).startsWith(mo)).length;
 
   const dueSoon=active.map(s=>({s,info:nextDueInfo(s)})).filter(x=>
@@ -1449,6 +1449,7 @@ function viewStu(){
     <select onchange="ui.statusFilter=this.value;render()" title="상태별">
       <option ${ui.statusFilter==='전체'?'selected':''}>상태 전체</option>
       <option ${ui.statusFilter==='재원'?'selected':''}>재원</option>
+      <option ${ui.statusFilter==='정지'?'selected':''}>정지</option>
       <option ${ui.statusFilter==='퇴원'?'selected':''}>퇴원</option>
     </select>
     <button class="btn sm" onclick="resetStuFilter()">↺ 필터 해제</button>
@@ -1498,12 +1499,12 @@ function stuRow(s){
     <td>${esc(lastPaidOf(s))||"-"}</td>
     <td>${dueBadge(s)}</td>
     <td>-</td>
-    <td><select id="r_st" style="padding:5px"><option ${s.status!=='퇴원'?'selected':''}>재원</option><option ${s.status==='퇴원'?'selected':''}>퇴원</option></select></td>
+    <td><select id="r_st" style="padding:5px"><option ${s.status!=='퇴원'&&s.status!=='정지'?'selected':''}>재원</option><option ${s.status==='정지'?'selected':''}>정지</option><option ${s.status==='퇴원'?'selected':''}>퇴원</option></select></td>
     <td style="white-space:nowrap"><button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="saveRowEdit('${s.id}')">저장</button> <button class="btn sm" onclick="ui.rowEditId=null;render()">취소</button></td></tr>`;
   }
   const info=nextDueInfo(s);
   const projCell=info.type==="count"?(info.proj||(s.classDays?"-":"수업요일 입력 필요")):(info.type==="date"?(info.due||"-"):"매출 입력 필요");
-  return `<tr style="${s.status==='퇴원'?'opacity:.45':''}">
+  return `<tr style="${s.status==='퇴원'?'opacity:.45':(s.status==='정지'?'background:#fff7ec':'')}">
     <td><span class="namelink" onclick="openDetail('${s.id}')">${esc(s.name)}</span></td>
     <td>${s.gubun?`<span class="pill ${s.gubun==='학생'?'pu':'ok'}">${esc(s.gubun)}</span>`:""}</td>
     <td>${esc(s.phone)}</td>
@@ -1589,7 +1590,7 @@ function stuFormHtml(s){
     <label class="fld" id="f_chwrap" style="display:${v.payCycle==='횟수제'?'flex':'none'}">누적 충전횟수<input type="number" id="f_ch" value="${v.charged||v.totalSessions||""}" placeholder="이전 결제 합산"></label>
     <label class="fld">최근결제일<input type="date" id="f_lp" value="${esc(v.lastPaid||"")}"></label>
     <label class="fld" style="grid-column:span 2">수업요일<span style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0">${["월","화","수","목","금","토","일"].map(d=>`<label style="display:flex;align-items:center;gap:3px;font-size:13px;color:var(--ink)"><input type="checkbox" id="f_day${d}" ${String(v.classDays||"").split(",").includes(d)?"checked":""}>${d}</label>`).join("")}</span></label>
-    ${s?`<label class="fld">상태<select id="f_stat"><option ${v.status!=='퇴원'?'selected':''}>재원</option><option ${v.status==='퇴원'?'selected':''}>퇴원</option></select></label>
+    ${s?`<label class="fld">상태<select id="f_stat"><option ${v.status!=='퇴원'&&v.status!=='정지'?'selected':''}>재원</option><option ${v.status==='정지'?'selected':''}>정지</option><option ${v.status==='퇴원'?'selected':''}>퇴원</option></select></label>
     <label class="fld">퇴원일<input type="date" id="f_qd" value="${esc(v.quitDate||"")}"></label>`:""}
     <button class="btn" onclick="${s?`saveStudent('${s.id}')`:"addStudent()"}">${s?"수정 저장":"등록"}</button>
   </div>`;
@@ -1627,7 +1628,7 @@ function viewStuDetail(){
   return `
   <div class="toolbar">
     <button class="btn sm" onclick="ui.detailId=null;render()">← 목록으로</button>
-    <h2 style="margin:0;font-size:18px">${esc(s.name)} <span class="pill ${s.gubun==='학생'?'pu':'ok'}">${esc(s.gubun||"")}</span> ${s.status==='퇴원'?'<span class="pill no">퇴원</span>':''}</h2>
+    <h2 style="margin:0;font-size:18px">${esc(s.name)} <span class="pill ${s.gubun==='학생'?'pu':'ok'}">${esc(s.gubun||"")}</span> ${s.status==='퇴원'?'<span class="pill no">퇴원</span>':(s.status==='정지'?'<span class="pill" style="background:#f39c12;color:#fff">⏸ 정지</span>':'')}</h2>
     <span style="flex:1"></span>
     <button class="btn sm" onclick="ui.editStu=!ui.editStu;render()">${ui.editStu?"수정 취소":"✎ 정보 수정"}</button>
     <button class="btn" onclick="payStudent('${s.id}')">💳 결제 등록</button>
@@ -2863,7 +2864,7 @@ function viewPay(){
   const todayPaid=DB.sales.filter(l=>Number(l.paidAmount)>0 && normDate(l.date)===today).sort((a,b)=>String(b.id).localeCompare(String(a.id)));
   const todaySum=todayPaid.reduce((a,l)=>a+Number(l.paidAmount),0);
   // 수강료 재결제 임박
-  const active=DB.students.filter(s=>s.status!=="퇴원");
+  const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지");
   const dueSoon=active.map(s=>({s,info:nextDueInfo(s)})).filter(x=>
     (x.info.type==="count"&&x.info.remain<=2)||(x.info.type==="date"&&x.info.dday<=7)
   ).sort((a,b)=>{const av=a.info.type==="date"?a.info.dday:a.info.remain;const bv=b.info.type==="date"?b.info.dday:b.info.remain;return av-bv;});
@@ -3672,14 +3673,50 @@ function importBank(input){
       const keyOf=(date,desc,vendor,amount)=>`${normDate(date)}|${String(desc).trim()}|${String(vendor).trim()}|${amount}`;
       const existIncKeys=new Set(DB.income.map(l=>keyOf(l.date,l.desc,l.vendor,Number(l.amount))));
       const existExpKeys=new Set(DB.expense.map(l=>keyOf(l.date,l.desc,l.vendor,Number(l.paidAmount||l.amount))));
+      // ── 1차: 전체 행 파싱 ──
+      const txs=[];
       for(let i=hi+1;i<aoa.length;i++){
         const r=aoa[i];if(!r||!r.length)continue;
         const dt=parseDate(r[cDate]);if(!dt)continue;
         const inAmt=cIn>=0?parseNum(r[cIn]):0;
         const outAmt=cOut>=0?parseNum(r[cOut]):0;
-        const who=cWho>=0?String(r[cWho]||"").trim():"";
-        const memo=cMemo>=0?String(r[cMemo]||"").trim():"";
-        const desc=cDesc>=0?String(r[cDesc]||"").trim():"";
+        if(inAmt<=0&&outAmt<=0)continue;
+        txs.push({
+          dt,inAmt,outAmt,
+          who:cWho>=0?String(r[cWho]||"").trim():"",
+          memo:cMemo>=0?String(r[cMemo]||"").trim():"",
+          desc:cDesc>=0?String(r[cDesc]||"").trim():"",
+          skip:false
+        });
+      }
+      // ── 2차: 취소·환불 상쇄 제외 ──
+      // 규칙1: '취소/환불/반환/승인취소' 문구가 있는 거래 → 반대방향 같은 금액의 원거래와 짝지어 둘 다 제외
+      // 규칙2: 문구가 없어도 같은 거래처에서 14일 이내 같은 금액이 입·출 반대로 있으면 상쇄 제외
+      const isCancelText=t=>/취소|환불|반환/.test(t);
+      const txt=t=>(t.who+" "+t.desc+" "+t.memo);
+      const baseName=v=>String(v).replace(/취소|환불|반환|승인/g,"").trim();
+      const dayDiff=(a,b)=>Math.abs((new Date(a+"T00:00:00")-new Date(b+"T00:00:00"))/86400000);
+      const cancelled=[];
+      const amtOfT=t=>t.inAmt>0?t.inAmt:t.outAmt;
+      const opposite=(a,b)=>(a.inAmt>0&&b.outAmt>0)||(a.outAmt>0&&b.inAmt>0);
+      // 규칙1
+      txs.forEach(c=>{
+        if(c.skip||!isCancelText(txt(c)))return;
+        const cand=txs.filter(o=>!o.skip&&o!==c&&opposite(c,o)&&amtOfT(o)===amtOfT(c)&&o.dt<=c.dt
+          &&(baseName(o.who)===baseName(c.who)||!c.who||!o.who||baseName(c.who).includes(baseName(o.who))||baseName(o.who).includes(baseName(c.who))))
+          .sort((a,b)=>String(b.dt).localeCompare(String(a.dt)));
+        if(cand.length){c.skip=true;cand[0].skip=true;cancelled.push({who:c.who||cand[0].who,amt:amtOfT(c)});}
+      });
+      // 규칙2
+      txs.forEach(a=>{
+        if(a.skip||!a.who)return;
+        const b=txs.find(o=>!o.skip&&o!==a&&o.who&&opposite(a,o)&&amtOfT(o)===amtOfT(a)&&baseName(o.who)===baseName(a.who)&&dayDiff(a.dt,o.dt)<=14);
+        if(b){a.skip=true;b.skip=true;cancelled.push({who:a.who,amt:amtOfT(a)});}
+      });
+      // ── 3차: 남은 거래 등록 ──
+      for(const t of txs){
+        if(t.skip)continue;
+        const dt=t.dt,inAmt=t.inAmt,outAmt=t.outAmt,who=t.who,memo=t.memo,desc=t.desc;
         if(inAmt>0){
           const d=desc||memo||"은행입금";
           const k=keyOf(dt,d,who,inAmt);
@@ -3697,16 +3734,18 @@ function importBank(input){
           newExp.push({id:uid(),date:dt,big:ac?ac.big:"기타지출",acct:ac?ac.acct:"기타",desc:d,vendor:who,memo:memo,amount:outAmt,discount:0,paidAmount:outAmt,method:"계좌이체",note:"은행내역 자동등록"});expCnt++;
         }
       }
+      // 취소 제외 안내문
+      const cancelNote=cancelled.length?`\n취소·환불 상쇄 제외 ${cancelled.length}쌍(${cancelled.length*2}건): ${cancelled.slice(0,3).map(c=>`${c.who} ${won(c.amt)}원`).join(", ")}${cancelled.length>3?" 외 "+(cancelled.length-3)+"쌍":""}`:"";
       if(!incCnt&&!expCnt){
         if(dupCnt>0){alert(`가져올 새 거래가 없습니다.\n\n${dupCnt}건은 이미 등록된 내역(날짜·적요·거래처·금액 동일)이라 제외했습니다.`);}
         else{alert("가져올 거래 내역이 없습니다. (입금·출금 금액이 있는 행을 찾지 못함)");}
         return;
       }
-      if(!confirm(`은행 거래내역을 가져옵니다.\n\n수입(입금) ${incCnt}건\n지출(출금) ${expCnt}건${autoCnt>0?`\n자동 분류 ${autoCnt}건 (과거 같은 거래처·적요의 분류 적용)`:""}${dupCnt>0?`\n\n※ 중복 ${dupCnt}건은 이미 등록되어 있어 제외했습니다.`:""}\n\n[확인]을 누르면 기존 내역에 추가됩니다.\n※ 분류 안 된 항목은 '기타'로 들어가니, 체크박스로 골라 일괄 변경하세요.`))return;
+      if(!confirm(`은행 거래내역을 가져옵니다.\n\n수입(입금) ${incCnt}건\n지출(출금) ${expCnt}건${autoCnt>0?`\n자동 분류 ${autoCnt}건 (과거 같은 거래처·적요의 분류 적용)`:""}${cancelNote}${dupCnt>0?`\n\n※ 중복 ${dupCnt}건은 이미 등록되어 있어 제외했습니다.`:""}\n\n[확인]을 누르면 기존 내역에 추가됩니다.\n※ 분류 안 된 항목은 '기타'로 들어가니, 체크박스로 골라 일괄 변경하세요.`))return;
       DB.income=DB.income.concat(newInc);
       DB.expense=DB.expense.concat(newExp);
       save();render();
-      alert(`완료: 수입 ${incCnt}건, 지출 ${expCnt}건 추가됨.${autoCnt>0?`\n이 중 ${autoCnt}건은 과거 분류를 자동 적용했습니다.`:""}${dupCnt>0?`\n중복 ${dupCnt}건은 제외했습니다.`:""}\n\n'기타'로 남은 항목만 확인해서 분류하면 됩니다.\n(한 번 분류하면 다음 가져오기부터 같은 거래처는 자동 분류됩니다)`);
+      alert(`완료: 수입 ${incCnt}건, 지출 ${expCnt}건 추가됨.${autoCnt>0?`\n이 중 ${autoCnt}건은 과거 분류를 자동 적용했습니다.`:""}${cancelled.length?`\n취소·환불 ${cancelled.length}쌍은 상쇄되어 제외했습니다.`:""}${dupCnt>0?`\n중복 ${dupCnt}건은 제외했습니다.`:""}\n\n'기타'로 남은 항목만 확인해서 분류하면 됩니다.\n(한 번 분류하면 다음 가져오기부터 같은 거래처는 자동 분류됩니다)`);
     }catch(err){alert("은행 내역 변환 중 오류가 발생했습니다.\n\n"+err.message);}
   };
   reader.readAsArrayBuffer(file);
