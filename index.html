@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.34 (2026-07-09) Supabase";
+const APP_VERSION="v5.35 (2026-07-09) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1087,6 +1087,7 @@ function render(){
   if(tab==="lead")m.innerHTML=viewLead();
   if(tab==="stu"){
     if(ui.detailId){m.innerHTML=viewStuDetail();}
+    else if(ui.stuSub==="quit"){m.innerHTML=stuSubBar()+viewQuitList();}
     else if(ui.stuSub==="att"){m.innerHTML=stuSubBar()+viewAtt();}
     else if(ui.stuSub==="les"){m.innerHTML=stuSubBar()+viewLes();}
     else{m.innerHTML=stuSubBar()+viewStu();}
@@ -1362,8 +1363,39 @@ function pivotHtml(title,p){
 }
 
 /* ───── 수강생 목록 ───── */
+function viewQuitList(){
+  const list=DB.students.filter(s=>s.status==="퇴원")
+    .filter(s=>String(s.name).includes(ui.quitSearch||"")||String(s.phone).includes(ui.quitSearch||""))
+    .sort((a,b)=>String(b.quitDate||"").localeCompare(String(a.quitDate||""))||String(a.name).localeCompare(String(b.name),"ko"));
+  return `
+  <div class="panel" style="margin-top:0"><h2>🚪 퇴원생 목록 (총 ${list.length}명)</h2>
+    <div class="toolbar">
+      <input placeholder="이름/연락처 검색" value="${esc(ui.quitSearch||"")}" oninput="ui.quitSearch=this.value;render()" style="min-width:200px">
+    </div>
+    <div class="twrap"><table><thead><tr><th>성명</th><th>구분</th><th>연락처</th><th>과정</th><th>담임</th><th>등록일</th><th>퇴원일</th><th>참고사항</th><th></th></tr></thead><tbody>
+    ${list.length?list.map(s=>`<tr>
+      <td><span class="namelink" onclick="openDetail('${s.id}')">${esc(s.name)}</span></td>
+      <td>${s.gubun?`<span class="pill ${s.gubun==='학생'?'pu':'ok'}">${esc(s.gubun)}</span>`:""}</td>
+      <td>${esc(s.phone)}</td>
+      <td>${esc(s.course)}</td>
+      <td>${esc(s.teacher)||"-"}</td>
+      <td>${esc(s.start)||"-"}</td>
+      <td>${esc(s.quitDate)||"-"}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.note)||""}</td>
+      <td><button class="btn sm" onclick="requitStu('${s.id}')">↩ 재원 전환</button></td>
+    </tr>`).join(""):`<tr><td colspan="9" class="empty">퇴원생이 없습니다.</td></tr>`}
+    </tbody></table></div>
+    <p class="note">※ 성명을 클릭하면 상세 정보(출결·납입 이력 포함)를 볼 수 있습니다. 재등록 시 [↩ 재원 전환]을 누르세요.</p>
+  </div>`;
+}
+function requitStu(id){
+  const st=findStu(id);if(!st)return;
+  if(!confirm(`${st.name} 님을 재원으로 전환할까요?\n(퇴원일은 지워지고 수강생 목록으로 돌아갑니다)`))return;
+  st.status="재원";st.quitDate="";
+  save();render();
+}
 function stuSubBar(){
-  const subs=[["list","📋 수강생 목록"],["att","✅ 출결"],["les","📝 학습지도"]];
+  const subs=[["list","📋 수강생 목록"],["quit","🚪 퇴원생"],["att","✅ 출결"],["les","📝 학습지도"]];
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.stuSub||"list")===k?'on':''}" onclick="ui.stuSub='${k}';ui.detailId=null;render()">${l}</button>`).join("")}</div>`;
 }
 function paySubBar(){
@@ -1451,7 +1483,6 @@ function viewStu(){
       <option ${ui.statusFilter==='전체'?'selected':''}>상태 전체</option>
       <option ${ui.statusFilter==='재원'?'selected':''}>재원</option>
       <option ${ui.statusFilter==='정지'?'selected':''}>정지</option>
-      <option ${ui.statusFilter==='퇴원'?'selected':''}>퇴원</option>
     </select>
     <select onchange="ui.stuSort=this.value;render()" title="정렬">
       <option value="name" ${(ui.stuSort||'name')==='name'?'selected':''}>이름순</option>
@@ -1482,9 +1513,10 @@ function stuFiltered(){
       &&(ui.teacherFilter==="전체"||(s.teacher||"")===ui.teacherFilter)
       &&(ui.statusFilter==="전체"||(s.status||"재원")===ui.statusFilter)
       &&(String(s.name).includes(ui.search)||String(s.phone).includes(ui.search)))
+    .filter(s=>s.status!=="퇴원") // 퇴원자는 '퇴원생' 탭에서 관리
     .sort((a,b)=>{
-      const quit=((a.status==="퇴원")-(b.status==="퇴원")); // 퇴원은 항상 아래
-      if(quit)return quit;
+      const paused=((a.status==="정지")-(b.status==="정지")); // 정지는 항상 아래
+      if(paused)return paused;
       const mode=ui.stuSort||"name";
       if(mode==="remain"){ // 잔여회차 적은순 (횟수제 우선, 기간제는 D-day순으로 뒤에)
         const ra=nextDueInfo(a),rb=nextDueInfo(b);
