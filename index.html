@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.33 (2026-07-04) Supabase";
+const APP_VERSION="v5.34 (2026-07-09) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1453,6 +1453,11 @@ function viewStu(){
       <option ${ui.statusFilter==='정지'?'selected':''}>정지</option>
       <option ${ui.statusFilter==='퇴원'?'selected':''}>퇴원</option>
     </select>
+    <select onchange="ui.stuSort=this.value;render()" title="정렬">
+      <option value="name" ${(ui.stuSort||'name')==='name'?'selected':''}>이름순</option>
+      <option value="remain" ${ui.stuSort==='remain'?'selected':''}>잔여회차 적은순</option>
+      <option value="course" ${ui.stuSort==='course'?'selected':''}>과정순</option>
+    </select>
     <button class="btn sm" onclick="resetStuFilter()">↺ 필터 해제</button>
     <button class="btn" onclick="ui.showStuForm=!ui.showStuForm;render()">+ 수강생 등록</button>
   </div>
@@ -1477,7 +1482,21 @@ function stuFiltered(){
       &&(ui.teacherFilter==="전체"||(s.teacher||"")===ui.teacherFilter)
       &&(ui.statusFilter==="전체"||(s.status||"재원")===ui.statusFilter)
       &&(String(s.name).includes(ui.search)||String(s.phone).includes(ui.search)))
-    .sort((a,b)=>((a.status==="퇴원")-(b.status==="퇴원"))||String(a.name).localeCompare(String(b.name),"ko"));
+    .sort((a,b)=>{
+      const quit=((a.status==="퇴원")-(b.status==="퇴원")); // 퇴원은 항상 아래
+      if(quit)return quit;
+      const mode=ui.stuSort||"name";
+      if(mode==="remain"){ // 잔여회차 적은순 (횟수제 우선, 기간제는 D-day순으로 뒤에)
+        const ra=nextDueInfo(a),rb=nextDueInfo(b);
+        const va=ra.type==="count"?ra.remain:100000+(ra.dday??99999);
+        const vb=rb.type==="count"?rb.remain:100000+(rb.dday??99999);
+        if(va!==vb)return va-vb;
+      }else if(mode==="course"){ // 과정순 → 같은 과정 안에서 이름순
+        const c=String(a.course||"").localeCompare(String(b.course||""),"ko");
+        if(c)return c;
+      }
+      return String(a.name).localeCompare(String(b.name),"ko");
+    });
 }
 function refreshStuTable(){
   const el=document.getElementById("stuBody");
@@ -2824,9 +2843,9 @@ function viewLead(){
   <p class="note">※ ‘등록전환’을 누르면 상담자가 수강생으로 등록되고, 수강생관리 탭에서 이어서 과정·수강료를 입력할 수 있습니다.</p>`;
 }
 function addLead(){
-  const nm=val("ld_nm").trim();
-  if(!nm){alert("성명을 입력하세요.");return;}
-  DB.leads.push({id:uid(),date:val("ld_dt"),name:nm,phone:val("ld_ph"),source:val("ld_src"),course:val("ld_co"),content:val("ld_ct"),status:"신규",recallDate:val("ld_recall"),staff:val("ld_staff"),convertedSid:"",note:""});
+  const nm=val("ld_nm").trim(),ph=val("ld_ph").trim(),ct=val("ld_ct").trim();
+  if(!nm&&!ph&&!ct){alert("성명·연락처·상담내용 중 하나는 입력하세요.");return;}
+  DB.leads.push({id:uid(),date:val("ld_dt"),name:nm||"(미상)",phone:ph,source:val("ld_src"),course:val("ld_co"),content:ct,status:"신규",recallDate:val("ld_recall"),staff:val("ld_staff"),convertedSid:"",note:""});
   save();render();
 }
 function saveLead(id){
