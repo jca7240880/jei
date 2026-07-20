@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.35 (2026-07-09) Supabase";
+const APP_VERSION="v5.36 (2026-07-09) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -1998,27 +1998,46 @@ function viewAttMonthly(){
 function printMonthlyAtt(){
   const {dates,stus,attSet}=_attGridData();
   const dowKo=["일","월","화","수","목","금","토"];
-  const wkBg=d=>d.dow===0?"background:#fdecea;":d.dow===6?"background:#eaf4fb;":"";
-  const head1=dates.map(d=>`<th style="${wkBg(d)}">${d.day}</th>`).join("");
-  const head2=dates.map(d=>`<th style="font-weight:400;${wkBg(d)}">${dowKo[d.dow]}</th>`).join("");
+  const wkBg=d=>d.dow===0?"background:#fde8e8;":d.dow===6?"background:#e3f1fa;":"";
+  const wkTx=d=>d.dow===0?"color:#d63031;":"";
+  const head1=dates.map(d=>`<th style="${wkBg(d)}${wkTx(d)}">${d.day}</th>`).join("");
+  const head2=dates.map(d=>`<th style="font-weight:600;${wkBg(d)}${wkTx(d)}">${dowKo[d.dow]}</th>`).join("");
   const rows=stus.map((st,i)=>{
-    let cnt=0;
     const cells=dates.map(d=>{
-      const on=attSet[st.id+"|"+d.date];if(on)cnt++;
-      return `<td style="text-align:center;${wkBg(d)}">${on?"O":""}</td>`;
+      const on=attSet[st.id+"|"+d.date];
+      const wk=d.dow===0||d.dow===6;
+      return `<td style="text-align:center;${wkBg(d)}">${on?"O":(wk?"":"-")}</td>`;
     }).join("");
-    return `<tr><td style="text-align:center">${i+1}</td><td>${esc(st.name)}</td><td>${esc(st.course)||""}</td><td style="font-size:10px">${esc(st.classDays)||""}</td>${cells}<td style="text-align:center;font-weight:bold">${cnt}</td></tr>`;
+    return `<tr style="height:34px"><td style="text-align:center">${i+1}</td><td style="text-align:center;white-space:nowrap">${esc(st.name)}</td><td style="text-align:center;white-space:nowrap">${esc(st.course)||""}</td>${cells}</tr>`;
   }).join("");
-  const html=`<!doctype html><html><head><meta charset="utf-8"><title>월별 출결표</title>
-  <style>@page{size:A4 landscape;margin:9mm}body{font-family:'Malgun Gothic',sans-serif;color:#000}
-  h1{text-align:center;font-size:17px;margin:0 0 3px}.info{text-align:right;font-size:11px;margin-bottom:6px}
-  table{width:100%;border-collapse:collapse;font-size:9.5px}th,td{border:1px solid #000;padding:2px 3px}th{background:#eee}</style></head><body>
-  <h1>제이컴퓨터학원 출결표</h1>
-  <div class="info">기간: ${ui.attFrom} ~ ${ui.attTo} &nbsp;|&nbsp; 담임: ${ui.attTeacher} &nbsp;|&nbsp; 수강생 ${stus.length}명 &nbsp;|&nbsp; 출력일: ${todayStr()}</div>
+  const logoUrl=(DB.settings.find(x=>x.key==="logoUrl")||{}).value||"";
+  const logoHtml=logoUrl
+    ?`<img src="${esc(logoUrl)}" style="height:16px;vertical-align:middle"> <span style="color:#196B24;font-weight:800;font-size:12px;vertical-align:middle">제이컴퓨터학원</span>`
+    :`<span style="display:inline-block;background:#196B24;color:#fff;font-weight:900;font-size:9px;padding:2px 4px;border-radius:3px;vertical-align:middle">JCA</span> <span style="color:#196B24;font-weight:800;font-size:12px;vertical-align:middle">제이컴퓨터학원</span>`;
+  const now=new Date();
+  let h=now.getHours();const ap=h<12?"AM":"PM";h=h%12||12;
+  const stamp=`${todayStr()} ${h}:${String(now.getMinutes()).padStart(2,"0")} ${ap}`;
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>출석부</title>
+  <style>
+  @page{size:A4 landscape;margin:10mm 9mm 18mm 9mm;
+    @bottom-right{content:counter(page);font-size:10px;color:#555;font-family:'Malgun Gothic'}}
+  body{font-family:'Malgun Gothic',sans-serif;color:#333;margin:0}
+  h1{text-align:center;font-size:21px;margin:8px 0 14px;color:#111;font-weight:800}
+  .period{font-size:11.5px;margin-bottom:5px;color:#333}
+  table{width:100%;border-collapse:collapse;font-size:10.5px}
+  th,td{border:1px solid #b9b9b9;padding:4px 3px}
+  th{font-weight:700;background:#fff}
+  .foot-l{position:fixed;bottom:-13mm;left:0;font-size:10px;color:#555}
+  .foot-c{position:fixed;bottom:-14mm;left:0;right:0;text-align:center}
+  </style></head><body>
+  <h1>출석부</h1>
+  <div class="period">조회기간 : ${ui.attFrom.replace(/-/g,".")} ~ ${ui.attTo.replace(/-/g,".")}${ui.attTeacher!=="전체"?` &nbsp;|&nbsp; 담임: ${esc(ui.attTeacher)}`:""}</div>
   <table><thead>
-    <tr><th rowspan="2">NO</th><th rowspan="2">성명</th><th rowspan="2">과목</th><th rowspan="2">요일/시간</th>${head1}<th rowspan="2">출석</th></tr>
-    <tr>${head2}</tr>
-  </thead><tbody>${rows}</tbody></table>
+    <tr><th colspan="3" style="min-width:150px">구분</th>${head1}</tr>
+    <tr><th style="width:34px">NO</th><th style="min-width:60px">성명</th><th style="min-width:64px">과목</th>${head2}</tr>
+  </thead><tbody>${rows||`<tr><td colspan="${dates.length+3}" style="text-align:center;height:40px">해당 조건의 수강생이 없습니다</td></tr>`}</tbody></table>
+  <div class="foot-l">${stamp}</div>
+  <div class="foot-c">${logoHtml}</div>
   <script>window.onload=function(){window.print();}<\/script></body></html>`;
   const w=window.open("","_blank");
   if(!w){alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.");return;}
@@ -2026,6 +2045,12 @@ function printMonthlyAtt(){
 }
 function printStuAttReport(sid){
   const st=findStu(sid);if(!st)return;
+  const logoUrl=(DB.settings.find(x=>x.key==="logoUrl")||{}).value||"";
+  const logoHtml=logoUrl
+    ?`<img src="${esc(logoUrl)}" style="height:16px;vertical-align:middle"> <span style="color:#196B24;font-weight:800;font-size:12px;vertical-align:middle">제이컴퓨터학원</span>`
+    :`<span style="display:inline-block;background:#196B24;color:#fff;font-weight:900;font-size:9px;padding:2px 4px;border-radius:3px;vertical-align:middle">JCA</span> <span style="color:#196B24;font-weight:800;font-size:12px;vertical-align:middle">제이컴퓨터학원</span>`;
+  const _n=new Date();let _h=_n.getHours();const _ap=_h<12?"AM":"PM";_h=_h%12||12;
+  const stamp=`${todayStr()} ${_h}:${String(_n.getMinutes()).padStart(2,"0")} ${_ap}`;
   const from=ui.attFrom||thisMonth()+"-01", to=ui.attTo||todayStr();
   const list=DB.attendance.filter(a=>String(a.sid)===String(sid)&&a.date>=from&&a.date<=to).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
   const dowKo=["일","월","화","수","목","금","토"];
@@ -2034,7 +2059,11 @@ function printStuAttReport(sid){
     return `<tr><td style="text-align:center">${i+1}</td><td>${esc(a.date)} (${dowKo[d.getDay()]})</td><td style="text-align:center">${esc(a.inTime)||"-"}</td><td style="text-align:center">${esc(a.outTime)||"-"}</td><td>${esc(a.memo)||""}</td></tr>`;
   }).join("");
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>${esc(st.name)} 출결 보고서</title>
-  <style>@page{size:A4;margin:14mm}body{font-family:'Malgun Gothic',sans-serif;color:#000}
+  <style>@page{size:A4;margin:14mm 14mm 20mm 14mm;
+    @bottom-right{content:counter(page);font-size:10px;color:#555;font-family:'Malgun Gothic'}}
+  body{font-family:'Malgun Gothic',sans-serif;color:#000;margin:0}
+  .foot-l{position:fixed;bottom:-15mm;left:0;font-size:10px;color:#555}
+  .foot-c{position:fixed;bottom:-16mm;left:0;right:0;text-align:center}
   h1{text-align:center;font-size:18px;margin:0 0 10px}
   .meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:12.5px;border:1px solid #000;padding:8px 12px;margin-bottom:10px}
   table{width:100%;border-collapse:collapse;font-size:11.5px}th,td{border:1px solid #000;padding:4px 6px}th{background:#eee}
@@ -2051,6 +2080,8 @@ function printStuAttReport(sid){
   <table><thead><tr><th style="width:6%">NO</th><th>일자 (요일)</th><th style="width:14%">입실</th><th style="width:14%">퇴실</th><th>비고</th></tr></thead>
   <tbody>${rows||`<tr><td colspan="5" style="text-align:center">해당 기간 출결 기록 없음</td></tr>`}</tbody></table>
   <div class="sum">기간 내 총 출석: ${list.length}회</div>
+  <div class="foot-l">${stamp}</div>
+  <div class="foot-c">${logoHtml}</div>
   <script>window.onload=function(){window.print();}<\/script></body></html>`;
   const w=window.open("","_blank");
   if(!w){alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.");return;}
