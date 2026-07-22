@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.38 (2026-07-20) Supabase";
+const APP_VERSION="v5.39 (2026-07-22) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",certSid:"",certKind:"confirm",certDraft:{},incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -2948,6 +2948,48 @@ function _bookStock(){
   DB.bookout.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,inA:0,outQ:0,outA:0};stock[t].outQ+=Number(b.qty);stock[t].outA+=Number(b.amount);});
   return stock;
 }
+function bookDetailHtml(title){
+  const ins=DB.bookin.filter(b=>b.title===title).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const outs=DB.bookout.filter(b=>b.title===title).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  // 입출고 통합 흐름 (날짜순 누적 재고)
+  const flow=[...ins.map(b=>({date:b.date,type:"in",qty:Number(b.qty)||0,who:b.vendor||"",amt:Number(b.amount)||0,note:b.note||"",id:b.id})),
+              ...outs.map(b=>({date:b.date,type:"out",qty:Number(b.qty)||0,who:b.name||"",amt:Number(b.amount)||0,note:b.note||"",id:b.id}))]
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date))||(a.type==="in"?-1:1));
+  let run=0;
+  const flowRows=flow.map(f=>{
+    run+=f.type==="in"?f.qty:-f.qty;
+    return `<tr style="background:${f.type==="in"?'#f2f9f3':'#fff8f2'}">
+      <td>${esc(f.date)}</td>
+      <td style="font-weight:700;color:${f.type==="in"?'var(--green)':'#c0662b'}">${f.type==="in"?"입고 ▲":"출고 ▼"}</td>
+      <td>${esc(f.who)||"-"}</td>
+      <td style="text-align:right">${f.type==="in"?"+":"−"}${f.qty}권</td>
+      <td style="text-align:right">${f.amt?won(f.amt)+"원":"-"}</td>
+      <td style="text-align:right;font-weight:800;color:${run<0?'var(--red)':'var(--ink)'}">${run}권</td>
+      <td>${esc(f.note)||""}</td>
+    </tr>`;
+  }).join("");
+  const inRows=ins.map(b=>`<tr><td>${esc(b.date)}</td><td>${esc(b.vendor)||"-"}</td><td style="text-align:right">${won(b.amount)}원</td><td style="text-align:right">${b.qty}권</td><td>${esc(b.note)||""}</td></tr>`).join("");
+  const outRows=outs.map(b=>`<tr><td>${esc(b.date)}</td><td>${esc(b.name)||"-"}</td><td style="text-align:right">${b.qty}권</td><td style="text-align:right">${b.amount?won(b.amount)+"원":"-"}</td><td>${esc(b.note)||""}</td></tr>`).join("");
+  const inQ=ins.reduce((a,b)=>a+(Number(b.qty)||0),0), outQ=outs.reduce((a,b)=>a+(Number(b.qty)||0),0);
+  const warn=run<0?`<div class="warn" style="margin:10px 0"><b>⚠ 재고가 음수입니다 (${run}권).</b> 입고 누락 또는 출고 중복 입력이 의심됩니다. 아래 흐름표에서 잔여가 처음 마이너스로 바뀌는 지점을 확인하세요.</div>`:"";
+  return `
+  ${warn}
+  <div style="display:flex;gap:6px;margin:14px 0 8px;flex-wrap:wrap">
+    ${[["flow","🔀 입출고 흐름 (재고 추적)"],["in","📥 입고 내역"],["out","📤 출고 내역"]].map(([k,l])=>`<button class="btn sm" style="${(ui.bookDetailTab||'flow')===k?'background:var(--green);color:#fff;border:none':''}" onclick="ui.bookDetailTab='${k}';render()">${l}</button>`).join("")}
+  </div>
+  ${(ui.bookDetailTab||"flow")==="flow"?`
+  <div class="twrap" style="border:none"><table><thead><tr><th>날짜</th><th>구분</th><th>구입처 / 수강생</th><th style="text-align:right">수량</th><th style="text-align:right">금액</th><th style="text-align:right">잔여재고</th><th>비고</th></tr></thead>
+  <tbody>${flowRows||`<tr><td colspan="7" class="empty">기록이 없습니다.</td></tr>`}</tbody></table></div>
+  <p class="note">※ 날짜순으로 재고가 어떻게 변했는지 보여줍니다. 맨 오른쪽 잔여재고를 따라가면 어디서 어긋났는지 바로 확인됩니다.</p>`
+  :(ui.bookDetailTab==="in"?`
+  <div class="twrap" style="border:none"><table><thead><tr><th>날짜</th><th>구입처</th><th style="text-align:right">입고금액</th><th style="text-align:right">수량</th><th>비고</th></tr></thead>
+  <tbody>${inRows||`<tr><td colspan="5" class="empty">입고 내역이 없습니다.</td></tr>`}
+  ${ins.length?`<tr style="background:var(--green-light)"><td colspan="3"><b>합계</b></td><td style="text-align:right"><b>${inQ}권</b></td><td></td></tr>`:""}</tbody></table></div>`
+  :`
+  <div class="twrap" style="border:none"><table><thead><tr><th>날짜</th><th>수강생명</th><th style="text-align:right">수량</th><th style="text-align:right">금액</th><th>비고</th></tr></thead>
+  <tbody>${outRows||`<tr><td colspan="5" class="empty">출고 내역이 없습니다.</td></tr>`}
+  ${outs.length?`<tr style="background:var(--green-light)"><td colspan="2"><b>합계</b></td><td style="text-align:right"><b>${outQ}권</b></td><td colspan="2"></td></tr>`:""}</tbody></table></div>`)}`;
+}
 function viewBookQuick(){
   const stock=_bookStock();
   const titles=Object.keys(stock).sort();
@@ -2966,7 +3008,8 @@ function viewBookQuick(){
       <div class="card"><div class="lab">출고수량</div><div class="val">${q.outQ}권</div></div>
       <div class="card"><div class="lab">출고금액</div><div class="val">${won(q.outA)}원</div></div>
       <div class="card"><div class="lab">잔여재고</div><div class="val ${q.inQ-q.outQ<=2?'neg':''}">${q.inQ-q.outQ}권</div></div>
-    </div>`:""}
+    </div>
+    ${bookDetailHtml(sel)}`:""}
   </div>`;
   const tot={inQ:0,inA:0,outQ:0,outA:0,rem:0};
   titles.forEach(t=>{const x=stock[t];tot.inQ+=x.inQ;tot.inA+=x.inA;tot.outQ+=x.outQ;tot.outA+=x.outA;tot.rem+=x.inQ-x.outQ;});
