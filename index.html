@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.41 (2026-07-22) Supabase";
+const APP_VERSION="v5.42 (2026-07-22) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -544,7 +544,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -3131,7 +3131,7 @@ function addBookOut(){
 function delBookOut(id){if(confirm("이 출고 기록을 삭제할까요? (재고에 반영됩니다)")){DB.bookout=DB.bookout.filter(x=>String(x.id)!==String(id));save();render();}}
 
 /* ───── 월간 업무일지 ───── */
-const LEAD_SOURCES=["블로그","전화","방문","지인소개","인터넷검색","SNS","현수막/전단","기타"];
+const LEAD_SOURCES=["네이버","당근","방문","블로그","전화","지인소개","인터넷검색","카카오톡","SNS","현수막/전단","기타"];
 const LEAD_STATUS=["신규","상담중","재연락","등록완료","미등록"];
 function leadStatusColor(st){return st==="등록완료"?"ok":(st==="미등록"?"no":(st==="재연락"?"warn":""));}
 function viewLead(){
@@ -3147,11 +3147,11 @@ function viewLead(){
   <div class="toolbar">
     <div class="card" style="padding:10px 14px"><span class="lab">전체 상담 </span><b>${DB.leads.length}건</b></div>
     <div class="card" style="padding:10px 14px"><span class="lab">등록 전환 </span><b style="color:var(--green)">${cnt("등록완료")}건 (${convRate}%)</b></div>
-    <div class="card" style="padding:10px 14px"><span class="lab">재연락 예정 </span><b class="${recalls.length?'neg':''}">${recalls.length}명</b></div>
+    <div class="card" style="padding:10px 14px"><span class="lab">방문 예정 </span><b class="${recalls.length?'neg':''}">${recalls.length}명</b></div>
   </div>
-  ${recalls.length?`<div class="panel" style="border-left:3px solid var(--amber)"><h2>🔔 오늘까지 재연락 예정 (${recalls.length}명)</h2>
-    <div class="twrap" style="border:none"><table><thead><tr><th>재연락일</th><th>성명</th><th>연락처</th><th>관심과정</th><th>상담내용</th></tr></thead><tbody>
-    ${recalls.map(l=>`<tr><td>${esc(l.recallDate)}</td><td><b>${esc(l.name)}</b></td><td>${esc(l.phone)}</td><td>${esc(l.course)}</td><td>${esc(l.content)}</td></tr>`).join("")}
+  ${recalls.length?`<div class="panel" style="border-left:3px solid var(--amber)"><h2>🔔 오늘까지 방문 예정 (${recalls.length}명)</h2>
+    <div class="twrap" style="border:none"><table><thead><tr><th>방문예정일</th><th>시간</th><th>성명</th><th>연락처</th><th>관심과정</th><th>상담내용</th></tr></thead><tbody>
+    ${recalls.map(l=>`<tr><td>${esc(l.recallDate)}</td><td>${esc(l.visitTime)||"-"}</td><td><b>${esc(l.name)}</b></td><td>${esc(l.phone)}</td><td>${esc(l.course)}</td><td>${esc(l.content)}</td></tr>`).join("")}
     </tbody></table></div></div>`:""}
   <div class="formbox">
     <label class="fld">상담일<input type="date" id="ld_dt" value="${today}"></label>
@@ -3160,7 +3160,8 @@ function viewLead(){
     <label class="fld">문의경로<select id="ld_src">${getSources().map(x=>`<option>${esc(x)}</option>`).join("")}</select></label>
     <label class="fld">관심과정<select id="ld_co"><option value=""></option>${courseNames().map(c=>`<option>${esc(c)}</option>`).join("")}</select></label>
     <label class="fld">담당자<select id="ld_staff">${getTeachers().map(t=>`<option>${esc(t)}</option>`).join("")}</select></label>
-    <label class="fld">재연락일<input type="date" id="ld_recall"></label>
+    <label class="fld">방문예정일<input type="date" id="ld_recall"></label>
+    <label class="fld">방문시간<input type="time" id="ld_vtime"></label>
     <label class="fld" style="grid-column:span 2">상담내용<input id="ld_ct" placeholder="예: 컴활2급 야간반 문의, 수강료 안내함"></label>
     <button class="btn" onclick="addLead()">상담 등록</button>
   </div>
@@ -3168,7 +3169,7 @@ function viewLead(){
     <span style="font-size:13px;color:var(--sub)">상태 필터:</span>
     ${["전체",...LEAD_STATUS].map(st=>`<button class="btn sm ${f===st?'on':''}" onclick="ui.leadFilter='${st}';render()">${st}${st!=="전체"?` ${cnt(st)}`:""}</button>`).join("")}
   </div>
-  <div class="twrap"><table><thead><tr><th>상담일</th><th>성명</th><th>연락처</th><th>문의경로</th><th>관심과정</th><th>상담내용</th><th>재연락일</th><th>담당</th><th>상태</th><th>작업</th></tr></thead><tbody>
+  <div class="twrap"><table><thead><tr><th>상담일</th><th>성명</th><th>연락처</th><th>문의경로</th><th>관심과정</th><th>상담내용</th><th>방문예정</th><th>담당</th><th>상태</th><th>작업</th></tr></thead><tbody>
   ${list.length?list.map(l=>{
     const editing=String(ui.leadEditId)===String(l.id);
     if(editing){
@@ -3179,13 +3180,13 @@ function viewLead(){
         <td><select id="le_src" style="padding:4px">${getSources().map(x=>`<option ${l.source===x?'selected':''}>${esc(x)}</option>`).join("")}</select></td>
         <td><select id="le_co" style="padding:4px"><option value=""></option>${courseNames().map(c=>`<option ${l.course===c?'selected':''}>${esc(c)}</option>`).join("")}</select></td>
         <td><input id="le_ct" value="${esc(l.content)}" style="padding:4px;width:140px"></td>
-        <td><input type="date" id="le_recall" value="${esc(l.recallDate)}" style="padding:4px"></td>
+        <td><input type="date" id="le_recall" value="${esc(l.recallDate)}" style="padding:4px"><input type="time" id="le_vtime" value="${esc(l.visitTime||"")}" style="padding:4px;margin-top:3px"></td>
         <td><select id="le_staff" style="padding:4px">${getTeachers().map(t=>`<option ${l.staff===t?'selected':''}>${esc(t)}</option>`).join("")}</select></td>
         <td><select id="le_st" style="padding:4px">${LEAD_STATUS.map(x=>`<option ${l.status===x?'selected':''}>${x}</option>`).join("")}</select></td>
         <td style="white-space:nowrap"><button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="saveLead('${l.id}')">저장</button> <button class="btn sm" onclick="ui.leadEditId=null;render()">취소</button></td></tr>`;
     }
     const converted=l.status==="등록완료";
-    return `<tr><td>${esc(l.date)}</td><td><b>${esc(l.name)}</b></td><td>${esc(l.phone)}</td><td>${esc(l.source)}</td><td>${esc(l.course)}</td><td>${esc(l.content)}</td><td>${esc(l.recallDate)||"-"}</td><td>${esc(l.staff)}</td><td><span class="pill ${leadStatusColor(l.status)}">${esc(l.status)}</span></td>
+    return `<tr><td>${esc(l.date)}</td><td><b>${esc(l.name)}</b></td><td>${esc(l.phone)}</td><td>${esc(l.source)}</td><td>${esc(l.course)}</td><td>${esc(l.content)}</td><td>${l.recallDate?esc(l.recallDate)+(l.visitTime?`<br><span style="font-size:11px;color:var(--sub)">${esc(l.visitTime)}</span>`:""):"-"}</td><td>${esc(l.staff)}</td><td><span class="pill ${leadStatusColor(l.status)}">${esc(l.status)}</span></td>
     <td style="white-space:nowrap">${converted?`<span style="font-size:11px;color:var(--sub)">수강생 전환됨</span>`:`<button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="convertLead('${l.id}')" title="수강생으로 등록">▶ 등록전환</button> `}<button class="btn sm" onclick="ui.leadEditId='${l.id}';render()">✎</button> <button class="btn sm" onclick="delLead('${l.id}')">🗑</button></td></tr>`;
   }).join(""):`<tr><td colspan="10" class="empty">상담 내역이 없습니다. 위에서 신규 문의를 등록하세요.</td></tr>`}
   </tbody></table></div>
@@ -3194,12 +3195,12 @@ function viewLead(){
 function addLead(){
   const nm=val("ld_nm").trim(),ph=val("ld_ph").trim(),ct=val("ld_ct").trim();
   if(!nm&&!ph&&!ct){alert("성명·연락처·상담내용 중 하나는 입력하세요.");return;}
-  DB.leads.push({id:uid(),date:val("ld_dt"),name:nm||"(미상)",phone:ph,source:val("ld_src"),course:val("ld_co"),content:ct,status:"신규",recallDate:val("ld_recall"),staff:val("ld_staff"),convertedSid:"",note:""});
+  DB.leads.push({id:uid(),date:val("ld_dt"),name:nm||"(미상)",phone:ph,source:val("ld_src"),course:val("ld_co"),content:ct,status:"신규",recallDate:val("ld_recall"),visitTime:val("ld_vtime"),staff:val("ld_staff"),convertedSid:"",note:""});
   save();render();
 }
 function saveLead(id){
   const l=DB.leads.find(x=>String(x.id)===String(id));if(!l)return;
-  l.date=val("le_dt");l.name=val("le_nm").trim();l.phone=val("le_ph");l.source=val("le_src");l.course=val("le_co");l.content=val("le_ct");l.recallDate=val("le_recall");l.staff=val("le_staff");l.status=val("le_st");
+  l.date=val("le_dt");l.name=val("le_nm").trim();l.phone=val("le_ph");l.source=val("le_src");l.course=val("le_co");l.content=val("le_ct");l.recallDate=val("le_recall");l.visitTime=val("le_vtime");l.staff=val("le_staff");l.status=val("le_st");
   ui.leadEditId=null;save();render();
 }
 function delLead(id){
@@ -4232,7 +4233,7 @@ function restoreExcel(input){
       if(courselogs)DB.courselogs=courselogs.filter(r=>r.일자).map(r=>({id:uid(),sid:"",date:exDate(r.일자),from:r.이전과정,to:r.변경과정}));
       if(lessons)DB.lessons=lessons.filter(r=>r.지도내용).map(r=>({id:uid(),date:exDate(r.일자),course:r.과정명,student:r.수강생,text:r.지도내용}));
       if(methods)DB.methods=methods.filter(r=>r.수단명).map(r=>({id:uid(),type:r.구분,name:r.수단명}));
-      if(leads)DB.leads=leads.filter(r=>r.성명).map(r=>({id:uid(),date:exDate(r.상담일),name:r.성명,phone:String(r.연락처||""),source:r.문의경로,course:r.관심과정,content:r.상담내용,status:r.상태,recallDate:exDate(r.재연락일),staff:r.담당자,convertedSid:r.등록전환수강생ID,note:r.비고}));
+      if(leads)DB.leads=leads.filter(r=>r.성명).map(r=>({id:uid(),date:exDate(r.상담일),name:r.성명,phone:String(r.연락처||""),source:r.문의경로,course:r.관심과정,content:r.상담내용,status:r.상태,recallDate:exDate(r.방문예정일||r.재연락일),visitTime:exTime(r.방문시간),staff:r.담당자,convertedSid:r.등록전환수강생ID,note:r.비고}));
       if(schedules)DB.schedules=schedules.filter(r=>r.요일).map(r=>({id:uid(),day:r.요일,start:r.시작시간,end:r.종료시간,course:r.과정명,teacher:r.강사,room:r.강의실,note:r.비고}));
       if(makeups)DB.makeups=makeups.filter(r=>r.수강생).map(r=>({id:uid(),absentDate:exDate(r.결석일),student:r.수강생,course:r.과정명,makeupDate:exDate(r.보강예정일),makeupTime:r.보강시간,teacher:r.강사,status:r.상태,note:r.비고}));
       if(meetings)DB.meetings=meetings.filter(r=>r.제목).map(r=>({id:uid(),date:exDate(r.일자),title:r.제목,members:r.참석자,content:r.내용,decision:r.결정사항,writer:r.작성자}));
@@ -4302,7 +4303,7 @@ function exportExcel(){
   sheetOf(DB.supplies.map(x=>({점검일:x.date,비품명:x.name,규격모델:x.model,수량:x.qty,단위:x.unit,취득일:x.buyDate,취득단가:x.price,보관위치:x.location,관리번호:x.code,점검결과:x.result,처분일:x.dispose,담당자:x.manager,비고:x.note})),{점검일:"",비품명:"",규격모델:"",수량:"",단위:"",취득일:"",취득단가:"",보관위치:"",관리번호:"",점검결과:"",처분일:"",담당자:"",비고:""},"비품관리대장");
   sheetOf(DB.facilities.map(x=>({점검일:x.date,시설명:x.name,면적:x.area,용도:x.use,점검주기:x.cycle,점검결과:x.result,보수이력:x.repair,담당자:x.manager})),{점검일:"",시설명:"",면적:"",용도:"",점검주기:"",점검결과:"",보수이력:"",담당자:""},"시설관리대장");
   sheetOf(DB.inspections.map(x=>({점검일:x.date,구분:x.kind,대상명칭:x.target,관리번호:x.code,내용:x.content,점검자:x.inspector,비용:x.cost,처리결과:x.result,차기점검일:x.nextDate,비고:x.note})),{점검일:"",구분:"",대상명칭:"",관리번호:"",내용:"",점검자:"",비용:"",처리결과:"",차기점검일:"",비고:""},"점검보수이력");
-  sheetOf(DB.leads.map(x=>({상담일:x.date,성명:x.name,연락처:x.phone,문의경로:x.source,관심과정:x.course,상담내용:x.content,상태:x.status,재연락일:x.recallDate,담당자:x.staff,등록전환수강생ID:x.convertedSid,비고:x.note})),{상담일:"",성명:"",연락처:"",문의경로:"",관심과정:"",상담내용:"",상태:"",재연락일:"",담당자:"",등록전환수강생ID:"",비고:""},"상담문의");
+  sheetOf(DB.leads.map(x=>({상담일:x.date,성명:x.name,연락처:x.phone,문의경로:x.source,관심과정:x.course,상담내용:x.content,상태:x.status,방문예정일:x.recallDate,방문시간:x.visitTime||"",담당자:x.staff,등록전환수강생ID:x.convertedSid,비고:x.note})),{상담일:"",성명:"",연락처:"",문의경로:"",관심과정:"",상담내용:"",상태:"",방문예정일:"",방문시간:"",담당자:"",등록전환수강생ID:"",비고:""},"상담문의");
   sheetOf(DB.schedules.map(x=>({요일:x.day,시작시간:x.start,종료시간:x.end,과정명:x.course,강사:x.teacher,강의실:x.room,비고:x.note})),{요일:"",시작시간:"",종료시간:"",과정명:"",강사:"",강의실:"",비고:""},"시간표");
   sheetOf(DB.makeups.map(x=>({결석일:x.absentDate,수강생:x.student,과정명:x.course,보강예정일:x.makeupDate,보강시간:x.makeupTime,강사:x.teacher,상태:x.status,비고:x.note})),{결석일:"",수강생:"",과정명:"",보강예정일:"",보강시간:"",강사:"",강의실:"",상태:"",비고:""},"보강관리");
   sheetOf(DB.meetings.map(x=>({일자:x.date,제목:x.title,참석자:x.members,내용:x.content,결정사항:x.decision,작성자:x.writer})),{일자:"",제목:"",참석자:"",내용:"",결정사항:"",작성자:""},"회의록");
