@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.42 (2026-07-22) Supabase";
+const APP_VERSION="v5.44 (2026-07-22) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1192,7 +1192,7 @@ function viewDash(){
   return `
   <h2 style="margin:4px 0 10px;font-size:17px;color:var(--green-dark)">📅 오늘 현황 <span style="font-size:13px;color:var(--sub);font-weight:400">${today}</span></h2>
   <div class="cards">
-    <div class="card"><div class="lab">오늘 상담 예정</div><div class="val">${todayConsult.length}건</div></div>
+    <div class="card"><div class="lab">오늘 방문 예정</div><div class="val">${todayConsult.length}건</div></div>
     <div class="card"><div class="lab">오늘 등원</div><div class="val">${attIn}명</div></div>
     <div class="card"><div class="lab">오늘 하원</div><div class="val">${attOut}명</div></div>
     <div class="card"><div class="lab">재결제 임박</div><div class="val ${dueSoon.length?'neg':''}">${dueSoon.length}명</div></div>
@@ -1207,11 +1207,23 @@ function viewDash(){
     <div class="card"><div class="lab">총 재원생</div><div class="val">${active.length}명</div></div>
   </div>`:""}
 
-  <h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">📞 상담 예약 일정</h2>
-  ${todayConsult.length?`<div class="panel" style="border-left:3px solid var(--amber);margin-top:0"><h2>오늘 상담 예정 (${todayConsult.length}건)</h2>
-    <div class="twrap" style="border:none"><table><thead><tr><th>성명</th><th>연락처</th><th>관심과정</th><th>상담내용</th></tr></thead><tbody>
-    ${todayConsult.map(l=>`<tr><td><b>${esc(l.name)}</b></td><td>${esc(l.phone)}</td><td>${esc(l.course)}</td><td>${esc(l.content)}</td></tr>`).join("")}
-    </tbody></table></div></div>`:`<div class="panel" style="margin-top:0"><div class="empty">오늘 예정된 상담이 없습니다.</div></div>`}
+  <h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">📞 상담 내역</h2>
+  ${todayConsult.length?`<div class="panel" style="border-left:3px solid var(--amber);margin-top:0"><h2>🔔 오늘 방문 예정 (${todayConsult.length}건)</h2>
+    <div class="twrap" style="border:none"><table><thead><tr><th>시간</th><th>성명</th><th>연락처</th><th>관심과정</th><th>상담내용</th></tr></thead><tbody>
+    ${todayConsult.sort((a,b)=>String(a.visitTime||"99:99").localeCompare(String(b.visitTime||"99:99"))).map(l=>`<tr><td><b>${esc(l.visitTime)||"-"}</b></td><td><b>${esc(l.name)}</b></td><td>${esc(l.phone)}</td><td>${esc(l.course)}</td><td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.content)}</td></tr>`).join("")}
+    </tbody></table></div></div>`:`<div class="panel" style="margin-top:0"><div class="empty">오늘 방문 예정인 상담이 없습니다.</div></div>`}
+  ${(()=>{
+    const recent=[...DB.leads].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,5);
+    return `<div class="panel"><h2><span>최근 상담 5건</span><button class="btn sm" onclick="tab='lead';ui.leadSub='reg';render()">상담관리 열기 ▶</button></h2>
+    <div class="twrap" style="border:none"><table><thead><tr><th>상담일</th><th>성명</th><th>연락처</th><th>문의경로</th><th>관심과정</th><th>상담내용</th><th>방문예정</th><th>상태</th></tr></thead><tbody>
+    ${recent.length?recent.map(l=>`<tr>
+      <td>${esc(l.date)}</td><td><b>${esc(l.name)}</b></td><td>${esc(l.phone)}</td><td>${esc(l.source)||"-"}</td><td>${esc(l.course)||"-"}</td>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.content)}">${esc(l.content)||"-"}</td>
+      <td>${l.recallDate?esc(l.recallDate)+(l.visitTime?` ${esc(l.visitTime)}`:""):"-"}</td>
+      <td><span class="pill ${leadStatusColor(l.status)}">${esc(l.status)}</span></td>
+    </tr>`).join(""):`<tr><td colspan="8" class="empty">상담 내역이 없습니다.</td></tr>`}
+    </tbody></table></div></div>`;
+  })()}
 
   <h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">⏰ 수강료 재결제 임박</h2>
   <div class="panel" style="margin-top:0"><h2>D-7 이내 / 잔여 2회 이하 (${dueSoon.length}명)</h2>
@@ -3162,7 +3174,7 @@ function viewLead(){
     <label class="fld">담당자<select id="ld_staff">${getTeachers().map(t=>`<option>${esc(t)}</option>`).join("")}</select></label>
     <label class="fld">방문예정일<input type="date" id="ld_recall"></label>
     <label class="fld">방문시간<input type="time" id="ld_vtime"></label>
-    <label class="fld" style="grid-column:span 2">상담내용<input id="ld_ct" placeholder="예: 컴활2급 야간반 문의, 수강료 안내함"></label>
+    <label class="fld" style="grid-column:span 3">상담내용<textarea id="ld_ct" rows="2" placeholder="예: 컴활2급 야간반 문의, 수강료 안내함" style="resize:vertical;font-family:inherit;font-size:inherit;padding:8px;border:1px solid var(--line);border-radius:8px"></textarea></label>
     <button class="btn" onclick="addLead()">상담 등록</button>
   </div>
   <div class="toolbar">
@@ -3179,18 +3191,20 @@ function viewLead(){
         <td><input id="le_ph" value="${esc(l.phone)}" style="padding:4px;width:100px"></td>
         <td><select id="le_src" style="padding:4px">${getSources().map(x=>`<option ${l.source===x?'selected':''}>${esc(x)}</option>`).join("")}</select></td>
         <td><select id="le_co" style="padding:4px"><option value=""></option>${courseNames().map(c=>`<option ${l.course===c?'selected':''}>${esc(c)}</option>`).join("")}</select></td>
-        <td><input id="le_ct" value="${esc(l.content)}" style="padding:4px;width:140px"></td>
+        <td><textarea id="le_ct" rows="3" style="padding:4px;width:220px;resize:vertical;font-family:inherit;font-size:12px;border:1px solid var(--line);border-radius:6px">${esc(l.content)}</textarea></td>
         <td><input type="date" id="le_recall" value="${esc(l.recallDate)}" style="padding:4px"><input type="time" id="le_vtime" value="${esc(l.visitTime||"")}" style="padding:4px;margin-top:3px"></td>
         <td><select id="le_staff" style="padding:4px">${getTeachers().map(t=>`<option ${l.staff===t?'selected':''}>${esc(t)}</option>`).join("")}</select></td>
         <td><select id="le_st" style="padding:4px">${LEAD_STATUS.map(x=>`<option ${l.status===x?'selected':''}>${x}</option>`).join("")}</select></td>
         <td style="white-space:nowrap"><button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="saveLead('${l.id}')">저장</button> <button class="btn sm" onclick="ui.leadEditId=null;render()">취소</button></td></tr>`;
     }
     const converted=l.status==="등록완료";
-    return `<tr><td>${esc(l.date)}</td><td><b>${esc(l.name)}</b></td><td>${esc(l.phone)}</td><td>${esc(l.source)}</td><td>${esc(l.course)}</td><td>${esc(l.content)}</td><td>${l.recallDate?esc(l.recallDate)+(l.visitTime?`<br><span style="font-size:11px;color:var(--sub)">${esc(l.visitTime)}</span>`:""):"-"}</td><td>${esc(l.staff)}</td><td><span class="pill ${leadStatusColor(l.status)}">${esc(l.status)}</span></td>
+    return `<tr><td>${esc(l.date)}</td><td><b>${esc(l.name)}</b></td><td>${esc(l.phone)}</td><td>${esc(l.source)}</td><td>${esc(l.course)}</td><td style="max-width:240px" onclick="ui.leadExpandId=(String(ui.leadExpandId)===String(l.id)?null:'${l.id}');render()" title="클릭하면 전체 내용 보기">
+      <div style="${String(ui.leadExpandId)===String(l.id)?'white-space:pre-wrap;word-break:break-all;':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'}cursor:pointer">${esc(l.content)||"-"}</div>
+    </td><td>${l.recallDate?esc(l.recallDate)+(l.visitTime?`<br><span style="font-size:11px;color:var(--sub)">${esc(l.visitTime)}</span>`:""):"-"}</td><td>${esc(l.staff)}</td><td><span class="pill ${leadStatusColor(l.status)}">${esc(l.status)}</span></td>
     <td style="white-space:nowrap">${converted?`<span style="font-size:11px;color:var(--sub)">수강생 전환됨</span>`:`<button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="convertLead('${l.id}')" title="수강생으로 등록">▶ 등록전환</button> `}<button class="btn sm" onclick="ui.leadEditId='${l.id}';render()">✎</button> <button class="btn sm" onclick="delLead('${l.id}')">🗑</button></td></tr>`;
   }).join(""):`<tr><td colspan="10" class="empty">상담 내역이 없습니다. 위에서 신규 문의를 등록하세요.</td></tr>`}
   </tbody></table></div>
-  <p class="note">※ ‘등록전환’을 누르면 상담자가 수강생으로 등록되고, 수강생관리 탭에서 이어서 과정·수강료를 입력할 수 있습니다.</p>`;
+  <p class="note">※ 상담내용이 길면 한 줄로 줄여 표시됩니다. <b>내용을 클릭</b>하면 전체가 펼쳐집니다.<br>※ ‘등록전환’을 누르면 상담자가 수강생으로 등록되고, 수강생관리 탭에서 이어서 과정·수강료를 입력할 수 있습니다.</p>`;
 }
 function addLead(){
   const nm=val("ld_nm").trim(),ph=val("ld_ph").trim(),ct=val("ld_ct").trim();
