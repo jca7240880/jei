@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.53 (2026-07-23) Supabase";
+const APP_VERSION="v5.54 (2026-07-23) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2854,17 +2854,14 @@ function printSalesReport(){
 function printReceiptSheet(){
   const rows=_salesMonthRows();
   const yy=d=>{const m=String(normDate(d)).match(/(\d{4})-(\d{2})-(\d{2})/);return m?`${m[1].slice(2)}/${m[2]}/${m[3]}`:"";};
-  const col=(l,no)=>{
-    if(!l)return `<div class="col empty"><div class="no">&nbsp;</div><div class="hd">
-      <div class="ln1">( )</div><div class="ln2">&nbsp;/ 원 /&nbsp;</div>
-      <div class="ln3"><span class="lb">비 고</span> -</div></div><div class="paste"></div></div>`;
+  const cell=(l,no)=>{
+    if(!l)return `<div class="cell empty"></div>`;
     const way=`${esc(l.method)||""}${l.cardCo?" - "+esc(l.cardCo):(String(l.method||"").includes("계좌")?" - 현금영수증":"")}`;
-    return `<div class="col">
-      <div class="no">${no}</div>
+    return `<div class="cell">
       <div class="hd">
-        <div class="ln1">${esc(l.name)}<br><span class="dt">(${yy(l.date)})</span></div>
-        <div class="ln2">${esc(l.course)||""}<br>${won(l.paidAmount)} 원<br>${esc(l.approval)||""}</div>
-        <div class="ln3"><span class="lb">비 고</span><br>${way}</div>
+        <div class="ln1"><span class="no">${no}</span>${esc(l.name)} <span class="dt">(${yy(l.date)})</span></div>
+        <div class="ln2">${esc(l.course)||""} / ${won(l.paidAmount)} 원${l.approval?" / "+esc(l.approval):""}</div>
+        <div class="ln3"><span class="lb">비 고</span> ${way}</div>
       </div>
       <div class="paste"></div>
     </div>`;
@@ -2876,7 +2873,7 @@ function printReceiptSheet(){
     while(chunk.length<per)chunk.push(null);
     pages.push(`<section class="page">
       <div class="ttl">월간매출자료 ${_moTitle()}</div>
-      <div class="grid">${chunk.map((l,j)=>col(l,i+j+1)).join("")}</div>
+      <div class="grid">${chunk.map((l,j)=>cell(l,i+j+1)).join("")}</div>
     </section>`);
   }
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>영수증 부착용지 ${_moTitle()}</title>
@@ -2887,17 +2884,17 @@ function printReceiptSheet(){
   .page{page-break-after:always;height:281mm;display:flex;flex-direction:column}
   .page:last-child{page-break-after:auto}
   .ttl{font-size:12px;font-weight:800;color:#333;margin-bottom:3mm}
-  .grid{display:flex;gap:3mm;flex:1}
-  .col{flex:1;border:1px solid #333;padding:5px 5px 0;display:flex;flex-direction:column;position:relative}
-  .col.empty{border:1px dashed #bbb;color:#aaa}
-  .no{font-size:11px;font-weight:800;color:#196B24;margin-bottom:2px}
-  .hd{border-bottom:1px dashed #bbb;padding-bottom:4px}
-  .ln1{font-size:12px;font-weight:800;line-height:1.35;word-break:break-all}
-  .ln1 .dt{font-weight:400;font-size:10.5px;color:#444}
-  .ln2{font-size:10.5px;margin-top:3px;line-height:1.45;word-break:break-all}
-  .ln3{font-size:10px;margin-top:3px;color:#333;line-height:1.5}
-  .ln3 .lb{display:inline-block;border:1px solid #999;padding:0 3px;font-size:9px}
-  .paste{flex:1;margin-top:3px}
+  .grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3mm}
+  .cell{border:1px solid #333;padding:7px 9px 0;display:flex;flex-direction:column}
+  .cell.empty{border:1px dashed #bbb}
+  .hd{border-bottom:1px dashed #bbb;padding-bottom:5px}
+  .ln1{font-size:13px;font-weight:800;line-height:1.4}
+  .ln1 .no{display:inline-block;background:#196B24;color:#fff;font-size:10px;padding:0 5px;border-radius:3px;margin-right:5px;vertical-align:1px}
+  .ln1 .dt{font-weight:400;font-size:11.5px;color:#444}
+  .ln2{font-size:12px;margin-top:3px;line-height:1.45;word-break:break-all}
+  .ln3{font-size:11px;margin-top:3px;color:#333}
+  .ln3 .lb{display:inline-block;border:1px solid #999;padding:0 4px;font-size:10px;margin-right:4px}
+  .paste{flex:1;margin-top:4px}
   </style></head><body>${pages.join("")}
   <script>window.onload=function(){window.print();}<\/script></body></html>`;
   const w=window.open("","_blank");
