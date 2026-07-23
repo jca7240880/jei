@@ -327,7 +327,7 @@ function ensureIds(){
   });
 }
 function loadAll(){
-  const db = {students:[], attendance:[], income:[], expense:[], sales:[], bookin:[], bookout:[], courses:[], methods:[], worklogs:[], consults:[], settings:[], courselogs:[], facilities:[], supplies:[], materials:[], equipments:[], inspections:[], lessons:[], leads:[], schedules:[], makeups:[], meetings:[],certs:[]};
+  const db = {students:[], attendance:[], income:[], expense:[], sales:[], bookin:[], bookout:[], courses:[], methods:[], worklogs:[], consults:[], settings:[], courselogs:[], facilities:[], supplies:[], materials:[], equipments:[], inspections:[], lessons:[], leads:[], schedules:[], makeups:[], meetings:[],certs:[],exams:[],examapps:[]};
   rows('students').forEach(function(r){ if(r[1]) db.students.push({id:S(r[0]), name:S(r[1]), phone:S(r[2]), gubun:S(r[3]), guardian:S(r[4]), birth:dstr(r[5]), school:S(r[6]), grade:S(r[7]), gender:S(r[8]), teacher:S(r[9]), course:S(r[10]), start:dstr(r[11]), tuition:N(r[12]), payCycle:S(r[13]), cycleMonths:N(r[14])||1, totalSessions:N(r[15]), lastPaid:dstr(r[16]), status:S(r[17])||'재원', note:S(r[18]), charged:N(r[19]), classDays:S(r[20]), quitDate:dstr(r[21])}); });
   rows('attendance').forEach(function(r){
     var date=dstr(r[3]);
@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.46 (2026-07-23) Supabase";
+const APP_VERSION="v5.48 (2026-07-23) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -525,7 +525,7 @@ function normDate(v){
   return str;
 }
 
-let DB={students:[],attendance:[],income:[],expense:[],sales:[],bookin:[],bookout:[],courses:[],methods:[],worklogs:[],consults:[],settings:[],courselogs:[],facilities:[],supplies:[],materials:[],equipments:[],inspections:[],lessons:[],leads:[],schedules:[],makeups:[],meetings:[],certs:[]};
+let DB={students:[],attendance:[],income:[],expense:[],sales:[],bookin:[],bookout:[],courses:[],methods:[],worklogs:[],consults:[],settings:[],courselogs:[],facilities:[],supplies:[],materials:[],equipments:[],inspections:[],lessons:[],leads:[],schedules:[],makeups:[],meetings:[],certs:[],exams:[],examapps:[]};
 let GAS=""; // (레거시 이름 유지) — 실제로는 Supabase URL을 저장
 let SUPA_KEY="";
 try{
@@ -533,10 +533,10 @@ try{
   SUPA_KEY=localStorage.getItem("jei_supa_key")||"";
 }catch(e){}
 
-const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["config","기초설정"]];
+const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["exam","자격관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -544,7 +544,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "status", "regDone", "feePaid", "ticketGiven", "result", "note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -1111,6 +1111,10 @@ function render(){
     else body=viewAssetTab(sub); // equipments/materials/supplies/facilities/inspections
     m.innerHTML=operSubBar()+body;
   }
+  if(tab==="exam"){
+    const sub=ui.examSub||"sched";
+    m.innerHTML=examSubBar()+(sub==="apply"?viewExamApply():viewExamSched());
+  }
   if(tab==="book"){
     const sub=ui.bookSub||"quick";
     m.innerHTML=bookSubBar()+viewBookSub(sub);
@@ -1223,6 +1227,24 @@ function viewDash(){
       <td><span class="pill ${leadStatusColor(l.status)}">${esc(l.status)}</span></td>
     </tr>`).join(""):`<tr><td colspan="8" class="empty">상담 내역이 없습니다.</td></tr>`}
     </tbody></table></div></div>`;
+  })()}
+
+  ${(()=>{
+    const up=DB.exams.filter(e=>{const n=dday(e.examDate);return n!==null&&n>=0&&n<=92;})
+      .sort((a,b)=>String(a.examDate).localeCompare(String(b.examDate)));
+    const regSoon=DB.exams.filter(e=>{const ds=dday(e.regStart),de=dday(e.regEnd);
+      return (ds!==null&&ds>=0&&ds<=7)||(ds!==null&&de!==null&&ds<=0&&de>=0);});
+    return `<h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">🎓 시험 일정 <span style="font-size:13px;color:var(--sub);font-weight:400">(3개월 이내)</span></h2>
+    ${regSoon.length?`<div class="panel" style="border-left:3px solid var(--red);margin-top:0"><h2>🔔 접수 임박·진행 중 (${regSoon.length}건)</h2>
+      <div class="twrap" style="border:none"><table><thead><tr><th>종목</th><th>접수기간</th><th>시험일</th><th>응시예정</th><th></th></tr></thead><tbody>
+      ${regSoon.map(e=>`<tr><td><b>${esc(e.item)}</b>${e.round?" "+esc(e.round)+"회":""}</td><td>${ddayTag(e.regStart)} ~ ${esc(e.regEnd)||"-"}</td><td>${esc(e.examDate)||"-"}</td><td>${examAppsOf(e.id).length}명</td>
+      <td><button class="btn sm" onclick="tab='exam';ui.examSub='apply';ui.examSel='${e.id}';render()">응시관리 ▶</button></td></tr>`).join("")}
+      </tbody></table></div></div>`:""}
+    ${up.length?`<div class="panel" ${regSoon.length?'':'style="margin-top:0"'}><h2>다가오는 시험 (${up.length}건)</h2>
+      <div class="twrap" style="border:none"><table><thead><tr><th>시험일</th><th>시행기관</th><th>종목</th><th>접수기간</th><th>발표일</th><th>응시자</th></tr></thead><tbody>
+      ${up.map(e=>`<tr><td>${ddayTag(e.examDate)}</td><td style="font-size:11.5px">${esc(e.org)}</td><td><b>${esc(e.item)}</b>${e.round?" "+esc(e.round)+"회":""}</td><td style="font-size:11.5px">${esc(e.regStart)||"-"} ~ ${esc(e.regEnd)||"-"}</td><td>${esc(e.resultDate)||"-"}</td>
+      <td><span class="namelink" onclick="tab='exam';ui.examSub='apply';ui.examSel='${e.id}';render()">${examAppsOf(e.id).length}명</span></td></tr>`).join("")}
+      </tbody></table></div></div>`:`<div class="panel" ${regSoon.length?'':'style="margin-top:0"'}><div class="empty">3개월 이내 예정된 시험이 없습니다. (자격관리 탭에서 일정을 등록하세요)</div></div>`}`;
   })()}
 
   <h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">⏰ 수강료 재결제 임박</h2>
@@ -1570,6 +1592,241 @@ function printCert(rec){
   <script>window.onload=function(){window.print();}<\/script></body></html>`;
   const w=window.open("","_blank");
   if(!w){alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.");return;}
+  w.document.write(html);w.document.close();
+}
+
+/* ═══════════ 자격관리 ═══════════ */
+const EXAM_ORGS=["KPC 한국생산성본부","대한상공회의소","한국산업인력공단","기타"];
+const EXAM_ITEMS={
+  "KPC 한국생산성본부":["ITQ 한글","ITQ 엑셀","ITQ 파워포인트","GTQ 1급","GTQ 2급","CAT 2급","CAT 1급"],
+  "대한상공회의소":["컴퓨터활용능력 1급 필기","컴퓨터활용능력 1급 실기","컴퓨터활용능력 2급 필기","컴퓨터활용능력 2급 실기"],
+  "한국산업인력공단":["전산응용건축제도기능사 필기","전산응용건축제도기능사 실기","건축기사 필기","건축기사 실기","건설안전기사 필기","건설안전기사 실기","산업안전기사 필기","산업안전기사 실기"],
+  "기타":[]
+};
+function dday(d){ if(!d)return null; return Math.ceil((new Date(d+"T00:00:00")-new Date(todayStr()+"T00:00:00"))/86400000); }
+function ddayTag(d,label){
+  const n=dday(d); if(n===null)return "-";
+  if(n<0)return `<span style="color:var(--sub)">${esc(d)} (종료)</span>`;
+  const urgent=n<=7;
+  return `${esc(d)} <span style="font-weight:800;color:${urgent?'var(--red)':'var(--green)'}">${n===0?"D-DAY":"D-"+n}</span>`;
+}
+function examSubBar(){
+  const subs=[["sched","📅 시험일정"],["apply","📝 응시관리"]];
+  return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.examSub||"sched")===k?'on':''}" onclick="ui.examSub='${k}';render()">${l}</button>`).join("")}</div>`;
+}
+function examLabel(e){ return `${esc(e.item)}${e.round?" "+esc(e.round)+"회":""}`; }
+function examById(id){ return DB.exams.find(x=>String(x.id)===String(id)); }
+function examAppsOf(examId){ return DB.examapps.filter(a=>String(a.examId)===String(examId)); }
+/* ── 시험일정 ── */
+function viewExamSched(){
+  const yFilter=ui.examYear||String(new Date().getFullYear());
+  const years=[...new Set(DB.exams.map(e=>String(e.examDate||"").slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort();
+  if(!years.includes(yFilter))years.push(yFilter);
+  const list=DB.exams.filter(e=>String(e.examDate||"").startsWith(yFilter))
+    .sort((a,b)=>String(a.examDate||"").localeCompare(String(b.examDate||"")));
+  // 접수 임박 (7일 이내 접수 시작 또는 접수 진행 중)
+  const soon=DB.exams.filter(e=>{
+    const ds=dday(e.regStart), de=dday(e.regEnd);
+    return (ds!==null&&ds>=0&&ds<=7)||(ds!==null&&de!==null&&ds<=0&&de>=0);
+  }).sort((a,b)=>String(a.regStart||"").localeCompare(String(b.regStart||"")));
+  const org=ui.examOrgSel||EXAM_ORGS[0];
+  const soonHtml=soon.length?`
+  <div class="panel" style="border-left:3px solid var(--amber);margin-top:0"><h2>🔔 접수 임박·진행 중 (${soon.length}건)</h2>
+    <div class="twrap" style="border:none"><table><thead><tr><th>종목</th><th>접수기간</th><th>시험일</th><th>응시 예정자</th><th></th></tr></thead><tbody>
+    ${soon.map(e=>{
+      const apps=examAppsOf(e.id);
+      const cand=apps.filter(a=>a.status!=="미응시");
+      return `<tr>
+        <td><b>${examLabel(e)}</b><br><span style="font-size:11px;color:var(--sub)">${esc(e.org)}</span></td>
+        <td>${ddayTag(e.regStart)} ~ ${esc(e.regEnd)||"-"}</td>
+        <td>${esc(e.examDate)||"-"}</td>
+        <td>${cand.length}명 ${cand.length?`<span style="font-size:11px;color:var(--sub)">(${cand.slice(0,4).map(a=>esc(a.name)).join(", ")}${cand.length>4?" 외 "+(cand.length-4)+"명":""})</span>`:""}</td>
+        <td><button class="btn sm" onclick="ui.examSub='apply';ui.examSel='${e.id}';render()">응시관리 ▶</button></td>
+      </tr>`;
+    }).join("")}
+    </tbody></table></div></div>`:"";
+  return `
+  ${soonHtml}
+  <div class="panel"><h2>➕ 시험일정 등록</h2>
+    <div class="formbox" style="margin-bottom:0">
+      <label class="fld">시행기관<select id="e_org" onchange="ui.examOrgSel=this.value;render()">${EXAM_ORGS.map(o=>`<option ${org===o?'selected':''}>${esc(o)}</option>`).join("")}</select></label>
+      <label class="fld" style="grid-column:span 2">종목<input id="e_item" list="examItems" placeholder="예: ITQ 한글"><datalist id="examItems">${(EXAM_ITEMS[org]||[]).map(i=>`<option value="${esc(i)}">`).join("")}</datalist></label>
+      <label class="fld">회차<input id="e_rd" placeholder="예: 1"></label>
+      <label class="fld">접수시작<input type="date" id="e_rs"></label>
+      <label class="fld">접수마감<input type="date" id="e_re"></label>
+      <label class="fld">시험일<input type="date" id="e_ed"></label>
+      <label class="fld">발표일<input type="date" id="e_rd2"></label>
+      <label class="fld">응시료(원)<input type="number" id="e_fee" value="0"></label>
+      <label class="fld">비고<input id="e_no"></label>
+      <button class="btn" onclick="addExam()">등록</button>
+    </div>
+    <p class="note">※ 연말에 다음 해 일정을 한 번에 등록해두면 접수·시험일이 자동으로 관리됩니다.</p>
+  </div>
+  <div class="panel"><h2><span>📅 ${yFilter}년 시험일정 (${list.length}건)</span>
+    <select onchange="ui.examYear=this.value;render()" style="padding:5px">${years.sort().map(y=>`<option ${y===yFilter?'selected':''}>${y}</option>`).join("")}</select></h2>
+    <div class="twrap"><table><thead><tr><th>시행기관</th><th>종목</th><th>회차</th><th>접수시작</th><th>접수마감</th><th>시험일</th><th>발표일</th><th>응시료</th><th>응시자</th><th>비고</th><th></th></tr></thead><tbody>
+    ${list.length?list.map(e=>{
+      if(String(ui.examEditId)===String(e.id)){
+        return `<tr style="background:var(--green-light)">
+          <td><select id="ee_org" style="padding:4px">${EXAM_ORGS.map(o=>`<option ${e.org===o?'selected':''}>${esc(o)}</option>`).join("")}</select></td>
+          <td><input id="ee_item" value="${esc(e.item)}" style="padding:4px;width:120px"></td>
+          <td><input id="ee_rd" value="${esc(e.round)}" style="padding:4px;width:44px"></td>
+          <td><input type="date" id="ee_rs" value="${esc(e.regStart)}" style="padding:4px"></td>
+          <td><input type="date" id="ee_re" value="${esc(e.regEnd)}" style="padding:4px"></td>
+          <td><input type="date" id="ee_ed" value="${esc(e.examDate)}" style="padding:4px"></td>
+          <td><input type="date" id="ee_rd2" value="${esc(e.resultDate)}" style="padding:4px"></td>
+          <td><input type="number" id="ee_fee" value="${Number(e.fee)||0}" style="padding:4px;width:70px"></td>
+          <td>-</td>
+          <td><input id="ee_no" value="${esc(e.note)}" style="padding:4px;width:90px"></td>
+          <td style="white-space:nowrap"><button class="btn sm" onclick="saveExam('${e.id}')">저장</button> <button class="btn sm" onclick="ui.examEditId=null;render()">취소</button></td></tr>`;
+      }
+      const apps=examAppsOf(e.id);
+      return `<tr>
+        <td style="font-size:11.5px">${esc(e.org)}</td>
+        <td><b>${esc(e.item)}</b></td>
+        <td style="text-align:center">${esc(e.round)||"-"}</td>
+        <td>${ddayTag(e.regStart)}</td>
+        <td>${esc(e.regEnd)||"-"}</td>
+        <td>${ddayTag(e.examDate)}</td>
+        <td>${esc(e.resultDate)||"-"}</td>
+        <td style="text-align:right">${e.fee?won(e.fee):"-"}</td>
+        <td style="text-align:center"><span class="namelink" onclick="ui.examSub='apply';ui.examSel='${e.id}';render()">${apps.length}명</span></td>
+        <td style="font-size:11.5px">${esc(e.note)||""}</td>
+        <td style="white-space:nowrap"><button class="btn sm" onclick="ui.examEditId='${e.id}';render()">수정</button> <button class="btn sm" onclick="delExam('${e.id}')">삭제</button></td>
+      </tr>`;
+    }).join(""):`<tr><td colspan="11" class="empty">${yFilter}년 등록된 시험일정이 없습니다.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+}
+function addExam(){
+  const item=val("e_item").trim();
+  if(!item){alert("종목을 입력하세요.");return;}
+  DB.exams.push({id:uid(),org:val("e_org"),item,round:val("e_rd"),regStart:val("e_rs"),regEnd:val("e_re"),examDate:val("e_ed"),resultDate:val("e_rd2"),fee:num("e_fee"),note:val("e_no")});
+  save();render();
+}
+function saveExam(id){
+  const e=examById(id);if(!e)return;
+  const item=val("ee_item").trim();if(!item){alert("종목은 필수입니다.");return;}
+  e.org=val("ee_org");e.item=item;e.round=val("ee_rd");e.regStart=val("ee_rs");e.regEnd=val("ee_re");
+  e.examDate=val("ee_ed");e.resultDate=val("ee_rd2");e.fee=num("ee_fee");e.note=val("ee_no");
+  ui.examEditId=null;save();render();
+}
+function delExam(id){
+  const n=examAppsOf(id).length;
+  if(!confirm(`이 시험일정을 삭제할까요?${n?`\n연결된 응시자 ${n}명의 기록도 함께 삭제됩니다.`:""}`))return;
+  DB.exams=DB.exams.filter(x=>String(x.id)!==String(id));
+  DB.examapps=DB.examapps.filter(a=>String(a.examId)!==String(id));
+  save();render();
+}
+/* ── 응시관리 ── */
+function viewExamApply(){
+  const exams=[...DB.exams].sort((a,b)=>String(b.examDate||"").localeCompare(String(a.examDate||"")));
+  const sel=ui.examSel?examById(ui.examSel):null;
+  if(!exams.length)return `<div class="panel" style="margin-top:0"><div class="empty">먼저 [📅 시험일정]에서 시험을 등록하세요.</div></div>`;
+  const apps=sel?examAppsOf(sel.id):[];
+  const appSids=new Set(apps.map(a=>String(a.sid)));
+  const cands=myStudents().filter(s=>s.status!=="퇴원"&&!appSids.has(String(s.id)))
+    .filter(s=>!ui.examCandQ||String(s.name).includes(ui.examCandQ)||String(s.course).includes(ui.examCandQ))
+    .sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko"));
+  const chk=(a,f,label)=>`<label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:11.5px"><input type="checkbox" ${a[f]==="Y"?"checked":""} onclick="toggleApp('${a.id}','${f}')">${label}</label>`;
+  const stat=f=>apps.filter(a=>a[f]==="Y").length;
+  return `
+  <div class="panel" style="margin-top:0"><h2>📝 응시관리</h2>
+    <div class="toolbar">
+      <label class="fld" style="flex:1 1 320px">시험 선택<select onchange="ui.examSel=this.value;render()">
+        <option value="">시험을 선택하세요</option>
+        ${exams.map(e=>`<option value="${e.id}" ${String(ui.examSel)===String(e.id)?'selected':''}>${esc(e.examDate)||"날짜미정"} · ${esc(e.item)}${e.round?" "+esc(e.round)+"회":""} (${esc(e.org)})</option>`).join("")}
+      </select></label>
+      ${sel?`<div class="card" style="padding:8px 14px"><span class="lab">접수 </span><b>${esc(sel.regStart)||"-"} ~ ${esc(sel.regEnd)||"-"}</b></div>
+      <div class="card" style="padding:8px 14px"><span class="lab">시험일 </span><b>${esc(sel.examDate)||"-"}</b></div>
+      <div class="card" style="padding:8px 14px"><span class="lab">발표 </span><b>${esc(sel.resultDate)||"-"}</b></div>`:""}
+    </div>
+  </div>
+  ${sel?`
+  <div class="cards">
+    <div class="card"><div class="lab">응시 대상</div><div class="val">${apps.length}명</div></div>
+    <div class="card"><div class="lab">접수 완료</div><div class="val">${stat("regDone")}명</div></div>
+    <div class="card"><div class="lab">응시료 입금</div><div class="val">${stat("feePaid")}명</div></div>
+    <div class="card"><div class="lab">수험표 지급</div><div class="val">${stat("ticketGiven")}명</div></div>
+    <div class="card"><div class="lab">응시료 합계</div><div class="val">${won((Number(sel.fee)||0)*apps.length)}원</div></div>
+  </div>
+  <div class="panel"><h2><span>응시자 명단 (${apps.length}명)</span><button class="btn sm" onclick="printExamList('${sel.id}')">🖨 명단 인쇄</button></h2>
+    <div class="twrap"><table><thead><tr><th>성명</th><th>과정</th><th>응시여부</th><th>진행 체크</th><th>결과</th><th>비고</th><th></th></tr></thead><tbody>
+    ${apps.length?apps.sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(a=>`<tr>
+      <td><b>${esc(a.name)}</b></td>
+      <td style="font-size:11.5px">${esc((findStu(a.sid)||{}).course)||"-"}</td>
+      <td><select onchange="setAppField('${a.id}','status',this.value)" style="padding:3px;font-size:11.5px">
+        ${["예정","응시","미응시"].map(v=>`<option ${(a.status||"예정")===v?'selected':''}>${v}</option>`).join("")}
+      </select></td>
+      <td style="white-space:nowrap;display:flex;gap:8px">${chk(a,"regDone","접수")}${chk(a,"feePaid","입금")}${chk(a,"ticketGiven","수험표")}</td>
+      <td><select onchange="setAppField('${a.id}','result',this.value)" style="padding:3px;font-size:11.5px">
+        ${["","합격","불합격","대기"].map(v=>`<option ${(a.result||"")===v?'selected':''}>${v||"-"}</option>`).join("")}
+      </select></td>
+      <td><input value="${esc(a.note)}" onchange="setAppField('${a.id}','note',this.value)" style="padding:3px;width:110px;font-size:11.5px"></td>
+      <td><button class="btn sm" onclick="delApp('${a.id}')">제외</button></td>
+    </tr>`).join(""):`<tr><td colspan="7" class="empty">아래에서 수강생을 추가하세요.</td></tr>`}
+    </tbody></table></div>
+  </div>
+  <div class="panel"><h2>➕ 응시자 추가</h2>
+    <div class="toolbar">
+      <input placeholder="이름 또는 과정 검색" value="${esc(ui.examCandQ||"")}" oninput="ui.examCandQ=this.value;render()" style="min-width:200px">
+      <span style="font-size:12px;color:var(--sub)">클릭하면 명단에 추가됩니다 (재원생 ${cands.length}명)</span>
+    </div>
+    <div class="chips">${cands.map(st=>`<span class="chip" style="cursor:pointer" onclick="addApp('${sel.id}','${st.id}')">${esc(st.name)} <span style="color:var(--sub);font-size:11px">${esc(st.course)||""}</span></span>`).join("")||`<span style="color:var(--sub);font-size:13px">추가할 수강생이 없습니다.</span>`}</div>
+  </div>`
+  :`<div class="panel"><div class="empty">시험을 선택하면 응시자 관리가 시작됩니다.</div></div>`}`;
+}
+function addApp(examId,sid){
+  const st=findStu(sid);if(!st)return;
+  if(DB.examapps.some(a=>String(a.examId)===String(examId)&&String(a.sid)===String(sid)))return;
+  DB.examapps.push({id:uid(),examId:String(examId),sid:String(sid),name:st.name,status:"예정",regDone:"",feePaid:"",ticketGiven:"",result:"",note:""});
+  save();render();
+}
+function toggleApp(id,field){
+  const a=DB.examapps.find(x=>String(x.id)===String(id));if(!a)return;
+  a[field]=a[field]==="Y"?"":"Y";
+  save();render();
+}
+function setAppField(id,field,v){
+  const a=DB.examapps.find(x=>String(x.id)===String(id));if(!a)return;
+  a[field]=v;save();
+}
+function delApp(id){
+  const a=DB.examapps.find(x=>String(x.id)===String(id));if(!a)return;
+  if(!confirm(`${a.name} 님을 이 시험 명단에서 제외할까요?`))return;
+  DB.examapps=DB.examapps.filter(x=>String(x.id)!==String(id));save();render();
+}
+function printExamList(examId){
+  const e=examById(examId);if(!e)return;
+  const apps=examAppsOf(examId).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko"));
+  const rows=apps.map((a,i)=>`<tr>
+    <td style="text-align:center">${i+1}</td><td>${esc(a.name)}</td><td>${esc((findStu(a.sid)||{}).course)||""}</td>
+    <td style="text-align:center">${esc(a.status)||""}</td>
+    <td style="text-align:center">${a.regDone==="Y"?"○":""}</td>
+    <td style="text-align:center">${a.feePaid==="Y"?"○":""}</td>
+    <td style="text-align:center">${a.ticketGiven==="Y"?"○":""}</td>
+    <td style="text-align:center">${esc(a.result)||""}</td><td>${esc(a.note)||""}</td></tr>`).join("");
+  const now=new Date();let h=now.getHours();const ap=h<12?"AM":"PM";h=h%12||12;
+  const stamp=`${todayStr()} ${h}:${String(now.getMinutes()).padStart(2,"0")} ${ap}`;
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>응시자 명단</title>
+  <style>@page{size:A4;margin:14mm;@bottom-right{content:counter(page);font-size:10px;color:#555;font-family:'Malgun Gothic'}}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  body{font-family:'Malgun Gothic',sans-serif;color:#111;margin:0}
+  h1{text-align:center;font-size:19px;margin:0 0 6px}
+  .info{font-size:11.5px;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;font-size:11.5px}th,td{border:1px solid #666;padding:5px 6px}th{background:#eee}
+  tfoot td{border:none;padding:8px 0 0}</style></head><body>
+  <h1>${esc(e.item)}${e.round?" "+esc(e.round)+"회":""} 응시자 명단</h1>
+  <div class="info">시행기관: ${esc(e.org)} &nbsp;|&nbsp; 접수: ${esc(e.regStart)||"-"} ~ ${esc(e.regEnd)||"-"} &nbsp;|&nbsp; 시험일: ${esc(e.examDate)||"-"} &nbsp;|&nbsp; 발표일: ${esc(e.resultDate)||"-"} &nbsp;|&nbsp; 총 ${apps.length}명</div>
+  <table><thead><tr><th style="width:6%">NO</th><th style="width:12%">성명</th><th>과정</th><th style="width:9%">응시</th><th style="width:8%">접수</th><th style="width:8%">입금</th><th style="width:9%">수험표</th><th style="width:9%">결과</th><th style="width:16%">비고</th></tr></thead>
+  <tbody>${rows||`<tr><td colspan="9" style="text-align:center">응시자 없음</td></tr>`}</tbody>
+  <tfoot><tr><td colspan="9"><div style="position:relative;font-size:10px;color:#555;height:18px">
+    <span style="position:absolute;left:0;bottom:0">${stamp}</span>
+    <span style="position:absolute;left:0;right:0;bottom:0;text-align:center;color:#196B24;font-weight:800;font-size:11.5px">제이컴퓨터학원</span>
+  </div></td></tr></tfoot></table>
+  <script>window.onload=function(){window.print();}<\/script></body></html>`;
+  const w=window.open("","_blank");
+  if(!w){alert("팝업이 차단되었습니다.");return;}
   w.document.write(html);w.document.close();
 }
 
@@ -2429,6 +2686,131 @@ function setAttTime(sid,field,value){  let a=attOf(sid,ui.attDate);
 function delAtt(id){if(confirm("이 출결 기록을 삭제할까요?")){DB.attendance=DB.attendance.filter(x=>String(x.id)!==String(id));save();render();}}
 
 /* ───── 매출상세 ───── */
+/* ───── 매출 보고서 / 영수증 부착용지 ───── */
+function _salesMonthRows(){
+  return DB.sales.filter(l=>normDate(l.date).startsWith(ui.salesMonth))
+    .sort((a,b)=>String(normDate(a.date)).localeCompare(String(normDate(b.date))));
+}
+function _moTitle(){
+  const [y,m]=ui.salesMonth.split("-");
+  return `${y}년 ${Number(m)}월`;
+}
+function _printFoot(cols){
+  const now=new Date();let h=now.getHours();const ap=h<12?"AM":"PM";h=h%12||12;
+  const stamp=`${todayStr()} ${h}:${String(now.getMinutes()).padStart(2,"0")} ${ap}`;
+  return `<tfoot><tr><td colspan="${cols}" style="border:none;padding:8px 0 0">
+    <div style="position:relative;font-size:10px;color:#555;height:18px">
+      <span style="position:absolute;left:0;bottom:0">${stamp}</span>
+      <span style="position:absolute;left:0;right:0;bottom:0;text-align:center;color:#196B24;font-weight:800;font-size:11.5px">제이컴퓨터학원</span>
+    </div></td></tr></tfoot>`;
+}
+function printSalesReport(){
+  const rows=_salesMonthRows();
+  // 결제수단별 결산
+  const byM={};
+  rows.forEach(l=>{
+    const k=String(l.method||"기타");
+    byM[k]=byM[k]||{tuition:0,paid:0,disc:0};
+    byM[k].tuition+=Number(l.tuition)||0;
+    byM[k].paid+=Number(l.paidAmount)||0;
+    byM[k].disc+=Number(l.discount)||0;
+  });
+  const keys=Object.keys(byM).sort((a,b)=>a.localeCompare(b,"ko"));
+  const tot={tuition:0,paid:0,disc:0};
+  keys.forEach(k=>{tot.tuition+=byM[k].tuition;tot.paid+=byM[k].paid;tot.disc+=byM[k].disc;});
+  const sumRows=keys.map(k=>`<tr><td style="text-align:center">${esc(k)}</td><td style="text-align:right">${won(byM[k].tuition)}</td><td style="text-align:right">${won(byM[k].paid)}</td><td style="text-align:right">${byM[k].disc?won(byM[k].disc):""}</td></tr>`).join("");
+  const detRows=rows.map((l,i)=>`<tr>
+    <td style="text-align:center">${i+1}</td>
+    <td style="text-align:center">${String(normDate(l.date)).slice(5).replace("-","/")}</td>
+    <td style="text-align:center">${esc(l.method)||""}</td>
+    <td style="text-align:right">${won(l.paidAmount)}</td>
+    <td style="text-align:center">${esc(l.gubun)||""}</td>
+    <td style="text-align:center">${esc(l.name)||""}</td>
+    <td>${esc(l.course)||""}</td>
+    <td style="text-align:right">${l.tuition?won(l.tuition):""}</td>
+    <td style="text-align:right">${l.discount?won(l.discount):""}</td>
+  </tr>`).join("");
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>월간매출자료 ${_moTitle()}</title>
+  <style>
+  @page{size:A4;margin:13mm;@bottom-right{content:counter(page);font-size:10px;color:#555;font-family:'Malgun Gothic'}}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  body{font-family:'Malgun Gothic',sans-serif;color:#111;margin:0}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+  h1{font-size:19px;margin:8px 0 0;font-weight:800}
+  .appr{border-collapse:collapse;font-size:10.5px;text-align:center}
+  .appr th{border:1px solid #444;padding:3px 8px;background:#f4f4f4;font-weight:700}
+  .appr td{border:1px solid #444;height:44px;width:58px}
+  .appr .side{writing-mode:vertical-rl;letter-spacing:4px;padding:0 4px;background:#f4f4f4;font-weight:700}
+  h2{font-size:13.5px;margin:16px 0 6px;padding-left:4px;border-left:4px solid #196B24}
+  table.d{width:100%;border-collapse:collapse;font-size:11px}
+  table.d th,table.d td{border:1px solid #777;padding:4px 6px}
+  table.d th{background:#eef4ee;font-weight:700;text-align:center}
+  tr.tot td{background:#f5f5f5;font-weight:800}
+  </style></head><body>
+  <div class="head">
+    <h1>월간매출자료 (${_moTitle()})</h1>
+    <table class="appr"><tr><td class="side" rowspan="2">결재</td><th>담당</th><th>원장</th></tr><tr><td></td><td></td></tr></table>
+  </div>
+  <h2>결산내역</h2>
+  <table class="d"><thead><tr><th style="width:22%">결제수단</th><th style="width:26%">수강료 합계</th><th style="width:26%">결제금액 합계</th><th style="width:26%">할인금액 합계</th></tr></thead>
+  <tbody>${sumRows||`<tr><td colspan="4" style="text-align:center">내역 없음</td></tr>`}
+  ${keys.length?`<tr class="tot"><td style="text-align:center">총합계</td><td style="text-align:right">${won(tot.tuition)}</td><td style="text-align:right">${won(tot.paid)}</td><td style="text-align:right">${tot.disc?won(tot.disc):""}</td></tr>`:""}
+  </tbody></table>
+  <h2>세부내역</h2>
+  <table class="d"><thead><tr><th style="width:6%">순번</th><th style="width:9%">날짜</th><th style="width:11%">결제수단</th><th style="width:13%">결제금액</th><th style="width:8%">구분</th><th style="width:11%">성명</th><th>과정명</th><th style="width:12%">수강료</th><th style="width:9%">할인</th></tr></thead>
+  <tbody>${detRows||`<tr><td colspan="9" style="text-align:center">내역 없음</td></tr>`}</tbody>
+  ${_printFoot(9)}</table>
+  <script>window.onload=function(){window.print();}<\/script></body></html>`;
+  const w=window.open("","_blank");
+  if(!w){alert("팝업이 차단되었습니다.");return;}
+  w.document.write(html);w.document.close();
+}
+function printReceiptSheet(){
+  const rows=_salesMonthRows();
+  const yy=d=>{const m=String(normDate(d)).match(/(\d{4})-(\d{2})-(\d{2})/);return m?`${m[1].slice(2)}/${m[2]}/${m[3]}`:"";};
+  const cell=(l,no)=>{
+    const way=l?`${esc(l.method)||""}${l.cardCo?" - "+esc(l.cardCo):(String(l.method||"").includes("계좌")?" - 현금영수증":"")}`:"-";
+    return `<div class="box">
+      <div class="no">${no}</div>
+      <div class="ln1">${l?esc(l.name):""} <span class="dt">(${l?yy(l.date):""})</span></div>
+      <div class="ln2">${l?esc(l.course):""} / ${l?won(l.paidAmount):""} 원 / ${l?esc(l.approval):""}</div>
+      <div class="ln3"><span class="lb">비 고</span> ${way}</div>
+      <div class="paste"></div>
+    </div>`;
+  };
+  const per=4;
+  const pages=[];
+  for(let i=0;i<Math.max(rows.length,1);i+=per){
+    const chunk=rows.slice(i,i+per);
+    while(chunk.length<per)chunk.push(null);
+    pages.push(`<section class="page">
+      <h1>월간매출자료 ${_moTitle()}</h1>
+      ${chunk.map((l,j)=>cell(l,i+j+1)).join("")}
+    </section>`);
+  }
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>영수증 부착용지 ${_moTitle()}</title>
+  <style>
+  @page{size:A4;margin:12mm}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  body{font-family:'Malgun Gothic',sans-serif;color:#111;margin:0}
+  h1{font-size:14px;font-weight:800;margin:0 0 8px;text-align:right;color:#333}
+  .page{page-break-after:always}
+  .page:last-child{page-break-after:auto}
+  .box{border:1px solid #333;padding:8px 10px 0;margin-bottom:8px;height:59mm;position:relative;box-sizing:border-box}
+  .no{position:absolute;top:6px;left:10px;font-size:12px;font-weight:800;color:#196B24}
+  .ln1{margin-left:22px;font-size:13.5px;font-weight:800}
+  .ln1 .dt{font-weight:400;font-size:12px;color:#444}
+  .ln2{margin-left:22px;font-size:12.5px;margin-top:3px}
+  .ln3{margin-left:22px;font-size:11.5px;margin-top:3px;color:#333}
+  .ln3 .lb{display:inline-block;border:1px solid #999;padding:0 5px;font-size:10.5px;margin-right:5px}
+  .paste{border-top:1px dashed #bbb;margin-top:6px;height:34mm}
+  </style></head><body>${pages.join("")}
+  <script>window.onload=function(){window.print();}<\/script></body></html>`;
+  const w=window.open("","_blank");
+  if(!w){alert("팝업이 차단되었습니다.");return;}
+  w.document.write(html);w.document.close();
+}
+
 function viewSales(){
   const pf=ui.salesPrefill||{};ui.salesPrefill=null;
   const list=DB.sales.map((l,idx)=>({l,idx})).filter(o=>normDate(o.l.date).startsWith(ui.salesMonth)&&(!ui.salesName||String(o.l.name).includes(ui.salesName))).sort((a,b)=>String(normDate(b.l.date)).localeCompare(String(normDate(a.l.date)))||b.idx-a.idx).map(o=>o.l);
@@ -2441,6 +2823,8 @@ function viewSales(){
     ${ui.salesName?`<button class="btn sm" onclick="ui.salesName='';render()">↺ 해제</button>`:""}
     <div class="card" style="padding:10px 14px"><span class="lab">${ui.salesMonth}${ui.salesName?` · ${esc(ui.salesName)}`:""} 수강료 합계 </span><b style="color:var(--green)">${won(sum)}원</b></div>
     <div class="card" style="padding:10px 14px"><span class="lab">입금 확인액 </span><b>${won(depSum)}원</b></div>
+    <button class="btn sm" onclick="printSalesReport()">🖨 매출현황 보고서</button>
+    <button class="btn sm" onclick="printReceiptSheet()">🧾 영수증 부착용지</button>
   </div>
   <div class="toolbar" style="border-top:1px solid var(--line);padding-top:10px">
     <span style="font-size:13px;color:var(--sub)">선택한 항목:</span>
@@ -4294,6 +4678,9 @@ function restoreExcel(input){
       if(schedules)DB.schedules=schedules.filter(r=>r.요일).map(r=>({id:uid(),day:r.요일,start:r.시작시간,end:r.종료시간,course:r.과정명,teacher:r.강사,room:r.강의실,note:r.비고}));
       if(makeups)DB.makeups=makeups.filter(r=>r.수강생).map(r=>({id:uid(),absentDate:exDate(r.결석일),student:r.수강생,course:r.과정명,makeupDate:exDate(r.보강예정일),makeupTime:r.보강시간,teacher:r.강사,status:r.상태,note:r.비고}));
       if(meetings)DB.meetings=meetings.filter(r=>r.제목).map(r=>({id:uid(),date:exDate(r.일자),title:r.제목,members:r.참석자,content:r.내용,decision:r.결정사항,writer:r.작성자}));
+      const exams=get("시험일정"),examapps=get("응시관리");
+      if(exams)DB.exams=exams.filter(r=>r.종목).map(r=>({id:r.ID||uid(),org:r.시행기관,item:r.종목,round:String(r.회차||""),regStart:exDate(r.접수시작),regEnd:exDate(r.접수마감),examDate:exDate(r.시험일),resultDate:exDate(r.발표일),fee:Number(r.응시료)||0,note:r.비고}));
+      if(examapps)DB.examapps=examapps.filter(r=>r.성명).map(r=>({id:uid(),examId:String(r.시험ID||""),sid:String(r.수강생ID||""),name:r.성명,status:r.응시여부||"예정",regDone:r.접수||"",feePaid:r.입금||"",ticketGiven:r.수험표||"",result:r.결과||"",note:r.비고||""}));
       const certs=get("증명서발급대장");
       if(certs)DB.certs=certs.filter(r=>r.발급번호).map(r=>({id:uid(),no:r.발급번호,date:exDate(r.발급일),sid:String(r.수강생ID||""),name:r.수강생,kind:r.종류,purpose:r.용도,payload:String(r.내용JSON||"{}")}));
 
@@ -4364,6 +4751,8 @@ function exportExcel(){
   sheetOf(DB.schedules.map(x=>({요일:x.day,시작시간:x.start,종료시간:x.end,과정명:x.course,강사:x.teacher,강의실:x.room,비고:x.note})),{요일:"",시작시간:"",종료시간:"",과정명:"",강사:"",강의실:"",비고:""},"시간표");
   sheetOf(DB.makeups.map(x=>({결석일:x.absentDate,수강생:x.student,과정명:x.course,보강예정일:x.makeupDate,보강시간:x.makeupTime,강사:x.teacher,상태:x.status,비고:x.note})),{결석일:"",수강생:"",과정명:"",보강예정일:"",보강시간:"",강사:"",강의실:"",상태:"",비고:""},"보강관리");
   sheetOf(DB.meetings.map(x=>({일자:x.date,제목:x.title,참석자:x.members,내용:x.content,결정사항:x.decision,작성자:x.writer})),{일자:"",제목:"",참석자:"",내용:"",결정사항:"",작성자:""},"회의록");
+  sheetOf(DB.exams.map(x=>({시행기관:x.org,종목:x.item,회차:x.round,접수시작:x.regStart,접수마감:x.regEnd,시험일:x.examDate,발표일:x.resultDate,응시료:x.fee,비고:x.note,ID:x.id})),{시행기관:"",종목:"",회차:"",접수시작:"",접수마감:"",시험일:"",발표일:"",응시료:"",비고:"",ID:""},"시험일정");
+  sheetOf(DB.examapps.map(x=>({시험ID:x.examId,수강생ID:x.sid,성명:x.name,응시여부:x.status,접수:x.regDone,입금:x.feePaid,수험표:x.ticketGiven,결과:x.result,비고:x.note})),{시험ID:"",수강생ID:"",성명:"",응시여부:"",접수:"",입금:"",수험표:"",결과:"",비고:""},"응시관리");
   sheetOf(DB.certs.map(x=>({발급일:x.date,발급번호:x.no,수강생ID:x.sid,수강생:x.name,종류:x.kind,용도:x.purpose,내용JSON:x.payload})),{발급일:"",발급번호:"",수강생ID:"",수강생:"",종류:"",용도:"",내용JSON:""},"증명서발급대장");
   XLSX.writeFile(wb,"제이컴퓨터학원_관리데이터_백업.xlsx");
 }
