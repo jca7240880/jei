@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.51 (2026-07-23) Supabase";
+const APP_VERSION="v5.52 (2026-07-23) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["exam","자격관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1721,9 +1721,14 @@ function delExam(id){
 }
 /* ── 응시관리 ── */
 function viewExamApply(){
-  const exams=[...DB.exams].sort((a,b)=>String(b.examDate||"").localeCompare(String(a.examDate||"")));
-  const sel=ui.examSel?examById(ui.examSel):null;
-  if(!exams.length)return `<div class="panel" style="margin-top:0"><div class="empty">먼저 [📅 시험일정]에서 시험을 등록하세요.</div></div>`;
+  const allExams=[...DB.exams].sort((a,b)=>String(a.regStart||"9999").localeCompare(String(b.regStart||"9999"))
+    ||String(a.examDate||"").localeCompare(String(b.examDate||"")));
+  const orgs=[...new Set(allExams.map(e=>e.org).filter(Boolean))];
+  const orgF=ui.examOrgF||"전체";
+  const exams=orgF==="전체"?allExams:allExams.filter(e=>e.org===orgF);
+  let sel=ui.examSel?examById(ui.examSel):null;
+  if(sel&&orgF!=="전체"&&sel.org!==orgF){sel=null;ui.examSel="";}
+  if(!allExams.length)return `<div class="panel" style="margin-top:0"><div class="empty">먼저 [📅 시험일정]에서 시험을 등록하세요.</div></div>`;
   const apps=sel?examAppsOf(sel.id):[];
   const appSids=new Set(apps.map(a=>String(a.sid)));
   const cands=myStudents().filter(s=>s.status!=="퇴원"&&!appSids.has(String(s.id)))
@@ -1734,9 +1739,13 @@ function viewExamApply(){
   return `
   <div class="panel" style="margin-top:0"><h2>📝 응시관리</h2>
     <div class="toolbar">
-      <label class="fld" style="flex:1 1 320px">시험 선택<select onchange="ui.examSel=this.value;render()">
-        <option value="">시험을 선택하세요</option>
-        ${exams.map(e=>`<option value="${e.id}" ${String(ui.examSel)===String(e.id)?'selected':''}>${esc(e.examDate)||"날짜미정"} · ${esc(e.item)}${e.round?" "+esc(e.round)+"회":""} (${esc(e.org)})</option>`).join("")}
+      <label class="fld">시행처<select onchange="ui.examOrgF=this.value;ui.examSel='';render()">
+        <option ${orgF==='전체'?'selected':''}>전체</option>
+        ${orgs.map(o=>`<option ${orgF===o?'selected':''}>${esc(o)}</option>`).join("")}
+      </select></label>
+      <label class="fld" style="flex:1 1 300px">시험 선택<select onchange="ui.examSel=this.value;render()">
+        <option value="">시험을 선택하세요 (${exams.length}건)</option>
+        ${exams.map(e=>`<option value="${e.id}" ${String(ui.examSel)===String(e.id)?'selected':''}>${esc(e.examDate)||"날짜미정"} · ${esc(e.item)}${e.round?" "+esc(e.round)+"회":""}</option>`).join("")}
       </select></label>
       ${sel?`<div class="card" style="padding:8px 14px"><span class="lab">접수 </span><b>${esc(sel.regStart)||"-"} ~ ${esc(sel.regEnd)||"-"}</b></div>
       <div class="card" style="padding:8px 14px"><span class="lab">시험일 </span><b>${esc(sel.examDate)||"-"}</b></div>
