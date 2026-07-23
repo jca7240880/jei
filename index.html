@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.44 (2026-07-22) Supabase";
+const APP_VERSION="v5.46 (2026-07-23) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -544,7 +544,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -1397,14 +1397,14 @@ function viewCert(){
     .map(st=>`<option value="${st.id}" ${String(ui.certSid)===String(st.id)?'selected':''}>${esc(st.name)}${st.status==='퇴원'?' (퇴원)':''}</option>`).join("");
   // 수강생 선택 시 자동 채움 기본값
   const v=sel?{
-    name:sel.name,birth:sel.birth||"",phone:sel.phone||"",course:sel.course||"",
+    name:sel.name,birth:sel.birth||"",phone:sel.phone||"",course:sel.course||"",addr:sel.addr||"",email:sel.email||"",
     from:sel.start||"",to:sel.status==="퇴원"?(sel.quitDate||""):"현재",days:sel.classDays||""
   }:{name:"",birth:"",phone:"",course:"",from:"",to:"",days:""};
   // 납입증명: 해당 수강생 매출 자동
   const payRows=sel?DB.sales.filter(l=>String(l.name)===String(sel.name)).sort((a,b)=>String(a.date).localeCompare(String(b.date))):[];
   const fields=`
-    <label class="fld">주소<input id="c_addr" value="${esc(ui.certDraft.addr||"")}" placeholder="수강생 주소"></label>
-    <label class="fld">E-mail<input id="c_email" value="${esc(ui.certDraft.email||"")}" placeholder="없으면 비워두기"></label>
+    <label class="fld" style="grid-column:span 2">주소<input id="c_addr" value="${esc(v.addr||ui.certDraft.addr||"")}" placeholder="수강생 주소"></label>
+    <label class="fld">E-mail<input id="c_email" value="${esc(v.email||ui.certDraft.email||"")}" placeholder="없으면 비워두기"></label>
     ${kind!=="payment"&&kind!=="card"?`
     <label class="fld">수강기간(부터)<input type="date" id="c_from" value="${esc(v.from!=="현재"?v.from:"")}"></label>
     <label class="fld">수강기간(까지)<input id="c_to" value="${esc(v.to)}" placeholder="날짜 또는 '현재'"></label>
@@ -1837,6 +1837,8 @@ function stuFormHtml(s){
     <label class="fld">구분<select id="f_gu"><option ${v.gubun==='학생'?'selected':''}>학생</option><option ${v.gubun==='성인'?'selected':''}>성인</option></select></label>
     <label class="fld">연락처<input id="f_ph" value="${esc(v.phone||"")}" placeholder="010-0000-0000"></label>
     <label class="fld">보호자 연락처<input id="f_gd" value="${esc(v.guardian||"")}"></label>
+    <label class="fld" style="grid-column:span 2">주소<input id="f_ad" value="${esc(v.addr||"")}" placeholder="예: 충주시 칠금동 000-0"></label>
+    <label class="fld">E-mail<input id="f_em" value="${esc(v.email||"")}" placeholder="예: abc@naver.com"></label>
     <label class="fld">생년월일<input type="date" id="f_bt" value="${esc(v.birth||"")}"></label>
     <label class="fld">성별<select id="f_sx"><option value=""></option><option ${v.gender==='남'?'selected':''}>남</option><option ${v.gender==='여'?'selected':''}>여</option></select></label>
     <label class="fld">학교<input id="f_sc" value="${esc(v.school||"")}"></label>
@@ -1858,7 +1860,7 @@ function stuFormHtml(s){
   </div>`;
 }
 function readStuForm(){
-  return {name:val("f_nm").trim(),gubun:val("f_gu"),phone:val("f_ph"),guardian:val("f_gd"),birth:val("f_bt"),gender:val("f_sx"),school:val("f_sc"),grade:val("f_gr"),teacher:val("f_tc"),course:val("f_co").trim(),start:val("f_st"),tuition:num("f_tu"),payCycle:val("f_pc"),cycleMonths:num("f_cm")||1,totalSessions:num("f_ts"),charged:num("f_ch")||num("f_ts"),lastPaid:val("f_lp"),classDays:["월","화","수","목","금","토","일"].filter(d=>{const e=document.getElementById("f_day"+d);return e&&e.checked;}).join(",")};
+  return {name:val("f_nm").trim(),gubun:val("f_gu"),phone:val("f_ph"),guardian:val("f_gd"),addr:val("f_ad"),email:val("f_em"),birth:val("f_bt"),gender:val("f_sx"),school:val("f_sc"),grade:val("f_gr"),teacher:val("f_tc"),course:val("f_co").trim(),start:val("f_st"),tuition:num("f_tu"),payCycle:val("f_pc"),cycleMonths:num("f_cm")||1,totalSessions:num("f_ts"),charged:num("f_ch")||num("f_ts"),lastPaid:val("f_lp"),classDays:["월","화","수","목","금","토","일"].filter(d=>{const e=document.getElementById("f_day"+d);return e&&e.checked;}).join(",")};
 }
 function addStudent(){
   const f=readStuForm();
@@ -1900,6 +1902,8 @@ function viewStuDetail(){
     <div class="detail-grid">
       <div class="item"><div class="k">연락처</div><div class="v">${esc(s.phone)||"-"}</div></div>
       <div class="item"><div class="k">보호자 연락처</div><div class="v">${esc(s.guardian)||"-"}</div></div>
+      <div class="item"><div class="k">주소</div><div class="v">${esc(s.addr)||"-"}</div></div>
+      <div class="item"><div class="k">E-mail</div><div class="v">${esc(s.email)||"-"}</div></div>
       <div class="item"><div class="k">생년월일</div><div class="v">${esc(s.birth)||"-"}</div></div>
       <div class="item"><div class="k">성별</div><div class="v">${esc(s.gender)||"-"}</div></div>
       <div class="item"><div class="k">학교 / 학년</div><div class="v">${esc(s.school)||"-"} ${esc(s.grade)?esc(s.grade)+"학년":""}</div></div>
@@ -3090,9 +3094,22 @@ function viewBookIn(){
     </div>
     <div class="twrap"><table><thead><tr><th>입고일</th><th>과목</th><th>구입처</th><th>교재명</th><th>정가</th><th>구입가</th><th>할인율</th><th>권수</th><th>입고금액</th><th></th></tr></thead><tbody>
     ${pgI.rows.length?pgI.rows.map(b=>{
+      if(String(ui.bookInEditId)===String(b.id)){
+        return `<tr style="background:var(--green-light)">
+          <td><input type="date" id="bi_dt" value="${esc(b.date)}" style="padding:4px"></td>
+          <td><select id="bi_sj" style="padding:4px">${["OA","CAD","디자인","기타"].map(x=>`<option ${b.subject===x?'selected':''}>${x}</option>`).join("")}</select></td>
+          <td><select id="bi_vd" style="padding:4px">${["북메이커","교보문고","성안당","기타"].map(x=>`<option ${b.vendor===x?'selected':''}>${x}</option>`).join("")}</select></td>
+          <td><input id="bi_tt" value="${esc(b.title)}" style="padding:4px;width:130px"></td>
+          <td><input type="number" id="bi_lp" value="${Number(b.listPrice)||0}" style="padding:4px;width:80px"></td>
+          <td><input type="number" id="bi_bp" value="${Number(b.buyPrice)||0}" style="padding:4px;width:80px"></td>
+          <td>-</td>
+          <td><input type="number" id="bi_q" value="${Number(b.qty)||0}" style="padding:4px;width:60px"></td>
+          <td>자동</td>
+          <td style="white-space:nowrap"><button class="btn sm" onclick="saveBookIn('${b.id}')">저장</button> <button class="btn sm" onclick="ui.bookInEditId=null;render()">취소</button></td></tr>`;
+      }
       const dr=b.listPrice?Math.round((1-b.buyPrice/b.listPrice)*100):0;
       return `<tr><td>${esc(b.date)}</td><td>${esc(b.subject)}</td><td>${esc(b.vendor)}</td><td>${esc(b.title)}</td><td>${won(b.listPrice)}</td><td>${won(b.buyPrice)}</td><td>${dr?dr+"%":"-"}</td><td>${b.qty}</td><td><b>${won(b.amount)}원</b></td>
-      <td><button class="btn sm" onclick="delBookIn('${b.id}')">삭제</button></td></tr>`;
+      <td style="white-space:nowrap"><button class="btn sm" onclick="ui.bookInEditId='${b.id}';render()">수정</button> <button class="btn sm" onclick="delBookIn('${b.id}')">삭제</button></td></tr>`;
     }).join(""):`<tr><td colspan="10" class="empty">입고 기록이 없습니다.</td></tr>`}
     </tbody></table></div>
     ${pagerHtml('bin',pgI)}
@@ -3106,18 +3123,29 @@ function viewBookOut(){
     <div class="formbox" style="margin-bottom:10px">
       <label class="fld">출고일<input type="date" id="o_dt" value="${todayStr()}"></label>
       <label class="fld">성명<input id="o_nm" list="stuNames2" placeholder="수강생명 또는 ‘견본’"><datalist id="stuNames2">${[...DB.students].sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(st=>`<option value="${esc(st.name)}">`).join("")}<option value="견본"></datalist></label>
-      <label class="fld" style="grid-column:span 2">교재명<select id="o_tt" onchange="const pz=latestBuyPrice(this.value);document.getElementById('o_pr').value=pz||''">${bookTitles().map(t=>`<option>${esc(t)}</option>`).join("")}</select></label>
-      <label class="fld">단가(원)<input type="number" id="o_pr" value="${bookTitles().length?latestBuyPrice(bookTitles()[0]):''}" placeholder="기본: 최근 구입가"></label>
+      <label class="fld" style="grid-column:span 2">교재명<select id="o_tt">${bookTitles().map(t=>`<option>${esc(t)}</option>`).join("")}</select></label>
       <label class="fld">권수<input type="number" id="o_q" value="1"></label>
       <label class="fld">비고<input id="o_no" placeholder="예: 견본, 무상지급"></label>
       <button class="btn" onclick="addBookOut()">출고 기록</button>
     </div>
-    <div class="twrap"><table><thead><tr><th>출고일</th><th>성명</th><th>교재명</th><th>단가</th><th>권수</th><th>출고금액</th><th>비고</th><th></th></tr></thead><tbody>
-    ${pgO.rows.length?pgO.rows.map(b=>`<tr><td>${esc(b.date)}</td><td>${esc(b.name)}</td><td>${esc(b.title)}</td><td>${won(b.price)}</td><td>${b.qty}</td><td><b>${won(b.amount)}원</b></td><td>${esc(b.note)}</td>
-    <td><button class="btn sm" onclick="delBookOut('${b.id}')">삭제</button></td></tr>`).join(""):`<tr><td colspan="8" class="empty">출고 기록이 없습니다.</td></tr>`}
+    <div class="twrap"><table><thead><tr><th>출고일</th><th>성명</th><th>교재명</th><th>권수</th><th>비고</th><th></th></tr></thead><tbody>
+    ${pgO.rows.length?pgO.rows.map(b=>{
+      if(String(ui.bookOutEditId)===String(b.id)){
+        return `<tr style="background:var(--green-light)">
+          <td><input type="date" id="bo_dt" value="${esc(b.date)}" style="padding:4px"></td>
+          <td><input id="bo_nm" value="${esc(b.name)}" list="stuNames2" style="padding:4px;width:100px"></td>
+          <td><input id="bo_tt" value="${esc(b.title)}" list="bkTitlesOut" style="padding:4px;width:150px"></td>
+          <td><input type="number" id="bo_q" value="${Number(b.qty)||0}" style="padding:4px;width:60px"></td>
+          <td><input id="bo_no" value="${esc(b.note)}" style="padding:4px;width:120px"></td>
+          <td style="white-space:nowrap"><button class="btn sm" onclick="saveBookOut('${b.id}')">저장</button> <button class="btn sm" onclick="ui.bookOutEditId=null;render()">취소</button></td></tr>`;
+      }
+      return `<tr><td>${esc(b.date)}</td><td>${esc(b.name)}</td><td>${esc(b.title)}</td><td>${b.qty}</td><td>${esc(b.note)}</td>
+      <td style="white-space:nowrap"><button class="btn sm" onclick="ui.bookOutEditId='${b.id}';render()">수정</button> <button class="btn sm" onclick="delBookOut('${b.id}')">삭제</button></td></tr>`;
+    }).join(""):`<tr><td colspan="6" class="empty">출고 기록이 없습니다.</td></tr>`}
     </tbody></table></div>
+    <datalist id="bkTitlesOut">${bookTitles().map(t=>`<option value="${esc(t)}">`).join("")}</datalist>
     ${pagerHtml('bout',pgO)}
-    <p class="note">※ 출고금액 = 단가 × 권수. 교재 선택 시 최근 구입가 자동 입력 (무상지급은 0).</p>
+    <p class="note">※ 출고는 수강생 지급용이므로 금액은 0원으로 기록됩니다 (재고 수량만 관리).</p>
   </div>`;
 }
 function viewBook(){
@@ -3132,13 +3160,28 @@ function addBookIn(){
 }
 function delBookIn(id){if(confirm("이 입고 기록을 삭제할까요? (재고에 반영됩니다)")){DB.bookin=DB.bookin.filter(x=>String(x.id)!==String(id));save();render();}}
 function addBookOut(){
-  const tt=val("o_tt"),q=num("o_q"),pr=num("o_pr");
+  const tt=val("o_tt"),q=num("o_q");
   if(!tt||!q){alert("교재명과 권수는 필수입니다.");return;}
   const sIn=DB.bookin.filter(b=>b.title===tt).reduce((a,b)=>a+Number(b.qty),0);
   const sOut=DB.bookout.filter(b=>b.title===tt).reduce((a,b)=>a+Number(b.qty),0);
   if(sIn-sOut<q && !confirm(`잔여재고(${sIn-sOut}권)보다 많은 수량입니다. 그래도 기록할까요?`))return;
-  DB.bookout.push({id:uid(),date:val("o_dt"),name:val("o_nm"),title:tt,price:pr,qty:q,amount:pr*q,note:val("o_no")});
+  DB.bookout.push({id:uid(),date:val("o_dt"),name:val("o_nm"),title:tt,price:0,qty:q,amount:0,note:val("o_no")});
   save();render();
+}
+function saveBookIn(id){
+  const b=DB.bookin.find(x=>String(x.id)===String(id));if(!b)return;
+  const tt=val("bi_tt").trim(),q=num("bi_q");
+  if(!tt||!q){alert("교재명과 권수는 필수입니다.");return;}
+  b.date=val("bi_dt");b.subject=val("bi_sj");b.vendor=val("bi_vd");b.title=tt;
+  b.listPrice=num("bi_lp");b.buyPrice=num("bi_bp");b.qty=q;b.amount=b.buyPrice*q;
+  ui.bookInEditId=null;save();render();
+}
+function saveBookOut(id){
+  const b=DB.bookout.find(x=>String(x.id)===String(id));if(!b)return;
+  const tt=val("bo_tt").trim(),q=num("bo_q");
+  if(!tt||!q){alert("교재명과 권수는 필수입니다.");return;}
+  b.date=val("bo_dt");b.name=val("bo_nm");b.title=tt;b.qty=q;b.price=0;b.amount=0;b.note=val("bo_no");
+  ui.bookOutEditId=null;save();render();
 }
 function delBookOut(id){if(confirm("이 출고 기록을 삭제할까요? (재고에 반영됩니다)")){DB.bookout=DB.bookout.filter(x=>String(x.id)!==String(id));save();render();}}
 
@@ -4183,7 +4226,7 @@ function restoreExcel(input){
           const dupKey=r.성명+"|"+String(r.연락처||"")+"|"+String(r.등록일||"");
           if(seenStu.has(dupKey))return; // 백업 속 중복 수강생 제거
           seenStu.add(dupKey);
-          DB.students.push({id:r.ID||uid(),name:r.성명,gubun:r.구분,phone:String(r.연락처||""),guardian:String(r.보호자연락처||""),birth:exDate(r.생년월일),gender:r.성별,school:r.학교,grade:r.학년,teacher:r.담임,course:r.과정명,start:exDate(r.등록일),tuition:Number(r.수강료)||0,payCycle:r.결제방식,cycleMonths:Number(r.주기개월)||1,totalSessions:Number(r.등록횟수)||0,charged:Number(r.누적충전)||0,classDays:r.수업요일,quitDate:exDate(r.퇴원일),lastPaid:exDate(r.최근결제일),status:r.상태||"재원",note:r.참고사항});
+          DB.students.push({id:r.ID||uid(),name:r.성명,gubun:r.구분,phone:String(r.연락처||""),addr:r.주소||"",email:r.이메일||"",guardian:String(r.보호자연락처||""),birth:exDate(r.생년월일),gender:r.성별,school:r.학교,grade:r.학년,teacher:r.담임,course:r.과정명,start:exDate(r.등록일),tuition:Number(r.수강료)||0,payCycle:r.결제방식,cycleMonths:Number(r.주기개월)||1,totalSessions:Number(r.등록횟수)||0,charged:Number(r.누적충전)||0,classDays:r.수업요일,quitDate:exDate(r.퇴원일),lastPaid:exDate(r.최근결제일),status:r.상태||"재원",note:r.참고사항});
         });
       }
       if(false)DB.students=students.filter(r=>r.성명).map(r=>({id:uid(),name:r.성명,gubun:r.구분,phone:String(r.연락처||""),guardian:String(r.보호자연락처||""),birth:exDate(r.생년월일),gender:r.성별,school:r.학교,grade:r.학년,teacher:r.담임,course:r.과정명,start:exDate(r.등록일),tuition:Number(r.수강료)||0,payCycle:r.결제방식,cycleMonths:Number(r.주기개월)||1,totalSessions:Number(r.등록횟수)||0,charged:Number(r.누적충전)||0,classDays:r.수업요일,quitDate:exDate(r.퇴원일),lastPaid:exDate(r.최근결제일),status:r.상태||"재원",note:r.참고사항}));
@@ -4287,7 +4330,7 @@ function exportExcel(){
   if(typeof XLSX==="undefined"){alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 상태에서 파일을 다시 열어주세요.");return;}
   const wb=XLSX.utils.book_new();
   const sheetOf=(rows,blank,name)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[blank]),name);
-  sheetOf(DB.students.map(s=>({ID:s.id,성명:s.name,구분:s.gubun,연락처:s.phone,보호자연락처:s.guardian,생년월일:s.birth,성별:s.gender,학교:s.school,학년:s.grade,담임:s.teacher,과정명:s.course,등록일:s.start,수강료:s.tuition,결제방식:s.payCycle,주기개월:s.cycleMonths,등록횟수:s.totalSessions,누적충전:s.charged,수업요일:s.classDays,퇴원일:s.quitDate,최근결제일:s.lastPaid,상태:s.status,참고사항:s.note})),
+  sheetOf(DB.students.map(s=>({ID:s.id,성명:s.name,구분:s.gubun,연락처:s.phone,주소:s.addr||"",이메일:s.email||"",보호자연락처:s.guardian,생년월일:s.birth,성별:s.gender,학교:s.school,학년:s.grade,담임:s.teacher,과정명:s.course,등록일:s.start,수강료:s.tuition,결제방식:s.payCycle,주기개월:s.cycleMonths,등록횟수:s.totalSessions,누적충전:s.charged,수업요일:s.classDays,퇴원일:s.quitDate,최근결제일:s.lastPaid,상태:s.status,참고사항:s.note})),
     {성명:"",구분:"",연락처:"",보호자연락처:"",생년월일:"",성별:"",학교:"",학년:"",담임:"",과정명:"",등록일:"",수강료:"",결제방식:"",주기개월:"",등록횟수:"",누적충전:"",수업요일:"",퇴원일:"",최근결제일:"",상태:"",참고사항:""},"수강생명부");
   sheetOf(DB.attendance.map(a=>{const st=findStu(a.sid);return{수강생ID:a.sid,일자:a.date,성명:st?st.name:"(삭제됨)",과정명:st?st.course:"",입실:a.inTime,퇴실:a.outTime,비고:a.memo||""};}),
     {일자:"",성명:"",과정명:"",입실:"",퇴실:"",비고:""},"출결기록");
