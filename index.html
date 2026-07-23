@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.48 (2026-07-23) Supabase";
+const APP_VERSION="v5.51 (2026-07-23) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -1623,7 +1623,8 @@ function viewExamSched(){
   const years=[...new Set(DB.exams.map(e=>String(e.examDate||"").slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort();
   if(!years.includes(yFilter))years.push(yFilter);
   const list=DB.exams.filter(e=>String(e.examDate||"").startsWith(yFilter))
-    .sort((a,b)=>String(a.examDate||"").localeCompare(String(b.examDate||"")));
+    .sort((a,b)=>String(a.regStart||"9999").localeCompare(String(b.regStart||"9999"))
+      ||String(a.examDate||"").localeCompare(String(b.examDate||"")));
   // 접수 임박 (7일 이내 접수 시작 또는 접수 진행 중)
   const soon=DB.exams.filter(e=>{
     const ds=dday(e.regStart), de=dday(e.regEnd);
@@ -1660,7 +1661,7 @@ function viewExamSched(){
       <label class="fld">비고<input id="e_no"></label>
       <button class="btn" onclick="addExam()">등록</button>
     </div>
-    <p class="note">※ 연말에 다음 해 일정을 한 번에 등록해두면 접수·시험일이 자동으로 관리됩니다.</p>
+    <p class="note">※ 연말에 다음 해 일정을 한 번에 등록해두면 접수·시험일이 자동으로 관리됩니다.<br>※ 아래 목록은 <b>접수시작일 빠른 순</b>으로 정렬됩니다 (접수일 미입력 건은 맨 뒤).</p>
   </div>
   <div class="panel"><h2><span>📅 ${yFilter}년 시험일정 (${list.length}건)</span>
     <select onchange="ui.examYear=this.value;render()" style="padding:5px">${years.sort().map(y=>`<option ${y===yFilter?'selected':''}>${y}</option>`).join("")}</select></h2>
@@ -1728,7 +1729,7 @@ function viewExamApply(){
   const cands=myStudents().filter(s=>s.status!=="퇴원"&&!appSids.has(String(s.id)))
     .filter(s=>!ui.examCandQ||String(s.name).includes(ui.examCandQ)||String(s.course).includes(ui.examCandQ))
     .sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko"));
-  const chk=(a,f,label)=>`<label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:11.5px"><input type="checkbox" ${a[f]==="Y"?"checked":""} onclick="toggleApp('${a.id}','${f}')">${label}</label>`;
+  const chk=(a,f,label)=>`<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:11.5px;white-space:nowrap;margin:0"><input type="checkbox" style="margin:0;width:auto" ${a[f]==="Y"?"checked":""} onclick="toggleApp('${a.id}','${f}')">${label}</label>`;
   const stat=f=>apps.filter(a=>a[f]==="Y").length;
   return `
   <div class="panel" style="margin-top:0"><h2>📝 응시관리</h2>
@@ -1752,13 +1753,13 @@ function viewExamApply(){
   </div>
   <div class="panel"><h2><span>응시자 명단 (${apps.length}명)</span><button class="btn sm" onclick="printExamList('${sel.id}')">🖨 명단 인쇄</button></h2>
     <div class="twrap"><table><thead><tr><th>성명</th><th>과정</th><th>응시여부</th><th>진행 체크</th><th>결과</th><th>비고</th><th></th></tr></thead><tbody>
-    ${apps.length?apps.sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(a=>`<tr>
+    ${apps.length?apps.sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(a=>`<tr style="vertical-align:middle">
       <td><b>${esc(a.name)}</b></td>
       <td style="font-size:11.5px">${esc((findStu(a.sid)||{}).course)||"-"}</td>
       <td><select onchange="setAppField('${a.id}','status',this.value)" style="padding:3px;font-size:11.5px">
         ${["예정","응시","미응시"].map(v=>`<option ${(a.status||"예정")===v?'selected':''}>${v}</option>`).join("")}
       </select></td>
-      <td style="white-space:nowrap;display:flex;gap:8px">${chk(a,"regDone","접수")}${chk(a,"feePaid","입금")}${chk(a,"ticketGiven","수험표")}</td>
+      <td style="white-space:nowrap;vertical-align:middle"><div style="display:flex;gap:10px;align-items:center">${chk(a,"regDone","접수")}${chk(a,"feePaid","입금")}${chk(a,"ticketGiven","수험표")}</div></td>
       <td><select onchange="setAppField('${a.id}','result',this.value)" style="padding:3px;font-size:11.5px">
         ${["","합격","불합격","대기"].map(v=>`<option ${(a.result||"")===v?'selected':''}>${v||"-"}</option>`).join("")}
       </select></td>
@@ -2768,13 +2769,16 @@ function printSalesReport(){
 function printReceiptSheet(){
   const rows=_salesMonthRows();
   const yy=d=>{const m=String(normDate(d)).match(/(\d{4})-(\d{2})-(\d{2})/);return m?`${m[1].slice(2)}/${m[2]}/${m[3]}`:"";};
-  const cell=(l,no)=>{
-    const way=l?`${esc(l.method)||""}${l.cardCo?" - "+esc(l.cardCo):(String(l.method||"").includes("계좌")?" - 현금영수증":"")}`:"-";
-    return `<div class="box">
-      <div class="no">${no}</div>
-      <div class="ln1">${l?esc(l.name):""} <span class="dt">(${l?yy(l.date):""})</span></div>
-      <div class="ln2">${l?esc(l.course):""} / ${l?won(l.paidAmount):""} 원 / ${l?esc(l.approval):""}</div>
-      <div class="ln3"><span class="lb">비 고</span> ${way}</div>
+  const col=(l,no)=>{
+    if(!l)return `<div class="col empty"></div>`;
+    const way=`${esc(l.method)||""}${l.cardCo?" - "+esc(l.cardCo):(String(l.method||"").includes("계좌")?" - 현금영수증":"")}`;
+    return `<div class="col">
+      <div class="hd">
+        <div class="ln1"><span class="no">${no}</span>${esc(l.name)} <span class="dt">(${yy(l.date)})</span></div>
+        <div class="ln2">${esc(l.course)||""}</div>
+        <div class="ln2"><b>${won(l.paidAmount)} 원</b>${l.approval?" / "+esc(l.approval):""}</div>
+        <div class="ln3"><span class="lb">비고</span> ${way}</div>
+      </div>
       <div class="paste"></div>
     </div>`;
   };
@@ -2784,26 +2788,30 @@ function printReceiptSheet(){
     const chunk=rows.slice(i,i+per);
     while(chunk.length<per)chunk.push(null);
     pages.push(`<section class="page">
-      <h1>월간매출자료 ${_moTitle()}</h1>
-      ${chunk.map((l,j)=>cell(l,i+j+1)).join("")}
+      <div class="ttl">월간매출자료 ${_moTitle()} <span class="pg">(${Math.floor(i/per)+1})</span></div>
+      <div class="grid">${chunk.map((l,j)=>col(l,i+j+1)).join("")}</div>
     </section>`);
   }
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>영수증 부착용지 ${_moTitle()}</title>
   <style>
-  @page{size:A4;margin:12mm}
-  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  @page{size:A4 landscape;margin:8mm}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;box-sizing:border-box}
   body{font-family:'Malgun Gothic',sans-serif;color:#111;margin:0}
-  h1{font-size:14px;font-weight:800;margin:0 0 8px;text-align:right;color:#333}
-  .page{page-break-after:always}
+  .page{page-break-after:always;height:194mm;display:flex;flex-direction:column}
   .page:last-child{page-break-after:auto}
-  .box{border:1px solid #333;padding:8px 10px 0;margin-bottom:8px;height:59mm;position:relative;box-sizing:border-box}
-  .no{position:absolute;top:6px;left:10px;font-size:12px;font-weight:800;color:#196B24}
-  .ln1{margin-left:22px;font-size:13.5px;font-weight:800}
-  .ln1 .dt{font-weight:400;font-size:12px;color:#444}
-  .ln2{margin-left:22px;font-size:12.5px;margin-top:3px}
-  .ln3{margin-left:22px;font-size:11.5px;margin-top:3px;color:#333}
-  .ln3 .lb{display:inline-block;border:1px solid #999;padding:0 5px;font-size:10.5px;margin-right:5px}
-  .paste{border-top:1px dashed #bbb;margin-top:6px;height:34mm}
+  .ttl{font-size:12px;font-weight:800;color:#333;margin-bottom:4px}
+  .ttl .pg{font-weight:400;color:#888;font-size:11px}
+  .grid{display:flex;gap:4mm;flex:1}
+  .col{flex:1;border:1px solid #333;padding:6px 7px;display:flex;flex-direction:column}
+  .col.empty{border:1px dashed #ccc}
+  .hd{border-bottom:1px dashed #bbb;padding-bottom:5px}
+  .ln1{font-size:12.5px;font-weight:800;line-height:1.4}
+  .ln1 .no{display:inline-block;background:#196B24;color:#fff;font-size:10px;padding:0 5px;border-radius:3px;margin-right:5px;vertical-align:1px}
+  .ln1 .dt{font-weight:400;font-size:11px;color:#444}
+  .ln2{font-size:11.5px;margin-top:2px;line-height:1.4;word-break:break-all}
+  .ln3{font-size:10.5px;margin-top:3px;color:#333}
+  .ln3 .lb{display:inline-block;border:1px solid #999;padding:0 4px;font-size:9.5px;margin-right:4px}
+  .paste{flex:1;margin-top:5px}
   </style></head><body>${pages.join("")}
   <script>window.onload=function(){window.print();}<\/script></body></html>`;
   const w=window.open("","_blank");
