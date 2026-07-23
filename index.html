@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.52 (2026-07-23) Supabase";
+const APP_VERSION="v5.53 (2026-07-23) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["exam","자격관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1113,7 +1113,7 @@ function render(){
   }
   if(tab==="exam"){
     const sub=ui.examSub||"sched";
-    m.innerHTML=examSubBar()+(sub==="apply"?viewExamApply():viewExamSched());
+    m.innerHTML=examSubBar()+(sub==="apply"?viewExamApply():(sub==="stat"?viewExamStat():viewExamSched()));
   }
   if(tab==="book"){
     const sub=ui.bookSub||"quick";
@@ -1611,21 +1611,87 @@ function ddayTag(d,label){
   return `${esc(d)} <span style="font-weight:800;color:${urgent?'var(--red)':'var(--green)'}">${n===0?"D-DAY":"D-"+n}</span>`;
 }
 function examSubBar(){
-  const subs=[["sched","📅 시험일정"],["apply","📝 응시관리"]];
+  const subs=[["sched","📅 시험일정"],["apply","📝 응시관리"],["stat","📊 결과분석"]];
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.examSub||"sched")===k?'on':''}" onclick="ui.examSub='${k}';render()">${l}</button>`).join("")}</div>`;
 }
 function examLabel(e){ return `${esc(e.item)}${e.round?" "+esc(e.round)+"회":""}`; }
 function examById(id){ return DB.exams.find(x=>String(x.id)===String(id)); }
 function examAppsOf(examId){ return DB.examapps.filter(a=>String(a.examId)===String(examId)); }
 /* ── 시험일정 ── */
+function viewExamStat(){
+  const yearsA=[...new Set(DB.exams.map(e=>String(e.examDate||e.regStart||"").slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
+  const yF=ui.statYear||"전체";
+  const orgs=[...new Set(DB.exams.map(e=>e.org).filter(Boolean))];
+  const oF=ui.statOrg||"전체";
+  const exams=DB.exams.filter(e=>(yF==="전체"||String(e.examDate||e.regStart||"").startsWith(yF))&&(oF==="전체"||e.org===oF))
+    .sort((a,b)=>String(b.examDate||"").localeCompare(String(a.examDate||"")));
+  const calc=list=>{
+    const apply=list.filter(a=>a.status==="응시").length;
+    const pass=list.filter(a=>a.result==="합격").length;
+    const fail=list.filter(a=>a.result==="불합격").length;
+    const wait=list.filter(a=>!a.result||a.result==="대기").length;
+    const judged=pass+fail;
+    return {total:list.length,apply,pass,fail,wait,rate:judged?Math.round(pass/judged*100):null};
+  };
+  // 시험별
+  const rows=exams.map(e=>{
+    const c=calc(examAppsOf(e.id));
+    return `<tr>
+      <td>${esc(e.examDate)||"-"}</td>
+      <td style="font-size:11.5px">${esc(e.org)}</td>
+      <td><b>${esc(e.item)}</b>${e.round?" "+esc(e.round)+"회":""}</td>
+      <td style="text-align:center">${c.total}</td>
+      <td style="text-align:center">${c.apply}</td>
+      <td style="text-align:center;color:var(--green);font-weight:700">${c.pass}</td>
+      <td style="text-align:center">${c.fail}</td>
+      <td style="text-align:center;color:var(--sub)">${c.wait}</td>
+      <td style="text-align:center;font-weight:800">${c.rate===null?"-":c.rate+"%"}</td>
+      <td><button class="btn sm" onclick="ui.examSub='apply';ui.examSel='${e.id}';ui.examOrgF='전체';ui.examYearF='전체';render()">명단 ▶</button></td>
+    </tr>`;
+  }).join("");
+  // 종목별 집계
+  const byItem={};
+  exams.forEach(e=>{
+    const k=String(e.item||"기타");
+    byItem[k]=byItem[k]||[];
+    examAppsOf(e.id).forEach(a=>byItem[k].push(a));
+  });
+  const itemRows=Object.keys(byItem).sort((a,b)=>a.localeCompare(b,"ko")).map(k=>{
+    const c=calc(byItem[k]);
+    return `<tr><td><b>${esc(k)}</b></td><td style="text-align:center">${c.total}</td><td style="text-align:center">${c.apply}</td>
+      <td style="text-align:center;color:var(--green);font-weight:700">${c.pass}</td><td style="text-align:center">${c.fail}</td>
+      <td style="text-align:center;font-weight:800">${c.rate===null?"-":c.rate+"%"}</td></tr>`;
+  }).join("");
+  const all=calc(exams.flatMap(e=>examAppsOf(e.id)));
+  return `
+  <div class="toolbar">
+    <label class="fld">연도<select onchange="ui.statYear=this.value;render()"><option ${yF==='전체'?'selected':''}>전체</option>${yearsA.map(y=>`<option ${yF===y?'selected':''}>${y}</option>`).join("")}</select></label>
+    <label class="fld">시행처<select onchange="ui.statOrg=this.value;render()"><option ${oF==='전체'?'selected':''}>전체</option>${orgs.map(o=>`<option ${oF===o?'selected':''}>${esc(o)}</option>`).join("")}</select></label>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="lab">응시 대상</div><div class="val">${all.total}명</div></div>
+    <div class="card"><div class="lab">실제 응시</div><div class="val">${all.apply}명</div></div>
+    <div class="card"><div class="lab">합격</div><div class="val">${all.pass}명</div></div>
+    <div class="card"><div class="lab">불합격</div><div class="val">${all.fail}명</div></div>
+    <div class="card"><div class="lab">합격률</div><div class="val ${all.rate!==null&&all.rate>=70?'':''}">${all.rate===null?"-":all.rate+"%"}</div></div>
+  </div>
+  <div class="panel"><h2>시험별 결과 (${exams.length}건)</h2>
+    <div class="twrap"><table><thead><tr><th>시험일</th><th>시행기관</th><th>종목</th><th>대상</th><th>응시</th><th>합격</th><th>불합격</th><th>미입력</th><th>합격률</th><th></th></tr></thead>
+    <tbody>${rows||`<tr><td colspan="10" class="empty">해당 조건의 시험이 없습니다.</td></tr>`}</tbody></table></div>
+    <p class="note">※ 합격률 = 합격 ÷ (합격+불합격). 결과 미입력 건은 계산에서 제외됩니다.</p>
+  </div>
+  <div class="panel"><h2>종목별 집계</h2>
+    <div class="twrap"><table><thead><tr><th>종목</th><th>대상</th><th>응시</th><th>합격</th><th>불합격</th><th>합격률</th></tr></thead>
+    <tbody>${itemRows||`<tr><td colspan="6" class="empty">데이터가 없습니다.</td></tr>`}</tbody></table></div>
+  </div>`;
+}
+
 function viewExamSched(){
-  const yFilter=ui.examYear||String(new Date().getFullYear());
-  const years=[...new Set(DB.exams.map(e=>String(e.examDate||"").slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort();
-  if(!years.includes(yFilter))years.push(yFilter);
-  const list=DB.exams.filter(e=>String(e.examDate||"").startsWith(yFilter))
+  const years=[...new Set(DB.exams.map(e=>String(e.examDate||e.regStart||"").slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort();
+  const yFilter=ui.examYear||"전체";
+  const list=DB.exams.filter(e=>yFilter==="전체"||String(e.examDate||e.regStart||"").startsWith(yFilter))
     .sort((a,b)=>String(a.regStart||"9999").localeCompare(String(b.regStart||"9999"))
       ||String(a.examDate||"").localeCompare(String(b.examDate||"")));
-  // 접수 임박 (7일 이내 접수 시작 또는 접수 진행 중)
   const soon=DB.exams.filter(e=>{
     const ds=dday(e.regStart), de=dday(e.regEnd);
     return (ds!==null&&ds>=0&&ds<=7)||(ds!==null&&de!==null&&ds<=0&&de>=0);
@@ -1635,36 +1701,23 @@ function viewExamSched(){
   <div class="panel" style="border-left:3px solid var(--amber);margin-top:0"><h2>🔔 접수 임박·진행 중 (${soon.length}건)</h2>
     <div class="twrap" style="border:none"><table><thead><tr><th>종목</th><th>접수기간</th><th>시험일</th><th>응시 예정자</th><th></th></tr></thead><tbody>
     ${soon.map(e=>{
-      const apps=examAppsOf(e.id);
-      const cand=apps.filter(a=>a.status!=="미응시");
+      const cand=examAppsOf(e.id).filter(a=>a.status!=="미응시");
       return `<tr>
         <td><b>${examLabel(e)}</b><br><span style="font-size:11px;color:var(--sub)">${esc(e.org)}</span></td>
         <td>${ddayTag(e.regStart)} ~ ${esc(e.regEnd)||"-"}</td>
         <td>${esc(e.examDate)||"-"}</td>
         <td>${cand.length}명 ${cand.length?`<span style="font-size:11px;color:var(--sub)">(${cand.slice(0,4).map(a=>esc(a.name)).join(", ")}${cand.length>4?" 외 "+(cand.length-4)+"명":""})</span>`:""}</td>
-        <td><button class="btn sm" onclick="ui.examSub='apply';ui.examSel='${e.id}';render()">응시관리 ▶</button></td>
+        <td><button class="btn sm" onclick="ui.examSub='apply';ui.examSel='${e.id}';ui.examOrgF='전체';ui.examYearF='전체';render()">응시관리 ▶</button></td>
       </tr>`;
     }).join("")}
-    </tbody></table></div></div>`:"";
+    </tbody></table></div></div>`:`<div class="panel" style="margin-top:0"><div class="empty">7일 이내 접수 예정이거나 접수 진행 중인 시험이 없습니다.</div></div>`;
   return `
   ${soonHtml}
-  <div class="panel"><h2>➕ 시험일정 등록</h2>
-    <div class="formbox" style="margin-bottom:0">
-      <label class="fld">시행기관<select id="e_org" onchange="ui.examOrgSel=this.value;render()">${EXAM_ORGS.map(o=>`<option ${org===o?'selected':''}>${esc(o)}</option>`).join("")}</select></label>
-      <label class="fld" style="grid-column:span 2">종목<input id="e_item" list="examItems" placeholder="예: ITQ 한글"><datalist id="examItems">${(EXAM_ITEMS[org]||[]).map(i=>`<option value="${esc(i)}">`).join("")}</datalist></label>
-      <label class="fld">회차<input id="e_rd" placeholder="예: 1"></label>
-      <label class="fld">접수시작<input type="date" id="e_rs"></label>
-      <label class="fld">접수마감<input type="date" id="e_re"></label>
-      <label class="fld">시험일<input type="date" id="e_ed"></label>
-      <label class="fld">발표일<input type="date" id="e_rd2"></label>
-      <label class="fld">응시료(원)<input type="number" id="e_fee" value="0"></label>
-      <label class="fld">비고<input id="e_no"></label>
-      <button class="btn" onclick="addExam()">등록</button>
-    </div>
-    <p class="note">※ 연말에 다음 해 일정을 한 번에 등록해두면 접수·시험일이 자동으로 관리됩니다.<br>※ 아래 목록은 <b>접수시작일 빠른 순</b>으로 정렬됩니다 (접수일 미입력 건은 맨 뒤).</p>
-  </div>
-  <div class="panel"><h2><span>📅 ${yFilter}년 시험일정 (${list.length}건)</span>
-    <select onchange="ui.examYear=this.value;render()" style="padding:5px">${years.sort().map(y=>`<option ${y===yFilter?'selected':''}>${y}</option>`).join("")}</select></h2>
+  <div class="panel"><h2><span>📅 시험일정 (${list.length}건)</span>
+    <select onchange="ui.examYear=this.value;render()" style="padding:5px">
+      <option ${yFilter==='전체'?'selected':''}>전체</option>
+      ${years.map(y=>`<option ${y===yFilter?'selected':''}>${y}</option>`).join("")}
+    </select></h2>
     <div class="twrap"><table><thead><tr><th>시행기관</th><th>종목</th><th>회차</th><th>접수시작</th><th>접수마감</th><th>시험일</th><th>발표일</th><th>응시료</th><th>응시자</th><th>비고</th><th></th></tr></thead><tbody>
     ${list.length?list.map(e=>{
       if(String(ui.examEditId)===String(e.id)){
@@ -1691,12 +1744,28 @@ function viewExamSched(){
         <td>${ddayTag(e.examDate)}</td>
         <td>${esc(e.resultDate)||"-"}</td>
         <td style="text-align:right">${e.fee?won(e.fee):"-"}</td>
-        <td style="text-align:center"><span class="namelink" onclick="ui.examSub='apply';ui.examSel='${e.id}';render()">${apps.length}명</span></td>
+        <td style="text-align:center"><span class="namelink" onclick="ui.examSub='apply';ui.examSel='${e.id}';ui.examOrgF='전체';ui.examYearF='전체';render()">${apps.length}명</span></td>
         <td style="font-size:11.5px">${esc(e.note)||""}</td>
         <td style="white-space:nowrap"><button class="btn sm" onclick="ui.examEditId='${e.id}';render()">수정</button> <button class="btn sm" onclick="delExam('${e.id}')">삭제</button></td>
       </tr>`;
-    }).join(""):`<tr><td colspan="11" class="empty">${yFilter}년 등록된 시험일정이 없습니다.</td></tr>`}
+    }).join(""):`<tr><td colspan="11" class="empty">등록된 시험일정이 없습니다. 아래에서 등록하세요.</td></tr>`}
     </tbody></table></div>
+    <p class="note">※ <b>접수시작일 빠른 순</b>으로 정렬됩니다 (접수일 미입력 건은 맨 뒤). 지난 시험도 그대로 보관되며 [전체]에서 모두 확인할 수 있습니다.</p>
+  </div>
+  <div class="panel"><h2>➕ 시험일정 등록</h2>
+    <div class="formbox" style="margin-bottom:0">
+      <label class="fld">시행기관<select id="e_org" onchange="ui.examOrgSel=this.value;render()">${EXAM_ORGS.map(o=>`<option ${org===o?'selected':''}>${esc(o)}</option>`).join("")}</select></label>
+      <label class="fld" style="grid-column:span 2">종목<input id="e_item" list="examItems" placeholder="예: ITQ 한글"><datalist id="examItems">${(EXAM_ITEMS[org]||[]).map(i=>`<option value="${esc(i)}">`).join("")}</datalist></label>
+      <label class="fld">회차<input id="e_rd" placeholder="예: 1"></label>
+      <label class="fld">접수시작<input type="date" id="e_rs"></label>
+      <label class="fld">접수마감<input type="date" id="e_re"></label>
+      <label class="fld">시험일<input type="date" id="e_ed"></label>
+      <label class="fld">발표일<input type="date" id="e_rd2"></label>
+      <label class="fld">응시료(원)<input type="number" id="e_fee" value="0"></label>
+      <label class="fld">비고<input id="e_no"></label>
+      <button class="btn" onclick="addExam()">등록</button>
+    </div>
+    <p class="note">※ 연말에 다음 해 일정을 한 번에 등록해두면 접수·시험일이 자동으로 관리됩니다.</p>
   </div>`;
 }
 function addExam(){
@@ -1724,10 +1793,13 @@ function viewExamApply(){
   const allExams=[...DB.exams].sort((a,b)=>String(a.regStart||"9999").localeCompare(String(b.regStart||"9999"))
     ||String(a.examDate||"").localeCompare(String(b.examDate||"")));
   const orgs=[...new Set(allExams.map(e=>e.org).filter(Boolean))];
+  const yearsA=[...new Set(allExams.map(e=>String(e.examDate||e.regStart||"").slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
   const orgF=ui.examOrgF||"전체";
-  const exams=orgF==="전체"?allExams:allExams.filter(e=>e.org===orgF);
+  const yearF=ui.examYearF||"전체";
+  const exams=allExams.filter(e=>(orgF==="전체"||e.org===orgF)
+    &&(yearF==="전체"||String(e.examDate||e.regStart||"").startsWith(yearF)));
   let sel=ui.examSel?examById(ui.examSel):null;
-  if(sel&&orgF!=="전체"&&sel.org!==orgF){sel=null;ui.examSel="";}
+  if(sel&&!exams.some(e=>String(e.id)===String(sel.id))){sel=null;ui.examSel="";}
   if(!allExams.length)return `<div class="panel" style="margin-top:0"><div class="empty">먼저 [📅 시험일정]에서 시험을 등록하세요.</div></div>`;
   const apps=sel?examAppsOf(sel.id):[];
   const appSids=new Set(apps.map(a=>String(a.sid)));
@@ -1739,6 +1811,10 @@ function viewExamApply(){
   return `
   <div class="panel" style="margin-top:0"><h2>📝 응시관리</h2>
     <div class="toolbar">
+      <label class="fld">연도<select onchange="ui.examYearF=this.value;ui.examSel='';render()">
+        <option ${yearF==='전체'?'selected':''}>전체</option>
+        ${yearsA.map(y=>`<option ${yearF===y?'selected':''}>${y}</option>`).join("")}
+      </select></label>
       <label class="fld">시행처<select onchange="ui.examOrgF=this.value;ui.examSel='';render()">
         <option ${orgF==='전체'?'selected':''}>전체</option>
         ${orgs.map(o=>`<option ${orgF===o?'selected':''}>${esc(o)}</option>`).join("")}
@@ -2779,14 +2855,16 @@ function printReceiptSheet(){
   const rows=_salesMonthRows();
   const yy=d=>{const m=String(normDate(d)).match(/(\d{4})-(\d{2})-(\d{2})/);return m?`${m[1].slice(2)}/${m[2]}/${m[3]}`:"";};
   const col=(l,no)=>{
-    if(!l)return `<div class="col empty"></div>`;
+    if(!l)return `<div class="col empty"><div class="no">&nbsp;</div><div class="hd">
+      <div class="ln1">( )</div><div class="ln2">&nbsp;/ 원 /&nbsp;</div>
+      <div class="ln3"><span class="lb">비 고</span> -</div></div><div class="paste"></div></div>`;
     const way=`${esc(l.method)||""}${l.cardCo?" - "+esc(l.cardCo):(String(l.method||"").includes("계좌")?" - 현금영수증":"")}`;
     return `<div class="col">
+      <div class="no">${no}</div>
       <div class="hd">
-        <div class="ln1"><span class="no">${no}</span>${esc(l.name)} <span class="dt">(${yy(l.date)})</span></div>
-        <div class="ln2">${esc(l.course)||""}</div>
-        <div class="ln2"><b>${won(l.paidAmount)} 원</b>${l.approval?" / "+esc(l.approval):""}</div>
-        <div class="ln3"><span class="lb">비고</span> ${way}</div>
+        <div class="ln1">${esc(l.name)}<br><span class="dt">(${yy(l.date)})</span></div>
+        <div class="ln2">${esc(l.course)||""}<br>${won(l.paidAmount)} 원<br>${esc(l.approval)||""}</div>
+        <div class="ln3"><span class="lb">비 고</span><br>${way}</div>
       </div>
       <div class="paste"></div>
     </div>`;
@@ -2797,30 +2875,29 @@ function printReceiptSheet(){
     const chunk=rows.slice(i,i+per);
     while(chunk.length<per)chunk.push(null);
     pages.push(`<section class="page">
-      <div class="ttl">월간매출자료 ${_moTitle()} <span class="pg">(${Math.floor(i/per)+1})</span></div>
+      <div class="ttl">월간매출자료 ${_moTitle()}</div>
       <div class="grid">${chunk.map((l,j)=>col(l,i+j+1)).join("")}</div>
     </section>`);
   }
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>영수증 부착용지 ${_moTitle()}</title>
   <style>
-  @page{size:A4 landscape;margin:8mm}
+  @page{size:A4;margin:8mm}
   *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;box-sizing:border-box}
   body{font-family:'Malgun Gothic',sans-serif;color:#111;margin:0}
-  .page{page-break-after:always;height:194mm;display:flex;flex-direction:column}
+  .page{page-break-after:always;height:281mm;display:flex;flex-direction:column}
   .page:last-child{page-break-after:auto}
-  .ttl{font-size:12px;font-weight:800;color:#333;margin-bottom:4px}
-  .ttl .pg{font-weight:400;color:#888;font-size:11px}
-  .grid{display:flex;gap:4mm;flex:1}
-  .col{flex:1;border:1px solid #333;padding:6px 7px;display:flex;flex-direction:column}
-  .col.empty{border:1px dashed #ccc}
-  .hd{border-bottom:1px dashed #bbb;padding-bottom:5px}
-  .ln1{font-size:12.5px;font-weight:800;line-height:1.4}
-  .ln1 .no{display:inline-block;background:#196B24;color:#fff;font-size:10px;padding:0 5px;border-radius:3px;margin-right:5px;vertical-align:1px}
-  .ln1 .dt{font-weight:400;font-size:11px;color:#444}
-  .ln2{font-size:11.5px;margin-top:2px;line-height:1.4;word-break:break-all}
-  .ln3{font-size:10.5px;margin-top:3px;color:#333}
-  .ln3 .lb{display:inline-block;border:1px solid #999;padding:0 4px;font-size:9.5px;margin-right:4px}
-  .paste{flex:1;margin-top:5px}
+  .ttl{font-size:12px;font-weight:800;color:#333;margin-bottom:3mm}
+  .grid{display:flex;gap:3mm;flex:1}
+  .col{flex:1;border:1px solid #333;padding:5px 5px 0;display:flex;flex-direction:column;position:relative}
+  .col.empty{border:1px dashed #bbb;color:#aaa}
+  .no{font-size:11px;font-weight:800;color:#196B24;margin-bottom:2px}
+  .hd{border-bottom:1px dashed #bbb;padding-bottom:4px}
+  .ln1{font-size:12px;font-weight:800;line-height:1.35;word-break:break-all}
+  .ln1 .dt{font-weight:400;font-size:10.5px;color:#444}
+  .ln2{font-size:10.5px;margin-top:3px;line-height:1.45;word-break:break-all}
+  .ln3{font-size:10px;margin-top:3px;color:#333;line-height:1.5}
+  .ln3 .lb{display:inline-block;border:1px solid #999;padding:0 3px;font-size:9px}
+  .paste{flex:1;margin-top:3px}
   </style></head><body>${pages.join("")}
   <script>window.onload=function(){window.print();}<\/script></body></html>`;
   const w=window.open("","_blank");
