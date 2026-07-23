@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.54 (2026-07-23) Supabase";
+const APP_VERSION="v5.55 (2026-07-23) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -533,7 +533,7 @@ try{
   SUPA_KEY=localStorage.getItem("jei_supa_key")||"";
 }catch(e){}
 
-const TABS=[["dash","대시보드"],["cal","캘린더"],["lead","상담관리"],["stu","수강생관리"],["work","업무관리"],["pay","수납관리"],["oper","운영관리"],["book","도서관리"],["exam","자격관리"],["config","기초설정"]];
+const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["oper","장비관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
   showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
@@ -897,7 +897,7 @@ function setTab(t){
   if(PENDING_SAVE){clearTimeout(syncTimer);saveCloud();}
   tab=t;ui.detailId=null;render();
 }
-function guardTab(){ if(ROLE==="부원장"&&STAFF_HIDDEN.includes(tab))tab="dash"; }
+function guardTab(){ if(tab==="cal")tab="dash"; if(ROLE==="부원장"&&STAFF_HIDDEN.includes(tab))tab="dash"; }
 function courseNames(){return DB.courses.map(c=>c.name).sort((a,b)=>String(a).localeCompare(String(b),"ko"));}
 function courseDatalist(id){return `<datalist id="${id}">${courseNames().map(c=>`<option value="${esc(c)}">`).join("")}</datalist>`;}
 function courseSelect(id,cur,allowEmpty){
@@ -1253,7 +1253,7 @@ function viewDash(){
     ${dueSoon.map(x=>`<tr><td><span class="namelink" onclick="openDetail('${x.s.id}')">${esc(x.s.name)}</span></td><td>${esc(x.s.course)}</td><td>${esc(x.s.phone)}</td><td>${dueBadge(x.s)}</td>
     <td><button class="btn sm" onclick="payStudent('${x.s.id}')">결제 등록</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">임박한 재결제 대상이 없습니다.</div>`}
   </div>
-  <p class="note">※ 장부 상세(연간 매출·수입·지출 현황과 차트, 수강생 추이)는 수납관리·운영관리 등 각 탭에서 확인하세요.</p>`;
+  <p class="note">※ 장부 상세(연간 매출·수입·지출 현황과 차트, 수강생 추이)는 수납관리·장비관리 등 각 탭에서 확인하세요.</p>`;
 }
 function viewLedger(){
   const mo=thisMonth();const d=new Date(todayStr()+"T00:00:00");
