@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.57 (2026-07-24) Supabase";
+const APP_VERSION="v5.58 (2026-07-24) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -544,7 +544,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "regDone", "feePaid", "ticketGiven", "result", "note"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -1612,6 +1612,48 @@ const EXAM_SUBJECTS=[
   [/컴활|컴퓨터활용/,    ["1급","2급"]],
   [/CAT/i,               ["CAT 1급","CAT 2급"]]
 ];
+function normKey(v){return String(v||"").replace(/[\s_·\-]/g,"").toUpperCase();}
+function isGroupApply(item){return /ITQ|GTQ|CAT|컴활|컴퓨터활용/i.test(String(item||""));}
+function matchCourseToExam(course,item){
+  const c=normKey(course), it=normKey(item);
+  if(!c||!it)return false;
+  if(it.includes("ITQ"))return c.includes("ITQ");
+  if(it.includes("GTQ"))return c.includes("GTQ")||c.includes("포토샵");
+  if(it.includes("CAT"))return c.includes("CAT");
+  if(it.includes("컴활")||it.includes("컴퓨터활용"))return c.includes("컴활")||c.includes("컴퓨터활용");
+  if(it.includes("기능사"))return c.includes("기능사")||/건축|토목|기계|실내건축|CAD/.test(c);
+  if(it.includes("기사"))return c.includes("기사")||c.includes("사무자동화");
+  return false;
+}
+function guessSubject(course,item){
+  const c=normKey(course);
+  // 긴 이름 우선 매칭 (실내건축 → 건축보다 먼저)
+  for(const o of [...subjectOptions(item)].sort((a,b)=>normKey(b).length-normKey(a).length)){ if(c.includes(normKey(o)))return o; }
+  if(normKey(item).includes("ITQ")){
+    if(/한글|아래아|HWP/.test(c))return "한글";
+    if(/파포|파워포인트|PPT/.test(c))return "파워포인트";
+    if(/엑셀|EXCEL/.test(c))return "엑셀";
+  }
+  return "";
+}
+/* 오늘 기준 진행 단계 안내 */
+function examStageNote(e){
+  const ds=dday(e.regStart), de=dday(e.regEnd), dx=dday(e.examDate), dr=dday(e.resultDate);
+  const grp=isGroupApply(e.item);
+  if(!grp){
+    if(ds!==null&&ds>0)return {c:"#f39c12",t:`접수 시작 D-${ds}`,d:"개별접수 — 수강생별 접수 여부와 개인 시험일을 확인하세요."};
+    if(dx!==null&&dx>=0)return {c:"var(--green)",t:"시험 진행 기간",d:"개인별 시험일을 확인하고 결과를 기록하세요."};
+    return {c:"var(--sub)",t:"종료",d:"결과를 입력하면 합격률 분석에 반영됩니다."};
+  }
+  if(ds!==null&&ds>10)return {c:"var(--sub)",t:`접수 시작 D-${ds}`,d:"아직 준비 단계입니다."};
+  if(ds!==null&&ds<=10&&ds>3)return {c:"#f39c12",t:`① 응시여부 확인 (접수 D-${ds})`,d:"대상 수강생에게 응시 의사를 확인하고 응시/미응시를 체크하세요."};
+  if(ds!==null&&ds<=3&&ds>0)return {c:"#e67e22",t:`② KPC 아이디·사진 확인 (접수 D-${ds})`,d:"응시자의 아이디 생성과 사진 등록 여부를 확인하세요."};
+  if(ds!==null&&de!==null&&ds<=0&&de>=0)return {c:"var(--red)",t:"③ 접수 진행 중",d:"단체접수 → 응시료 안내 문자 발송 → 입금 확인 순으로 처리하세요."};
+  if(dx!==null&&dx<=3&&dx>=0)return {c:"#e67e22",t:`④ 수험표 지급 (시험 D-${dx})`,d:"수험표를 출력해 지급하고 체크하세요."};
+  if(dx!==null&&dx>3)return {c:"var(--green)",t:`시험 D-${dx}`,d:"수험표는 시험 3일 전부터 지급합니다."};
+  if(dr!==null&&dr<=0)return {c:"var(--green)",t:"⑤ 결과 확인",d:"합격/불합격을 입력하면 합격률이 자동 집계됩니다."};
+  return {c:"var(--sub)",t:"발표 대기",d:`발표일 ${esc(e.resultDate)||"미정"}`};
+}
 function subjectOptions(item){
   const it=String(item||"");
   for(const [re,list] of EXAM_SUBJECTS){ if(re.test(it))return list; }
@@ -1818,14 +1860,19 @@ function viewExamApply(){
   if(sel&&!exams.some(e=>String(e.id)===String(sel.id))){sel=null;ui.examSel="";}
   if(!allExams.length)return `<div class="panel" style="margin-top:0"><div class="empty">먼저 [📅 시험일정]에서 시험을 등록하세요.</div></div>`;
   const apps=sel?examAppsOf(sel.id):[];
-  const appCnt={};
-  apps.forEach(a=>{appCnt[String(a.sid)]=(appCnt[String(a.sid)]||0)+1;});
-  const cands=myStudents().filter(s=>s.status!=="퇴원")
-    .filter(s=>!ui.examCandQ||String(s.name).includes(ui.examCandQ)||String(s.course).includes(ui.examCandQ))
-    .sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko"));
-  const chk=(a,f,label)=>`<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:11.5px;white-space:nowrap;margin:0"><input type="checkbox" style="margin:0;width:auto" ${a[f]==="Y"?"checked":""} onclick="toggleApp('${a.id}','${f}')">${label}</label>`;
   const stat=f=>apps.filter(a=>a[f]==="Y").length;
   const subjOpts=sel?subjectOptions(sel.item):[];
+  const grp=sel?isGroupApply(sel.item):true;
+  const stage=sel?examStageNote(sel):null;
+  const chk=(a,f,label)=>`<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:11.5px;white-space:nowrap;margin:0"><input type="checkbox" style="margin:0;width:auto" ${a[f]==="Y"?"checked":""} onclick="toggleApp('${a.id}','${f}')">${label}</label>`;
+  // 추천 대상 (과정명 매칭 · 미등록)
+  const appCnt={};
+  apps.forEach(a=>{appCnt[String(a.sid)]=(appCnt[String(a.sid)]||0)+1;});
+  const reco=sel?myStudents().filter(st=>st.status!=="퇴원"&&matchCourseToExam(st.course,sel.item)&&!appCnt[String(st.id)])
+    .sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")):[];
+  const cands=sel?myStudents().filter(st=>st.status!=="퇴원")
+    .filter(st=>!ui.examCandQ||String(st.name).includes(ui.examCandQ)||String(st.course).includes(ui.examCandQ))
+    .sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")):[];
   return `
   <div class="panel" style="margin-top:0"><h2>📝 응시관리</h2>
     <div class="toolbar">
@@ -1847,53 +1894,95 @@ function viewExamApply(){
     </div>
   </div>
   ${sel?`
+  <div class="panel" style="border-left:4px solid ${stage.c};margin-top:0">
+    <h2><span style="color:${stage.c}">${stage.t}</span> <span style="font-size:12px;color:var(--sub);font-weight:400">${grp?"단체접수":"개별접수"} · ${esc(sel.item)}</span></h2>
+    <p style="margin:0;font-size:13px;color:var(--ink)">${stage.d}</p>
+    <p class="note" style="margin-top:6px">진행 순서: ${grp
+      ?"① 접수 10일 전 응시여부 확인 → ② 3일 전 아이디·사진 → ③ 접수일 접수·문자·입금 → ④ 시험 3일 전 수험표 → ⑤ 발표일 결과"
+      :"① 개별접수 여부 확인 → ② 개인별 시험일 기록 → ③ 결과 입력"}</p>
+  </div>
+  ${reco.length?`<div class="panel" style="border-left:3px solid var(--green)"><h2><span>🎯 응시 대상 추천 (${reco.length}명)</span>
+    <button class="btn sm" onclick="addRecoAll('${sel.id}')">＋ 전체 추가</button></h2>
+    <p class="note" style="margin:0 0 8px">과정명이 <b>${esc(sel.item)}</b>와(과) 일치하는 재원생입니다. 클릭하면 과목이 자동 지정되어 명단에 추가됩니다.</p>
+    <div class="chips">${reco.map(st=>{
+      const g=guessSubject(st.course,sel.item);
+      return `<span class="chip" style="cursor:pointer;border-color:var(--green)" onclick="addApp('${sel.id}','${st.id}','${g}')">${esc(st.name)} <span style="color:var(--sub);font-size:11px">${esc(st.course)||""}</span>${g?` <b style="color:var(--green);font-size:10px">→${esc(g)}</b>`:""}</span>`;
+    }).join("")}</div>
+  </div>`:""}
   <div class="cards">
     <div class="card"><div class="lab">응시 건수</div><div class="val">${apps.length}건</div></div>
     <div class="card"><div class="lab">실인원</div><div class="val">${new Set(apps.map(a=>String(a.sid))).size}명</div></div>
-    <div class="card"><div class="lab">접수 완료</div><div class="val">${stat("regDone")}명</div></div>
-    <div class="card"><div class="lab">응시료 입금</div><div class="val">${stat("feePaid")}명</div></div>
-    <div class="card"><div class="lab">수험표 지급</div><div class="val">${stat("ticketGiven")}명</div></div>
-    <div class="card"><div class="lab">응시료 합계</div><div class="val">${won((Number(sel.fee)||0)*apps.length)}원</div></div>
+    <div class="card"><div class="lab">응시 확정</div><div class="val">${apps.filter(a=>a.status==="응시").length}명</div></div>
+    <div class="card"><div class="lab">접수 완료</div><div class="val">${stat("regDone")}건</div></div>
+    ${grp?`<div class="card"><div class="lab">응시료 입금</div><div class="val">${stat("feePaid")}건</div></div>
+    <div class="card"><div class="lab">수험표 지급</div><div class="val">${stat("ticketGiven")}건</div></div>
+    <div class="card"><div class="lab">응시료 합계</div><div class="val">${won((Number(sel.fee)||0)*apps.filter(a=>a.status!=="미응시").length)}원</div></div>`:""}
   </div>
-  <div class="panel"><h2><span>응시자 명단 (${apps.length}명)</span><button class="btn sm" onclick="printExamList('${sel.id}')">🖨 명단 인쇄</button></h2>
-    <div class="twrap"><table><thead><tr><th>성명</th><th>과목</th><th>응시여부</th><th>진행 체크</th><th>결과</th><th>비고</th><th></th></tr></thead><tbody>
-    ${apps.length?apps.sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")||String(a.subject||"").localeCompare(String(b.subject||""),"ko")).map(a=>`<tr style="vertical-align:middle">
+  <div class="panel"><h2><span>응시자 명단 (${apps.length}건)</span><button class="btn sm" onclick="printExamList('${sel.id}')">🖨 명단 인쇄</button></h2>
+    <div class="twrap"><table><thead><tr>
+      <th>성명</th><th>과목</th><th>응시여부</th>
+      ${grp?`<th>사전준비</th><th>접수·입금</th><th>수험표</th>`:`<th>접수</th><th>개인 시험일</th>`}
+      <th>결과</th><th>비고</th><th></th></tr></thead><tbody>
+    ${apps.length?apps.sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")||String(a.subject||"").localeCompare(String(b.subject||""),"ko")).map(a=>`<tr style="vertical-align:middle;${a.status==="미응시"?'opacity:.5':''}">
       <td><b>${esc(a.name)}</b></td>
       <td>${subjOpts.length?`<select onchange="setAppField('${a.id}','subject',this.value)" style="padding:3px;font-size:11.5px">
         <option value="">선택</option>${subjOpts.map(v=>`<option ${(a.subject||"")===v?'selected':''}>${esc(v)}</option>`).join("")}
       </select>`:`<input value="${esc(a.subject)}" onchange="setAppField('${a.id}','subject',this.value)" placeholder="과목" style="padding:3px;width:90px;font-size:11.5px">`}</td>
-      <td><select onchange="setAppField('${a.id}','status',this.value)" style="padding:3px;font-size:11.5px">
+      <td><select onchange="setAppField('${a.id}','status',this.value);render()" style="padding:3px;font-size:11.5px">
         ${["예정","응시","미응시"].map(v=>`<option ${(a.status||"예정")===v?'selected':''}>${v}</option>`).join("")}
       </select></td>
-      <td style="white-space:nowrap;vertical-align:middle"><div style="display:flex;gap:10px;align-items:center">${chk(a,"regDone","접수")}${chk(a,"feePaid","입금")}${chk(a,"ticketGiven","수험표")}</div></td>
-      <td><select onchange="setAppField('${a.id}','result',this.value)" style="padding:3px;font-size:11.5px">
+      ${grp?`
+      <td style="white-space:nowrap"><div style="display:flex;gap:8px;align-items:center">${chk(a,"kpcId","아이디")}${chk(a,"photo","사진")}</div></td>
+      <td style="white-space:nowrap"><div style="display:flex;gap:8px;align-items:center">${chk(a,"regDone","접수")}${chk(a,"smsSent","문자")}${chk(a,"feePaid","입금")}</div></td>
+      <td style="text-align:center">${chk(a,"ticketGiven","지급")}</td>`
+      :`
+      <td style="text-align:center">${chk(a,"regDone","접수완료")}</td>
+      <td><input type="date" value="${esc(a.myDate)}" onchange="setAppField('${a.id}','myDate',this.value);render()" style="padding:3px;font-size:11.5px">${a.myDate?`<div style="font-size:10.5px;color:${dday(a.myDate)!==null&&dday(a.myDate)>=0&&dday(a.myDate)<=7?'var(--red)':'var(--sub)'};text-align:center">${dday(a.myDate)===null?"":(dday(a.myDate)<0?"종료":(dday(a.myDate)===0?"D-DAY":"D-"+dday(a.myDate)))}</div>`:""}</td>`}
+      <td><select onchange="setAppField('${a.id}','result',this.value);render()" style="padding:3px;font-size:11.5px">
         ${["","합격","불합격","대기"].map(v=>`<option ${(a.result||"")===v?'selected':''}>${v||"-"}</option>`).join("")}
       </select></td>
-      <td><input value="${esc(a.note)}" onchange="setAppField('${a.id}','note',this.value)" style="padding:3px;width:110px;font-size:11.5px"></td>
+      <td><input value="${esc(a.note)}" onchange="setAppField('${a.id}','note',this.value)" style="padding:3px;width:100px;font-size:11.5px"></td>
       <td><button class="btn sm" onclick="delApp('${a.id}')">제외</button></td>
-    </tr>`).join(""):`<tr><td colspan="7" class="empty">아래에서 수강생을 추가하세요.</td></tr>`}
+    </tr>`).join(""):`<tr><td colspan="${grp?9:8}" class="empty">위 추천 목록이나 아래에서 수강생을 추가하세요.</td></tr>`}
     </tbody></table></div>
+    ${!grp?`<p class="note">※ 개별접수 시험은 <b>수강생마다 시험일이 다르므로</b> 개인 시험일을 꼭 입력하세요. 7일 이내면 빨간색으로 표시됩니다.</p>`:""}
   </div>
-  <div class="panel"><h2>➕ 응시자 추가</h2>
+  <div class="panel"><h2>➕ 응시자 직접 추가</h2>
     <div class="toolbar">
       <input placeholder="이름 또는 과정 검색" value="${esc(ui.examCandQ||"")}" oninput="ui.examCandQ=this.value;render()" style="min-width:200px">
-      <span style="font-size:12px;color:var(--sub)">클릭하면 명단에 추가됩니다 · <b>ITQ처럼 여러 과목 응시</b>는 같은 수강생을 여러 번 클릭하세요 (재원생 ${cands.length}명, 초록 숫자 = 이미 등록된 건수)</span>
+      <span style="font-size:12px;color:var(--sub)">클릭하면 추가 · <b>ITQ처럼 여러 과목</b>은 같은 수강생을 여러 번 클릭 (초록 숫자 = 등록 건수)</span>
     </div>
     <div class="chips">${cands.map(st=>{
       const n=appCnt[String(st.id)]||0;
-      return `<span class="chip" style="cursor:pointer;${n?'border-color:var(--green);background:var(--green-light)':''}" onclick="addApp('${sel.id}','${st.id}')">${esc(st.name)} <span style="color:var(--sub);font-size:11px">${esc(st.course)||""}</span>${n?` <b style="background:var(--green);color:#fff;border-radius:8px;padding:0 5px;font-size:10px">${n}</b>`:""}</span>`;
+      return `<span class="chip" style="cursor:pointer;${n?'border-color:var(--green);background:var(--green-light)':''}" onclick="addApp('${sel.id}','${st.id}','')">${esc(st.name)} <span style="color:var(--sub);font-size:11px">${esc(st.course)||""}</span>${n?` <b style="background:var(--green);color:#fff;border-radius:8px;padding:0 5px;font-size:10px">${n}</b>`:""}</span>`;
     }).join("")||`<span style="color:var(--sub);font-size:13px">추가할 수강생이 없습니다.</span>`}</div>
   </div>`
   :`<div class="panel"><div class="empty">시험을 선택하면 응시자 관리가 시작됩니다.</div></div>`}`;
 }
-function addApp(examId,sid){
+function addRecoAll(examId){
+  const e=examById(examId);if(!e)return;
+  const has={};
+  examAppsOf(examId).forEach(a=>{has[String(a.sid)]=true;});
+  const list=myStudents().filter(st=>st.status!=="퇴원"&&matchCourseToExam(st.course,e.item)&&!has[String(st.id)]);
+  if(!list.length)return;
+  if(!confirm(`과정이 일치하는 ${list.length}명을 명단에 추가할까요?\n(과목은 과정명에 따라 자동 지정되며, 이후 응시/미응시를 체크하면 됩니다)`))return;
+  list.forEach(st=>{
+    DB.examapps.push({id:uid(),examId:String(examId),sid:String(st.id),name:st.name,subject:guessSubject(st.course,e.item),
+      status:"예정",kpcId:"",photo:"",regDone:"",smsSent:"",feePaid:"",ticketGiven:"",myDate:"",result:"",note:""});
+  });
+  save();render();
+}
+function addApp(examId,sid,subject){
   const st=findStu(sid);if(!st)return;
   const already=DB.examapps.filter(a=>String(a.examId)===String(examId)&&String(a.sid)===String(sid));
   if(already.length){
     const done=already.map(a=>a.subject||"과목미정").join(", ");
     if(!confirm(`${st.name} 님은 이미 ${already.length}건 등록되어 있습니다. (${done})\n\n다른 과목으로 한 건 더 추가할까요?`))return;
   }
-  DB.examapps.push({id:uid(),examId:String(examId),sid:String(sid),name:st.name,subject:"",status:"예정",regDone:"",feePaid:"",ticketGiven:"",result:"",note:""});
+  const e=examById(examId);
+  DB.examapps.push({id:uid(),examId:String(examId),sid:String(sid),name:st.name,
+    subject:subject||(e?guessSubject(st.course,e.item):""),status:"예정",
+    kpcId:"",photo:"",regDone:"",smsSent:"",feePaid:"",ticketGiven:"",myDate:"",result:"",note:""});
   save();render();
 }
 function toggleApp(id,field){
@@ -1912,13 +2001,14 @@ function delApp(id){
 }
 function printExamList(examId){
   const e=examById(examId);if(!e)return;
-  const apps=examAppsOf(examId).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko"));
+  const apps=examAppsOf(examId).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")||String(a.subject||"").localeCompare(String(b.subject||""),"ko"));
+  const grpP=isGroupApply(e.item);
   const rows=apps.map((a,i)=>`<tr>
     <td style="text-align:center">${i+1}</td><td>${esc(a.name)}</td><td>${esc(a.subject)||""}</td>
     <td style="text-align:center">${esc(a.status)||""}</td>
     <td style="text-align:center">${a.regDone==="Y"?"○":""}</td>
-    <td style="text-align:center">${a.feePaid==="Y"?"○":""}</td>
-    <td style="text-align:center">${a.ticketGiven==="Y"?"○":""}</td>
+    ${grpP?`<td style="text-align:center">${a.feePaid==="Y"?"○":""}</td>
+    <td style="text-align:center">${a.ticketGiven==="Y"?"○":""}</td>`:`<td style="text-align:center">${esc(a.myDate)||""}</td>`}
     <td style="text-align:center">${esc(a.result)||""}</td><td>${esc(a.note)||""}</td></tr>`).join("");
   const now=new Date();let h=now.getHours();const ap=h<12?"AM":"PM";h=h%12||12;
   const stamp=`${todayStr()} ${h}:${String(now.getMinutes()).padStart(2,"0")} ${ap}`;
@@ -1932,7 +2022,7 @@ function printExamList(examId){
   tfoot td{border:none;padding:8px 0 0}</style></head><body>
   <h1>${esc(e.item)}${e.round?" "+esc(e.round)+"회":""} 응시자 명단</h1>
   <div class="info">시행기관: ${esc(e.org)} &nbsp;|&nbsp; 접수: ${esc(e.regStart)||"-"} ~ ${esc(e.regEnd)||"-"} &nbsp;|&nbsp; 시험일: ${esc(e.examDate)||"-"} &nbsp;|&nbsp; 발표일: ${esc(e.resultDate)||"-"} &nbsp;|&nbsp; 총 ${apps.length}명</div>
-  <table><thead><tr><th style="width:6%">NO</th><th style="width:12%">성명</th><th>과목</th><th style="width:9%">응시</th><th style="width:8%">접수</th><th style="width:8%">입금</th><th style="width:9%">수험표</th><th style="width:9%">결과</th><th style="width:16%">비고</th></tr></thead>
+  <table><thead><tr><th style="width:6%">NO</th><th style="width:12%">성명</th><th>과목</th><th style="width:9%">응시</th><th style="width:8%">접수</th>${grpP?`<th style="width:8%">입금</th><th style="width:9%">수험표</th>`:`<th style="width:13%">개인 시험일</th>`}<th style="width:9%">결과</th><th style="width:16%">비고</th></tr></thead>
   <tbody>${rows||`<tr><td colspan="9" style="text-align:center">응시자 없음</td></tr>`}</tbody>
   <tfoot><tr><td colspan="9"><div style="position:relative;font-size:10px;color:#555;height:18px">
     <span style="position:absolute;left:0;bottom:0">${stamp}</span>
@@ -4799,7 +4889,7 @@ function restoreExcel(input){
       if(meetings)DB.meetings=meetings.filter(r=>r.제목).map(r=>({id:uid(),date:exDate(r.일자),title:r.제목,members:r.참석자,content:r.내용,decision:r.결정사항,writer:r.작성자}));
       const exams=get("시험일정"),examapps=get("응시관리");
       if(exams)DB.exams=exams.filter(r=>r.종목).map(r=>({id:r.ID||uid(),org:r.시행기관,item:r.종목,round:String(r.회차||""),regStart:exDate(r.접수시작),regEnd:exDate(r.접수마감),examDate:exDate(r.시험일),resultDate:exDate(r.발표일),fee:Number(r.응시료)||0,note:r.비고}));
-      if(examapps)DB.examapps=examapps.filter(r=>r.성명).map(r=>({id:uid(),examId:String(r.시험ID||""),sid:String(r.수강생ID||""),name:r.성명,subject:r.과목||"",status:r.응시여부||"예정",regDone:r.접수||"",feePaid:r.입금||"",ticketGiven:r.수험표||"",result:r.결과||"",note:r.비고||""}));
+      if(examapps)DB.examapps=examapps.filter(r=>r.성명).map(r=>({id:uid(),examId:String(r.시험ID||""),sid:String(r.수강생ID||""),name:r.성명,subject:r.과목||"",status:r.응시여부||"예정",kpcId:r.아이디||"",photo:r.사진||"",regDone:r.접수||"",smsSent:r.문자||"",feePaid:r.입금||"",ticketGiven:r.수험표||"",myDate:exDate(r.개인시험일),result:r.결과||"",note:r.비고||""}));
       const certs=get("증명서발급대장");
       if(certs)DB.certs=certs.filter(r=>r.발급번호).map(r=>({id:uid(),no:r.발급번호,date:exDate(r.발급일),sid:String(r.수강생ID||""),name:r.수강생,kind:r.종류,purpose:r.용도,payload:String(r.내용JSON||"{}")}));
 
@@ -4871,7 +4961,7 @@ function exportExcel(){
   sheetOf(DB.makeups.map(x=>({결석일:x.absentDate,수강생:x.student,과정명:x.course,보강예정일:x.makeupDate,보강시간:x.makeupTime,강사:x.teacher,상태:x.status,비고:x.note})),{결석일:"",수강생:"",과정명:"",보강예정일:"",보강시간:"",강사:"",강의실:"",상태:"",비고:""},"보강관리");
   sheetOf(DB.meetings.map(x=>({일자:x.date,제목:x.title,참석자:x.members,내용:x.content,결정사항:x.decision,작성자:x.writer})),{일자:"",제목:"",참석자:"",내용:"",결정사항:"",작성자:""},"회의록");
   sheetOf(DB.exams.map(x=>({시행기관:x.org,종목:x.item,회차:x.round,접수시작:x.regStart,접수마감:x.regEnd,시험일:x.examDate,발표일:x.resultDate,응시료:x.fee,비고:x.note,ID:x.id})),{시행기관:"",종목:"",회차:"",접수시작:"",접수마감:"",시험일:"",발표일:"",응시료:"",비고:"",ID:""},"시험일정");
-  sheetOf(DB.examapps.map(x=>({시험ID:x.examId,수강생ID:x.sid,성명:x.name,과목:x.subject||"",응시여부:x.status,접수:x.regDone,입금:x.feePaid,수험표:x.ticketGiven,결과:x.result,비고:x.note})),{시험ID:"",수강생ID:"",성명:"",과목:"",응시여부:"",접수:"",입금:"",수험표:"",결과:"",비고:""},"응시관리");
+  sheetOf(DB.examapps.map(x=>({시험ID:x.examId,수강생ID:x.sid,성명:x.name,과목:x.subject||"",응시여부:x.status,아이디:x.kpcId||"",사진:x.photo||"",접수:x.regDone,문자:x.smsSent||"",입금:x.feePaid,수험표:x.ticketGiven,개인시험일:x.myDate||"",결과:x.result,비고:x.note})),{시험ID:"",수강생ID:"",성명:"",과목:"",응시여부:"",아이디:"",사진:"",접수:"",문자:"",입금:"",수험표:"",개인시험일:"",결과:"",비고:""},"응시관리");
   sheetOf(DB.certs.map(x=>({발급일:x.date,발급번호:x.no,수강생ID:x.sid,수강생:x.name,종류:x.kind,용도:x.purpose,내용JSON:x.payload})),{발급일:"",발급번호:"",수강생ID:"",수강생:"",종류:"",용도:"",내용JSON:""},"증명서발급대장");
   XLSX.writeFile(wb,"제이컴퓨터학원_관리데이터_백업.xlsx");
 }
