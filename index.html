@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.58 (2026-07-24) Supabase";
+const APP_VERSION="v5.60 (2026-07-24) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -1230,21 +1230,46 @@ function viewDash(){
   })()}
 
   ${(()=>{
-    const up=DB.exams.filter(e=>{const n=dday(e.examDate);return n!==null&&n>=0&&n<=92;})
-      .sort((a,b)=>String(a.examDate).localeCompare(String(b.examDate)));
     const regSoon=DB.exams.filter(e=>{const ds=dday(e.regStart),de=dday(e.regEnd);
-      return (ds!==null&&ds>=0&&ds<=7)||(ds!==null&&de!==null&&ds<=0&&de>=0);});
-    return `<h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">🎓 시험 일정 <span style="font-size:13px;color:var(--sub);font-weight:400">(3개월 이내)</span></h2>
-    ${regSoon.length?`<div class="panel" style="border-left:3px solid var(--red);margin-top:0"><h2>🔔 접수 임박·진행 중 (${regSoon.length}건)</h2>
-      <div class="twrap" style="border:none"><table><thead><tr><th>종목</th><th>접수기간</th><th>시험일</th><th>응시예정</th><th></th></tr></thead><tbody>
-      ${regSoon.map(e=>`<tr><td><b>${esc(e.item)}</b>${e.round?" "+esc(e.round)+"회":""}</td><td>${ddayTag(e.regStart)} ~ ${esc(e.regEnd)||"-"}</td><td>${esc(e.examDate)||"-"}</td><td>${examAppsOf(e.id).length}명</td>
-      <td><button class="btn sm" onclick="tab='exam';ui.examSub='apply';ui.examSel='${e.id}';render()">응시관리 ▶</button></td></tr>`).join("")}
-      </tbody></table></div></div>`:""}
-    ${up.length?`<div class="panel" ${regSoon.length?'':'style="margin-top:0"'}><h2>다가오는 시험 (${up.length}건)</h2>
-      <div class="twrap" style="border:none"><table><thead><tr><th>시험일</th><th>시행기관</th><th>종목</th><th>접수기간</th><th>발표일</th><th>응시자</th></tr></thead><tbody>
-      ${up.map(e=>`<tr><td>${ddayTag(e.examDate)}</td><td style="font-size:11.5px">${esc(e.org)}</td><td><b>${esc(e.item)}</b>${e.round?" "+esc(e.round)+"회":""}</td><td style="font-size:11.5px">${esc(e.regStart)||"-"} ~ ${esc(e.regEnd)||"-"}</td><td>${esc(e.resultDate)||"-"}</td>
-      <td><span class="namelink" onclick="tab='exam';ui.examSub='apply';ui.examSel='${e.id}';render()">${examAppsOf(e.id).length}명</span></td></tr>`).join("")}
-      </tbody></table></div></div>`:`<div class="panel" ${regSoon.length?'':'style="margin-top:0"'}><div class="empty">3개월 이내 예정된 시험이 없습니다. (자격관리 탭에서 일정을 등록하세요)</div></div>`}`;
+      return (ds!==null&&ds>=0&&ds<=10)||(ds!==null&&de!==null&&ds<=0&&de>=0);})
+      .sort((a,b)=>String(a.regStart||"").localeCompare(String(b.regStart||"")));
+    if(!regSoon.length)return `<h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">🎓 시험 일정</h2>
+      <div class="panel" style="margin-top:0"><div class="empty">접수 임박(10일 이내)이거나 접수 진행 중인 시험이 없습니다.</div></div>`;
+    // 접수 임박 시험별 응시 대상 추천
+    const recoBlocks=regSoon.map(e=>{
+      const has={};examAppsOf(e.id).forEach(a=>{has[String(a.sid)]=true;});
+      const reco=myStudents().filter(st=>st.status!=="퇴원"&&matchCourseToExam(st.course,e.item)&&!has[String(st.id)])
+        .sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko"));
+      const cnt=examAppsOf(e.id).length;
+      return `<div style="padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+          <b style="font-size:13.5px">${esc(e.item)}${e.round?" "+esc(e.round)+"회":""}</b>
+          <span style="font-size:12px;color:var(--sub)">등록 ${cnt}건 · 추천 ${reco.length}명 · ${examStageNote(e).t}</span>
+        </div>
+        ${reco.length?`<div class="chips" style="margin-top:8px">${reco.map(st=>{
+          const g=guessSubject(st.course,e.item);
+          return `<span class="chip" style="cursor:pointer;border-color:var(--green)" onclick="addApp('${e.id}','${st.id}','${g}')">${esc(st.name)} <span style="color:var(--sub);font-size:11px">${esc(st.course)||""}</span>${g?` <b style="color:var(--green);font-size:10px">→${esc(g)}</b>`:""}</span>`;
+        }).join("")}</div>
+        <p class="note" style="margin:6px 0 0">※ 클릭하면 해당 시험 명단에 바로 추가됩니다 (과목 자동 지정).</p>`
+        :`<p class="note" style="margin:6px 0 0">과정이 일치하는 미등록 수강생이 없습니다.</p>`}
+      </div>`;
+    }).join("");
+    return `<h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">🎓 시험 일정</h2>
+    <div class="panel" style="border-left:3px solid var(--red);margin-top:0"><h2>🔔 접수 임박·진행 중 (${regSoon.length}건)</h2>
+      <div class="twrap" style="border:none"><table><thead><tr><th>종목</th><th>시행기관</th><th>접수기간</th><th>시험일</th><th>발표일</th><th>등록</th><th></th></tr></thead><tbody>
+      ${regSoon.map(e=>`<tr>
+        <td><b>${esc(e.item)}</b>${e.round?" "+esc(e.round)+"회":""}</td>
+        <td style="font-size:11.5px">${esc(e.org)}</td>
+        <td>${ddayTag(e.regStart)} ~ ${esc(e.regEnd)||"-"}</td>
+        <td>${ddayTag(e.examDate)}</td>
+        <td>${esc(e.resultDate)||"-"}</td>
+        <td style="text-align:center">${examAppsOf(e.id).length}건</td>
+        <td><button class="btn sm" onclick="tab='exam';ui.examSub='apply';ui.examSel='${e.id}';ui.examOrgF='전체';ui.examYearF='전체';render()">응시관리 ▶</button></td>
+      </tr>`).join("")}
+      </tbody></table></div>
+      <h2 style="margin-top:14px">🎯 응시 대상 추천</h2>
+      ${recoBlocks}
+    </div>`;
   })()}
 
   <h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">⏰ 수강료 재결제 임박</h2>
@@ -1606,7 +1631,7 @@ const EXAM_ITEMS={
 /* 응시자별 세부 과목 (시험 종목에 따라 선택지 결정) */
 const EXAM_SUBJECTS=[
   [/ITQ/i,               ["한글","파워포인트","엑셀"]],
-  [/GTQ/i,               ["GTQ 1급","GTQ 2급","GTQ_i 1급","GTQ_i 2급"]],
+  [/GTQ/i,               ["GTQ 1급","GTQ_i 1급","GTQ_id 1급"]],
   [/기능사/,             ["건축","토목","기계","실내건축"]],
   [/기사|산업기사/,      ["사무자동화"]],
   [/컴활|컴퓨터활용/,    ["1급","2급"]],
