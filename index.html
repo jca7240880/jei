@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.65 (2026-07-27) Supabase";
+const APP_VERSION="v5.66 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2180,19 +2180,29 @@ function viewStuDash(){
 
   // 월별 신규/퇴원 + 해당월 재원생(등록일·퇴원일 기준)
   const pad2=k=>(k<10?"0":"")+k;
+  // 1월 진입 인원 = 전년도 말 기준 재원 (등록<1월 & 그 전까지 미퇴원)
+  const janStr=selYear+"-01";
+  let opening=0;
+  ST.forEach(s=>{
+    const sm=String(s.start||"").slice(0,7);
+    const qm=String(s.quitDate||"").slice(0,7);
+    if(sm && sm<janStr && !(qm && qm<janStr)) opening++;
+  });
+  // 재원생 총원 = 전월 인원 + 당월 신규 − 당월 퇴원 (누적)
   const rows=[], enroll=[];
+  let running=opening;
   for(let k=1;k<=12;k++){
     const ymStr=selYear+"-"+pad2(k);
-    let n=0,q=0,e=0;
+    let n=0,q=0;
     ST.forEach(s=>{
       const sm=String(s.start||"").slice(0,7);
       const qm=String(s.quitDate||"").slice(0,7);
       if(sm===ymStr) n++;
       if(qm===ymStr) q++;
-      if(sm && sm<=ymStr && !(qm && qm<ymStr)) e++;   // 해당월 재원
     });
+    running=running+n-q;
     rows.push({label:k+"월",n:n,q:q,net:n-q});
-    enroll.push(e);
+    enroll.push(running);
   }
   const flowMax=Math.max(1,...rows.map(r=>Math.max(r.n,r.q)));
   const enrollMax=Math.max(1,...enroll);
