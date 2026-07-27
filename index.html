@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.60 (2026-07-24) Supabase";
+const APP_VERSION="v5.61 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["oper","장비관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"list",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1088,6 +1088,7 @@ function render(){
   if(tab==="lead")m.innerHTML=viewLead();
   if(tab==="stu"){
     if(ui.detailId){m.innerHTML=viewStuDetail();}
+    else if(ui.stuSub==="dash"){m.innerHTML=stuSubBar()+viewStuDash();}
     else if(ui.stuSub==="quit"){m.innerHTML=stuSubBar()+viewQuitList();}
     else if(ui.stuSub==="cert"){m.innerHTML=stuSubBar()+viewCert();}
     else if(ui.stuSub==="att"){m.innerHTML=stuSubBar()+viewAtt();}
@@ -2091,7 +2092,7 @@ function requitStu(id){
   save();render();
 }
 function stuSubBar(){
-  const subs=[["list","📋 수강생 목록"],["quit","🚪 퇴원생"],["att","✅ 출결"],["les","📝 학습지도"],["cert","📜 증명서"]];
+  const subs=[["dash","📊 대시보드"],["list","📋 수강생 목록"],["quit","🚪 퇴원생"],["att","✅ 출결"],["les","📝 학습지도"],["cert","📜 증명서"]];
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.stuSub||"list")===k?'on':''}" onclick="ui.stuSub='${k}';ui.detailId=null;render()">${l}</button>`).join("")}</div>`;
 }
 function paySubBar(){
@@ -2156,6 +2157,90 @@ function addMeeting(){
   save();render();
 }
 function delMeeting(id){if(!confirm("이 회의록을 삭제할까요?"))return;DB.meetings=DB.meetings.filter(x=>String(x.id)!==String(id));save();render();}
+function viewStuDash(){
+  const mo=thisMonth();
+  const isActive=s=>s.status!=="퇴원"&&s.status!=="정지";
+  const ST=DB.students||[];
+  const active=ST.filter(isActive);
+  const newMo=ST.filter(s=>String(s.start||"").startsWith(mo)).length;
+  const quitMo=ST.filter(s=>String(s.quitDate||"").startsWith(mo)).length;
+  const wonjang=active.filter(s=>s.teacher==="원장").length;
+  const buwon=active.filter(s=>s.teacher==="부원장").length;
+
+  // 연도별 신규/퇴원 집계
+  const ym={};
+  ST.forEach(s=>{
+    const sy=String(s.start||"").slice(0,4);
+    if(/^\d{4}$/.test(sy)){ (ym[sy]=ym[sy]||{n:0,q:0}).n++; }
+    const qy=String(s.quitDate||"").slice(0,4);
+    if(/^\d{4}$/.test(qy)){ (ym[qy]=ym[qy]||{n:0,q:0}).q++; }
+  });
+  let years=Object.keys(ym).sort();
+  if(!years.length) years=[thisYear()];
+  const rows=years.map(y=>({y,n:(ym[y]||{}).n||0,q:(ym[y]||{}).q||0,net:((ym[y]||{}).n||0)-((ym[y]||{}).q||0)}));
+  const maxV=Math.max(1,...rows.map(r=>Math.max(r.n,r.q)));
+
+  // ── SVG 그룹 막대차트 ──
+  const W=Math.max(360, years.length*90+52), H=290;
+  const padL=34,padR=14,padT=24,padB=52;
+  const plotH=H-padT-padB, plotW=W-padL-padR;
+  const gw=plotW/years.length, bw=Math.min(24,gw/3.2), y0=padT+plotH;
+  const sc=v=>plotH*(v/maxV);
+  let grid="";
+  const ticks=4;
+  for(let i=0;i<=ticks;i++){
+    const v=Math.round(maxV*i/ticks), gy=y0-sc(v);
+    grid+=`<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="var(--line)"/>`;
+    grid+=`<text x="${padL-5}" y="${gy+4}" text-anchor="end" font-size="10" fill="var(--sub)">${v}</text>`;
+  }
+  let bars="";
+  rows.forEach((r,i)=>{
+    const cx=padL+gw*i+gw/2, xN=cx-bw-2, xQ=cx+2, hN=sc(r.n), hQ=sc(r.q);
+    bars+=`<rect x="${xN}" y="${y0-hN}" width="${bw}" height="${hN}" rx="3" fill="var(--green)"/>`;
+    bars+=`<rect x="${xQ}" y="${y0-hQ}" width="${bw}" height="${hQ}" rx="3" fill="var(--red)"/>`;
+    if(r.n) bars+=`<text x="${xN+bw/2}" y="${y0-hN-4}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--green)">${r.n}</text>`;
+    if(r.q) bars+=`<text x="${xQ+bw/2}" y="${y0-hQ-4}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--red)">${r.q}</text>`;
+    bars+=`<text x="${cx}" y="${y0+16}" text-anchor="middle" font-size="11" fill="var(--ink)">${r.y}</text>`;
+    const nc=r.net>0?'var(--green)':(r.net<0?'var(--red)':'var(--sub)'), ns=(r.net>0?'+':'')+r.net;
+    bars+=`<text x="${cx}" y="${y0+34}" text-anchor="middle" font-size="12" font-weight="800" fill="${nc}">${ns}</text>`;
+  });
+  const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block" font-family="'Malgun Gothic',sans-serif">${grid}<line x1="${padL}" y1="${y0}" x2="${W-padR}" y2="${y0}" stroke="var(--sub)"/>${bars}</svg>`;
+
+  // ── 상세 표 ──
+  const totN=rows.reduce((a,r)=>a+r.n,0), totQ=rows.reduce((a,r)=>a+r.q,0), totNet=totN-totQ;
+  const netStyle=v=>`color:${v>0?'var(--green)':(v<0?'var(--red)':'var(--sub)')};font-weight:700`;
+  const tbl=`<div class="twrap" style="max-height:none"><table>
+    <thead><tr><th>연도</th><th>신규등록</th><th>퇴원</th><th>순증감</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr><td>${r.y}</td><td>${r.n}명</td><td>${r.q}명</td><td style="${netStyle(r.net)}">${r.net>0?'+':''}${r.net}명</td></tr>`).join("")}
+    <tr style="background:var(--green-light);font-weight:800"><td>합계</td><td>${totN}명</td><td>${totQ}명</td><td style="${netStyle(totNet)}">${totNet>0?'+':''}${totNet}명</td></tr>
+    </tbody></table></div>`;
+
+  return `
+  <h2 style="margin:4px 0 10px;font-size:17px;color:var(--green-dark)">👥 수강생 현황 <span style="font-size:13px;color:var(--sub);font-weight:400">${todayStr()}</span></h2>
+  <div class="cards">
+    <div class="card"><div class="lab">현 재원생</div><div class="val">${active.length}명</div></div>
+    <div class="card"><div class="lab">이번달 신규등록</div><div class="val">${newMo}명</div></div>
+    <div class="card"><div class="lab">이번달 퇴원</div><div class="val ${quitMo?'neg':''}">${quitMo}명</div></div>
+    <div class="card"><div class="lab">원장 담당 재원생</div><div class="val">${wonjang}명</div></div>
+    <div class="card"><div class="lab">부원장 담당 재원생</div><div class="val">${buwon}명</div></div>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin:0 0 6px;font-size:16px;color:var(--green-dark)">📈 연도별 증감 추이</h2>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-bottom:10px">
+      <span><span style="display:inline-block;width:11px;height:11px;background:var(--green);border-radius:2px;margin-right:5px;vertical-align:middle"></span>신규등록</span>
+      <span><span style="display:inline-block;width:11px;height:11px;background:var(--red);border-radius:2px;margin-right:5px;vertical-align:middle"></span>퇴원</span>
+      <span style="font-weight:700">숫자 = 순증감(신규−퇴원)</span>
+    </div>
+    <div style="overflow-x:auto">${svg}</div>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin:0 0 10px;font-size:16px;color:var(--green-dark)">📋 연도별 상세</h2>
+    ${tbl}
+  </div>`;
+}
+
 function viewStu(){
   const list=stuFiltered();
   return `
