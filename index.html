@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.62 (2026-07-27) Supabase";
+const APP_VERSION="v5.63 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2175,72 +2175,56 @@ function viewStuDash(){
   });
   let allYears=[...yset].sort();
   if(!allYears.length) allYears=[thisYear()];
-
-  const mode=ui.dashMode||"year";
   let selYear=ui.dashYear||(allYears.includes(thisYear())?thisYear():allYears[allYears.length-1]);
   if(!allYears.includes(selYear)) selYear=allYears[allYears.length-1];
 
-  // ── 집계 (연도별 또는 선택연도 월별) ──
-  let rows;
-  if(mode==="month"){
-    const mm={}; for(let k=1;k<=12;k++) mm[k]={n:0,q:0};
-    ST.forEach(s=>{
-      const st=String(s.start||""); if(st.slice(0,4)===selYear){const m=parseInt(st.slice(5,7),10); if(m>=1&&m<=12) mm[m].n++;}
-      const qt=String(s.quitDate||""); if(qt.slice(0,4)===selYear){const m=parseInt(qt.slice(5,7),10); if(m>=1&&m<=12) mm[m].q++;}
-    });
-    rows=[]; for(let k=1;k<=12;k++) rows.push({label:k+"월",n:mm[k].n,q:mm[k].q,net:mm[k].n-mm[k].q});
-  }else{
-    const ym={};
-    ST.forEach(s=>{
-      const sy=String(s.start||"").slice(0,4); if(/^\d{4}$/.test(sy)){(ym[sy]=ym[sy]||{n:0,q:0}).n++;}
-      const qy=String(s.quitDate||"").slice(0,4); if(/^\d{4}$/.test(qy)){(ym[qy]=ym[qy]||{n:0,q:0}).q++;}
-    });
-    rows=allYears.map(y=>({label:y,n:(ym[y]||{}).n||0,q:(ym[y]||{}).q||0,net:((ym[y]||{}).n||0)-((ym[y]||{}).q||0)}));
-  }
+  // 선택 연도 월별 집계
+  const mm={}; for(let k=1;k<=12;k++) mm[k]={n:0,q:0};
+  ST.forEach(s=>{
+    const st=String(s.start||""); if(st.slice(0,4)===selYear){const m=parseInt(st.slice(5,7),10); if(m>=1&&m<=12) mm[m].n++;}
+    const qt=String(s.quitDate||""); if(qt.slice(0,4)===selYear){const m=parseInt(qt.slice(5,7),10); if(m>=1&&m<=12) mm[m].q++;}
+  });
+  const rows=[]; for(let k=1;k<=12;k++) rows.push({label:k+"월",n:mm[k].n,q:mm[k].q,net:mm[k].n-mm[k].q});
   const maxV=Math.max(1,...rows.map(r=>Math.max(r.n,r.q)));
 
-  // ── SVG 그룹 막대차트 ──
-  const step=mode==="month"?58:90;
-  const W=Math.max(360, rows.length*step+52), H=290;
-  const padL=34,padR=14,padT=24,padB=52;
-  const plotH=H-padT-padB, plotW=W-padL-padR;
-  const gw=plotW/rows.length, bw=Math.min(mode==="month"?16:24, gw/3.2), y0=padT+plotH;
-  const sc=v=>plotH*(v/maxV);
+  // ── SVG 꺾은선 차트 ──
+  const W=620,H=300;
+  const padL=34,padR=18,padT=26,padB=44;
+  const plotH=H-padT-padB, plotW=W-padL-padR, y0=padT+plotH;
+  const px=i=>padL+(plotW*i/11);
+  const py=v=>y0-plotH*(v/maxV);
   let grid=""; const ticks=4;
   for(let t=0;t<=ticks;t++){
-    const v=Math.round(maxV*t/ticks), gy=y0-sc(v);
+    const v=Math.round(maxV*t/ticks), gy=py(v);
     grid+=`<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="var(--line)"/>`;
     grid+=`<text x="${padL-5}" y="${gy+4}" text-anchor="end" font-size="10" fill="var(--sub)">${v}</text>`;
   }
-  let bars="";
-  rows.forEach((r,idx)=>{
-    const cx=padL+gw*idx+gw/2, xN=cx-bw-2, xQ=cx+2, hN=sc(r.n), hQ=sc(r.q);
-    bars+=`<rect x="${xN}" y="${y0-hN}" width="${bw}" height="${hN}" rx="3" fill="var(--green)"/>`;
-    bars+=`<rect x="${xQ}" y="${y0-hQ}" width="${bw}" height="${hQ}" rx="3" fill="var(--red)"/>`;
-    if(r.n) bars+=`<text x="${xN+bw/2}" y="${y0-hN-4}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--green)">${r.n}</text>`;
-    if(r.q) bars+=`<text x="${xQ+bw/2}" y="${y0-hQ-4}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--red)">${r.q}</text>`;
-    bars+=`<text x="${cx}" y="${y0+16}" text-anchor="middle" font-size="${mode==="month"?10:11}" fill="var(--ink)">${r.label}</text>`;
-    const nc=r.net>0?'var(--green)':(r.net<0?'var(--red)':'var(--sub)'), ns=(r.net>0?'+':'')+r.net;
-    if(r.n||r.q) bars+=`<text x="${cx}" y="${y0+34}" text-anchor="middle" font-size="${mode==="month"?10:12}" font-weight="800" fill="${nc}">${ns}</text>`;
-  });
-  const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block" font-family="'Malgun Gothic',sans-serif">${grid}<line x1="${padL}" y1="${y0}" x2="${W-padR}" y2="${y0}" stroke="var(--sub)"/>${bars}</svg>`;
+  // x축 월 라벨
+  let xlab="";
+  rows.forEach((r,i)=>{ xlab+=`<text x="${px(i)}" y="${y0+18}" text-anchor="middle" font-size="9" fill="var(--ink)">${r.label}</text>`; });
+  // 선 + 점 + 값
+  const line=(key,color)=>{
+    const pts=rows.map((r,i)=>`${px(i)},${py(r[key])}`).join(" ");
+    let dots="";
+    rows.forEach((r,i)=>{
+      dots+=`<circle cx="${px(i)}" cy="${py(r[key])}" r="3" fill="${color}"/>`;
+      if(r[key]>0) dots+=`<text x="${px(i)}" y="${py(r[key])-7}" text-anchor="middle" font-size="9" font-weight="700" fill="${color}">${r[key]}</text>`;
+    });
+    return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
+  };
+  const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block" font-family="'Malgun Gothic',sans-serif">${grid}<line x1="${padL}" y1="${y0}" x2="${W-padR}" y2="${y0}" stroke="var(--sub)"/>${line("q","var(--red)")}${line("n","var(--green)")}${xlab}</svg>`;
 
   // ── 상세 표 ──
   const totN=rows.reduce((a,r)=>a+r.n,0), totQ=rows.reduce((a,r)=>a+r.q,0), totNet=totN-totQ;
   const netStyle=v=>`color:${v>0?'var(--green)':(v<0?'var(--red)':'var(--sub)')};font-weight:700`;
-  const headCol=mode==="month"?"월":"연도";
   const tbl=`<div class="twrap" style="max-height:none"><table>
-    <thead><tr><th>${headCol}</th><th>신규등록</th><th>퇴원</th><th>순증감</th></tr></thead>
+    <thead><tr><th>월</th><th>신규등록</th><th>퇴원</th><th>순증감</th></tr></thead>
     <tbody>${rows.map(r=>`<tr><td>${r.label}</td><td>${r.n}명</td><td>${r.q}명</td><td style="${netStyle(r.net)}">${r.net>0?'+':''}${r.net}명</td></tr>`).join("")}
-    <tr style="background:var(--green-light);font-weight:800"><td>합계</td><td>${totN}명</td><td>${totQ}명</td><td style="${netStyle(totNet)}">${totNet>0?'+':''}${totNet}명</td></tr>
+    <tr style="background:var(--green-light);font-weight:800"><td>${selYear}년 합계</td><td>${totN}명</td><td>${totQ}명</td><td style="${netStyle(totNet)}">${totNet>0?'+':''}${totNet}명</td></tr>
     </tbody></table></div>`;
 
-  // ── 토글 (연도별/월별) + 연도 선택 ──
-  const toggle=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-    <button class="${mode==='year'?'btn':'btn sm'}" onclick="ui.dashMode='year';render()">연도별</button>
-    <button class="${mode==='month'?'btn':'btn sm'}" onclick="ui.dashMode='month';render()">월별</button>
-    ${mode==='month'?`<select onchange="ui.dashYear=this.value;render()" style="margin-left:4px">${allYears.map(y=>`<option ${y===selYear?'selected':''}>${y}</option>`).join("")}</select>`:""}
-  </div>`;
+  // 연도 필터
+  const yearFilter=`<select onchange="ui.dashYear=this.value;render()">${allYears.map(y=>`<option ${y===selYear?'selected':''}>${y}</option>`).join("")}</select>`;
 
   return `
   <h2 style="margin:4px 0 10px;font-size:17px;color:var(--green-dark)">👥 수강생 현황 <span style="font-size:13px;color:var(--sub);font-weight:400">${todayStr()}</span></h2>
@@ -2253,18 +2237,19 @@ function viewStuDash(){
   </div>
 
   <div class="panel">
-    <h2 style="margin:0 0 10px;font-size:16px;color:var(--green-dark)">📈 ${mode==='month'?selYear+'년 월별 증감':'연도별 증감 추이'}</h2>
-    ${toggle}
-    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-bottom:10px">
-      <span><span style="display:inline-block;width:11px;height:11px;background:var(--green);border-radius:2px;margin-right:5px;vertical-align:middle"></span>신규등록</span>
-      <span><span style="display:inline-block;width:11px;height:11px;background:var(--red);border-radius:2px;margin-right:5px;vertical-align:middle"></span>퇴원</span>
-      <span style="font-weight:700">숫자 = 순증감(신규−퇴원)</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <h2 style="margin:0;font-size:16px;color:var(--green-dark)">📈 월별 증감 추이</h2>
+      <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;color:var(--sub)">연도</span>${yearFilter}</div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-bottom:6px">
+      <span><span style="display:inline-block;width:14px;height:3px;background:var(--green);border-radius:2px;margin-right:5px;vertical-align:middle"></span>신규등록</span>
+      <span><span style="display:inline-block;width:14px;height:3px;background:var(--red);border-radius:2px;margin-right:5px;vertical-align:middle"></span>퇴원</span>
     </div>
     <div style="overflow-x:auto">${svg}</div>
   </div>
 
   <div class="panel">
-    <h2 style="margin:0 0 10px;font-size:16px;color:var(--green-dark)">📋 ${mode==='month'?selYear+'년 월별 상세':'연도별 상세'}</h2>
+    <h2 style="margin:0 0 10px;font-size:16px;color:var(--green-dark)">📋 ${selYear}년 월별 상세</h2>
     ${tbl}
   </div>`;
 }
