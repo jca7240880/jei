@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.67 (2026-07-27) Supabase";
+const APP_VERSION="v5.68 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2064,8 +2064,9 @@ function viewQuitList(){
   const list=DB.students.filter(s=>s.status==="퇴원")
     .filter(s=>String(s.name).includes(ui.quitSearch||"")||String(s.phone).includes(ui.quitSearch||""))
     .sort((a,b)=>String(b.quitDate||"").localeCompare(String(a.quitDate||""))||String(a.name).localeCompare(String(b.name),"ko"));
+  const noDate=list.filter(s=>!s.quitDate).length;
   return `
-  <div class="panel" style="margin-top:0"><h2>🚪 퇴원생 목록 (총 ${list.length}명)</h2>
+  <div class="panel" style="margin-top:0"><h2>🚪 퇴원생 목록 (총 ${list.length}명)${noDate?` <span style="font-size:13px;color:var(--red);font-weight:600">· 퇴원일 미입력 ${noDate}명</span>`:""}</h2>
     <div class="toolbar">
       <input placeholder="이름/연락처 검색" value="${esc(ui.quitSearch||"")}" oninput="ui.quitSearch=this.value;render()" style="min-width:200px">
     </div>
@@ -2077,18 +2078,23 @@ function viewQuitList(){
       <td>${esc(s.course)}</td>
       <td>${esc(s.teacher)||"-"}</td>
       <td>${esc(s.start)||"-"}</td>
-      <td>${esc(s.quitDate)||"-"}</td>
+      <td><input type="date" value="${esc(s.quitDate||"")}" onchange="setQuitDate('${s.id}',this.value)" style="padding:4px;font-size:12px;border-radius:4px;${!s.quitDate?'border:1.5px solid var(--red);background:var(--red-light)':'border:1px solid var(--line)'}"></td>
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.note)||""}</td>
       <td><button class="btn sm" onclick="requitStu('${s.id}')">↩ 재원 전환</button></td>
     </tr>`).join(""):`<tr><td colspan="9" class="empty">퇴원생이 없습니다.</td></tr>`}
     </tbody></table></div>
-    <p class="note">※ 성명을 클릭하면 상세 정보(출결·납입 이력 포함)를 볼 수 있습니다. 재등록 시 [↩ 재원 전환]을 누르세요.</p>
+    <p class="note">※ 퇴원일 칸에 직접 날짜를 입력하면 바로 저장됩니다. <b style="color:var(--red)">빨간 테두리</b>는 퇴원일 미입력 → 채우면 대시보드 재원생 추이가 정확해집니다.<br>※ 성명을 클릭하면 상세 정보(출결·납입 이력)를 볼 수 있고, 재등록 시 [↩ 재원 전환]을 누르세요.</p>
   </div>`;
 }
 function requitStu(id){
   const st=findStu(id);if(!st)return;
   if(!confirm(`${st.name} 님을 재원으로 전환할까요?\n(퇴원일은 지워지고 수강생 목록으로 돌아갑니다)`))return;
   st.status="재원";st.quitDate="";
+  save();render();
+}
+function setQuitDate(id,v){
+  const st=findStu(id); if(!st)return;
+  st.quitDate=v||"";
   save();render();
 }
 function stuSubBar(){
