@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.69 (2026-07-27) Supabase";
+const APP_VERSION="v5.70 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2258,6 +2258,7 @@ function viewStuDash(){
   const ST=DB.students||[];
   const mo=thisMonth();
   const active=ST.filter(isActive);
+  const paused=ST.filter(s=>s.status==="정지").length;
   const newMo=ST.filter(s=>String(s.start||"").startsWith(mo)).length;
   const quitMo=ST.filter(s=>String(s.quitDate||"").startsWith(mo)).length;
   const wonjang=active.filter(s=>s.teacher==="원장").length;
@@ -2356,6 +2357,7 @@ function viewStuDash(){
   <h2 style="margin:4px 0 10px;font-size:17px;color:var(--green-dark)">👥 수강생 현황 <span style="font-size:13px;color:var(--sub);font-weight:400">${todayStr()}</span></h2>
   <div class="cards">
     <div class="card"><div class="lab">현 재원생</div><div class="val">${active.length}명</div></div>
+    <div class="card"><div class="lab">정지</div><div class="val" style="color:var(--amber)">${paused}명</div></div>
     <div class="card"><div class="lab">이번달 신규등록</div><div class="val">${newMo}명</div></div>
     <div class="card"><div class="lab">이번달 퇴원</div><div class="val ${quitMo?'neg':''}">${quitMo}명</div></div>
     <div class="card"><div class="lab">원장 담당 재원생</div><div class="val">${wonjang}명</div></div>
