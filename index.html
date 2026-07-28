@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.75 (2026-07-27) Supabase";
+const APP_VERSION="v5.76 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -544,7 +544,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -2099,7 +2099,7 @@ function setQuitDate(id,v){
   save();render();
 }
 function stuSubBar(){
-  const subs=[["dash","📊 대시보드"],["list","📋 수강생 목록"],["quit","🚪 퇴원생"],["att","✅ 출결"],["les","📝 학습지도"],["cert","📜 증명서"]];
+  const subs=[["dash","📊 대시보드"],["list","📋 수강생 목록"],["quit","🚪 퇴원생"],["att","✅ 출결"],["les","📝 학습관리"],["cert","📜 증명서"]];
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.stuSub||"list")===k?'on':''}" onclick="ui.stuSub='${k}';ui.detailId=null;render()">${l}</button>`).join("")}</div>`;
 }
 function paySubBar(){
@@ -2714,10 +2714,10 @@ function viewStuDetail(){
     <div style="margin-top:8px"><button class="btn" onclick="saveNote('${s.id}')">참고사항 저장</button></div>
   </div>
 
-  <div class="panel"><h2>📘 학습지도 기록</h2>
+  <div class="panel"><h2>📘 학습관리 기록</h2>
     ${(function(){
       const all=DB.lessons.filter(l=>String(l.student)===String(s.name)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-      if(!all.length)return `<div class="empty">학습지도 기록이 없습니다. 학습지도 탭에서 '${esc(s.name)}' 선택 후 입력하면 여기에 표시됩니다.</div>`;
+      if(!all.length)return `<div class="empty">학습관리 기록이 없습니다. 학습관리 탭에서 '${esc(s.name)}' 선택 후 입력하면 여기에 표시됩니다.</div>`;
       const pg=paginate(all,ui.detailLesPage,10);
       return `<div style="max-height:420px;overflow:auto">${pg.rows.map(l=>`<div class="lesson-card"><div class="top"><span><span class="tag">${esc(l.course)||"과정 미지정"}</span></span><span>${esc(l.date)}</span></div><div class="body">${esc(l.text)}</div></div>`).join("")}</div>
       ${pg.totalPages>1?`<div style="display:flex;gap:5px;justify-content:center;margin-top:10px;flex-wrap:wrap">${Array.from({length:pg.totalPages},(_,i)=>`<button class="btn sm" style="${i+1===pg.page?'background:var(--green);color:#fff;border:none':''}" onclick="ui.detailLesPage=${i+1};render()">${i+1}</button>`).join("")}</div>`:""}
@@ -4858,7 +4858,7 @@ function viewLes(){
   const selName=ui.lesStudent;
   const isCommon=selName==="공통(전체 수업)";
   const stu=(selName&&!isCommon)?DB.students.find(st=>String(st.name)===String(selName)):null;
-  const myList=selName?[...DB.lessons].filter(l=>String(l.student)===selName||(isCommon&&!l.student)).sort((a,b)=>String(b.date).localeCompare(String(a.date))):[];
+  const myList=selName?[...DB.lessons].filter(l=>String(l.student)===selName||(isCommon&&!l.student)).sort((a,b)=>String(b.date).localeCompare(String(a.date))||(Number(b.session||0)-Number(a.session||0))):[];
   let infoBar="";
   if(stu){
     const pt=effPayType(stu)||"-";
@@ -4889,15 +4889,18 @@ function viewLes(){
   ${selName?`
   <div class="panel"><h2>2️⃣ 학습 내용 입력</h2>
     <div class="formbox" style="margin-bottom:0">
-      <label class="fld">일자<input type="date" id="s_dt" value="${todayStr()}"></label>
+      <label class="fld">작성일<input type="date" id="s_dt" value="${todayStr()}"></label>
+      <label class="fld">차시<input type="number" id="s_ss" min="1" placeholder="예: 3"></label>
       <label class="fld" style="grid-column:1/-1">학습 내용<textarea id="s_tx" rows="3" placeholder="예: VLOOKUP 보충 지도. 절대참조 개념 재설명 필요."></textarea></label>
       <button class="btn" onclick="addLesson()">기록 저장</button>
     </div>
   </div>
   <div class="panel"><h2>3️⃣ ${esc(selName)} 학습 진행 이력</h2>
     ${myList.length?myList.map(l=>`<div class="lesson-card">
-      <div class="top"><span><span class="tag">${esc(l.course)||"과정 미지정"}</span></span>
-      <span>${esc(l.date)} <button class="btn sm" style="margin-left:8px" onclick="delLesson('${l.id}')">삭제</button></span></div>
+      <div class="top">
+        <span style="font-weight:700;color:var(--ink);font-size:13px">${esc(l.date)}${l.session?` · ${esc(l.session)}차시`:""}</span>
+        <span>${esc(l.course)?`<span class="tag">${esc(l.course)}</span> `:""}<button class="btn sm" style="margin-left:8px" onclick="delLesson('${l.id}')">삭제</button></span>
+      </div>
       <div class="body">${esc(l.text)}</div></div>`).join(""):`<div class="empty">아직 학습 진행 이력이 없습니다. 위에서 첫 기록을 작성하세요.</div>`}
   </div>`:`<div class="panel"><div class="empty">수강생을 먼저 선택하면 입력란과 학습 진행 이력이 표시됩니다.</div></div>`}`;
 }
@@ -4912,7 +4915,7 @@ function addLesson(){
   if(!tx){alert("학습 내용을 입력하세요.");return;}
   const isCommon=ui.lesStudent==="공통(전체 수업)";
   const stu=isCommon?null:DB.students.find(st=>String(st.name)===String(ui.lesStudent));
-  DB.lessons.push({id:uid(),date:val("s_dt"),course:stu?(stu.course||""):"",student:isCommon?"":ui.lesStudent,text:tx});
+  DB.lessons.push({id:uid(),date:val("s_dt"),session:(val("s_ss").trim()===""?"":num("s_ss")),course:stu?(stu.course||""):"",student:isCommon?"":ui.lesStudent,text:tx});
   save();render();
 }
 function delLesson(id){if(confirm("이 기록을 삭제할까요?")){DB.lessons=DB.lessons.filter(x=>String(x.id)!==String(id));save();render();}}
