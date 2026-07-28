@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.72 (2026-07-27) Supabase";
+const APP_VERSION="v5.73 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -4856,7 +4856,16 @@ function printInspReport(){
 function lesValidName(n){return n==="공통(전체 수업)"||DB.students.some(st=>st.name===n);}
 function viewLes(){
   const selName=ui.lesStudent;
-  const myList=selName?[...DB.lessons].filter(l=>String(l.student)===selName||(selName==="공통(전체 수업)"&&!l.student)).sort((a,b)=>String(b.date).localeCompare(String(a.date))):[];
+  const isCommon=selName==="공통(전체 수업)";
+  const stu=(selName&&!isCommon)?DB.students.find(st=>String(st.name)===String(selName)):null;
+  const myList=selName?[...DB.lessons].filter(l=>String(l.student)===selName||(isCommon&&!l.student)).sort((a,b)=>String(b.date).localeCompare(String(a.date))):[];
+  const infoBar=stu?`
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">
+      ${lesInfoItem("결제방식",effPayType(stu)||"-")}
+      ${lesInfoItem("최근결제일",lastPaidOf(stu)||"-")}
+      ${lesInfoItem("수강과목",stu.course||"-")}
+      ${lesInfoItem("방문요일",stu.classDays||"-")}
+    </div>`:"";
   return `
   <div class="panel" style="margin-top:0"><h2>1️⃣ 수강생 선택</h2>
     <div class="toolbar" style="margin-bottom:0">
@@ -4869,29 +4878,35 @@ function viewLes(){
       ${selName?`<button class="btn sm" onclick="ui.lesStudent='';render()">↺ 선택 해제</button>`:""}
       ${selName?(lesValidName(selName)?`<span class="tag" style="font-size:13px;padding:6px 12px">${esc(selName)} · 기록 ${myList.length}건</span>`:`<span class="tag red" style="font-size:13px;padding:6px 12px">'${esc(selName)}' — 일치하는 수강생 없음</span>`):""}
     </div>
+    ${infoBar}
   </div>
   ${selName?`
-  <div class="panel"><h2>2️⃣ 지도 내용 입력</h2>
+  <div class="panel"><h2>2️⃣ 학습 내용 입력</h2>
     <div class="formbox" style="margin-bottom:0">
       <label class="fld">일자<input type="date" id="s_dt" value="${todayStr()}"></label>
-      <label class="fld">과정${courseSelect("s_co","",true)}</label>
-      <label class="fld" style="grid-column:1/-1">지도 내용<textarea id="s_tx" rows="3" placeholder="예: VLOOKUP 보충 지도. 절대참조 개념 재설명 필요."></textarea></label>
+      <label class="fld" style="grid-column:1/-1">학습 내용<textarea id="s_tx" rows="3" placeholder="예: VLOOKUP 보충 지도. 절대참조 개념 재설명 필요."></textarea></label>
       <button class="btn" onclick="addLesson()">기록 저장</button>
     </div>
   </div>
-  <div class="panel"><h2>3️⃣ ${esc(selName)} 이전 지도 기록</h2>
+  <div class="panel"><h2>3️⃣ ${esc(selName)} 학습 진행 이력</h2>
     ${myList.length?myList.map(l=>`<div class="lesson-card">
       <div class="top"><span><span class="tag">${esc(l.course)||"과정 미지정"}</span></span>
       <span>${esc(l.date)} <button class="btn sm" style="margin-left:8px" onclick="delLesson('${l.id}')">삭제</button></span></div>
-      <div class="body">${esc(l.text)}</div></div>`).join(""):`<div class="empty">아직 지도 기록이 없습니다. 위에서 첫 기록을 작성하세요.</div>`}
-  </div>`:`<div class="panel"><div class="empty">수강생을 먼저 선택하면 입력란과 이전 지도 기록이 표시됩니다.</div></div>`}`;
+      <div class="body">${esc(l.text)}</div></div>`).join(""):`<div class="empty">아직 학습 진행 이력이 없습니다. 위에서 첫 기록을 작성하세요.</div>`}
+  </div>`:`<div class="panel"><div class="empty">수강생을 먼저 선택하면 입력란과 학습 진행 이력이 표시됩니다.</div></div>`}`;
+}
+function lesInfoItem(k,v){
+  return `<div style="background:var(--green-light);border:1px solid var(--green-mid);border-radius:8px;padding:7px 12px;min-width:88px">
+    <div style="font-size:11px;color:var(--sub)">${k}</div><div style="font-size:13px;font-weight:700;color:var(--ink)">${esc(v)}</div></div>`;
 }
 function addLesson(){
   const tx=val("s_tx").trim();
   if(!ui.lesStudent){alert("수강생을 먼저 선택하세요.");return;}
   if(!lesValidName(ui.lesStudent)){alert("일치하는 수강생이 없습니다. 목록에서 선택하거나 이름을 정확히 입력하세요.");return;}
-  if(!tx){alert("지도 내용을 입력하세요.");return;}
-  DB.lessons.push({id:uid(),date:val("s_dt"),course:val("s_co"),student:ui.lesStudent==="공통(전체 수업)"?"":ui.lesStudent,text:tx});
+  if(!tx){alert("학습 내용을 입력하세요.");return;}
+  const isCommon=ui.lesStudent==="공통(전체 수업)";
+  const stu=isCommon?null:DB.students.find(st=>String(st.name)===String(ui.lesStudent));
+  DB.lessons.push({id:uid(),date:val("s_dt"),course:stu?(stu.course||""):"",student:isCommon?"":ui.lesStudent,text:tx});
   save();render();
 }
 function delLesson(id){if(confirm("이 기록을 삭제할까요?")){DB.lessons=DB.lessons.filter(x=>String(x.id)!==String(id));save();render();}}
