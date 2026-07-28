@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.4 (2026-07-28) Supabase";
+const APP_VERSION="v6.5 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -549,6 +549,10 @@ function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
   // 스키마에 없는 필드는 제거 (구버전 잔여 필드로 인한 400 오류 원천 차단)
+  if(table==="subs"){
+    o.devices=(o.devices===""||o.devices==null)?null:Number(o.devices);
+    o.amount=Number(o.amount)||0;
+  }
   const allow=SUPA_COLS[table];
   if(allow){ Object.keys(o).forEach(k=>{ if(!allow.includes(k)) delete o[k]; }); }
   return o;
@@ -2287,7 +2291,7 @@ function subFormHtml(sub){
 function readSubForm(){
   return {category:val("g_cat"),currency:val("g_cur"),plan:val("g_plan").trim(),software:val("g_soft").trim(),amount:num("g_amt"),
     payDate:val("g_pd"),term:val("g_term"),nextDate:val("g_next"),renew:val("g_ren"),
-    card:val("g_card").trim(),devices:(val("g_dev").trim()===""?"":num("g_dev")),note:val("g_note").trim()};
+    card:val("g_card").trim(),devices:(val("g_dev").trim()===""?null:num("g_dev")),note:val("g_note").trim()};
 }
 function addSub(){
   const f=readSubForm();
