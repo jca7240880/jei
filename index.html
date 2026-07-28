@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.77 (2026-07-27) Supabase";
+const APP_VERSION="v6.2 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -525,7 +525,7 @@ function normDate(v){
   return str;
 }
 
-let DB={subs:[],students:[],attendance:[],income:[],expense:[],sales:[],bookin:[],bookout:[],courses:[],methods:[],worklogs:[],consults:[],settings:[],courselogs:[],facilities:[],supplies:[],materials:[],equipments:[],inspections:[],lessons:[],leads:[],schedules:[],makeups:[],meetings:[],certs:[],exams:[],examapps:[]};
+let DB={subs:[],seats:[],students:[],attendance:[],income:[],expense:[],sales:[],bookin:[],bookout:[],courses:[],methods:[],worklogs:[],consults:[],settings:[],courselogs:[],facilities:[],supplies:[],materials:[],equipments:[],inspections:[],lessons:[],leads:[],schedules:[],makeups:[],meetings:[],certs:[],exams:[],examapps:[]};
 let GAS=""; // (레거시 이름 유지) — 실제로는 Supabase URL을 저장
 let SUPA_KEY="";
 try{
@@ -536,7 +536,7 @@ try{
 const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["subs","구독관리"],["oper","장비관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -544,7 +544,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -1112,7 +1112,7 @@ function render(){
     else body=viewAssetTab(sub); // equipments/materials/supplies/facilities/inspections
     m.innerHTML=operSubBar()+body;
   }
-  if(tab==="subs")m.innerHTML=viewSubs();
+  if(tab==="subs")m.innerHTML=subsSubBar()+subsContent();
   if(tab==="exam"){
     const sub=ui.examSub||"sched";
     m.innerHTML=examSubBar()+(sub==="apply"?viewExamApply():(sub==="stat"?viewExamStat():viewExamSched()));
@@ -2164,6 +2164,91 @@ function addMeeting(){
   save();render();
 }
 function delMeeting(id){if(!confirm("이 회의록을 삭제할까요?"))return;DB.meetings=DB.meetings.filter(x=>String(x.id)!==String(id));save();render();}
+const AUTODESK_PRODUCTS=[{key:"AutoCAD",label:"AutoCAD - including specialized toolsets",seats:25},{key:"Inventor",label:"Inventor Professional",seats:25},{key:"Revit",label:"Revit",seats:25}];
+const SEAT_REASONS=["과정변경","퇴원","기타"];
+function subsSubBar(){
+  const subs=[["reg","구독등록"],["ms","Microsoft"],["ad","Autodesk"],["adobe","Adobe"],["etc","기타"]];
+  return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.subsSub||"reg")===k?'on':''}" onclick="ui.subsSub='${k}';ui.seatAdd=null;ui.seatEditId=null;render()">${l}</button>`).join("")}</div>`;
+}
+function subsContent(){
+  const t=ui.subsSub||"reg";
+  if(t==="ad")return viewAutodesk();
+  if(t==="reg")return viewSubs();
+  const names={ms:"Microsoft",adobe:"Adobe",etc:"기타"};
+  return `<div class="panel" style="margin-top:0"><div class="empty">${names[t]||""} 구독 관리는 준비 중입니다.</div></div>`;
+}
+function seatStudentOptions(){
+  return DB.students.filter(s=>s.status!=="퇴원").sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(s=>`<option value="${esc(s.name)}">`).join("");
+}
+function assignSeat(prod){
+  const nm=val("seat_stu_"+prod).trim(), dt=val("seat_dt_"+prod);
+  if(!nm){alert("수강생을 선택하세요.");return;}
+  DB.seats.push({id:uid(),vendor:"autodesk",product:prod,student:nm,assignDate:dt||todayStr(),releaseDate:"",releaseReason:"",note:""});
+  ui.seatAdd=null; save(); render();
+}
+function editSeat(id){ ui.seatEditId=id; ui.seatAdd=null; render(); }
+function saveSeat(id){
+  const a=DB.seats.find(x=>String(x.id)===String(id)); if(!a)return;
+  const nm=val("se_stu").trim();
+  if(!nm){alert("수강생을 입력하세요.");return;}
+  a.student=nm; a.assignDate=val("se_ad"); a.releaseDate=val("se_rd"); a.releaseReason=val("se_rr");
+  ui.seatEditId=null; save(); render();
+}
+function delSeat(id){
+  const a=DB.seats.find(x=>String(x.id)===String(id)); if(!a)return;
+  if(confirm(`'${a.product} · ${a.student}' 지정을 삭제할까요?`)){ DB.seats=DB.seats.filter(x=>String(x.id)!==String(id)); save(); render(); }
+}
+function seatRow(a){
+  if(ui.seatEditId===a.id){
+    return `<tr><td colspan="5"><div class="formbox" style="margin:0">
+      <label class="fld">수강생<input id="se_stu" list="seatStuList" value="${esc(a.student||"")}"></label>
+      <label class="fld">지정일<input type="date" id="se_ad" value="${esc(a.assignDate||"")}"></label>
+      <label class="fld">지정해제일<input type="date" id="se_rd" value="${esc(a.releaseDate||"")}"></label>
+      <label class="fld">사유<select id="se_rr"><option value="">(없음)</option>${SEAT_REASONS.map(r=>`<option ${a.releaseReason===r?"selected":""}>${r}</option>`).join("")}</select></label>
+      <button class="btn" onclick="saveSeat('${a.id}')">저장</button>
+      <button class="btn sm" onclick="ui.seatEditId=null;render()">취소</button>
+    </div></td></tr>`;
+  }
+  const released=!!a.releaseDate;
+  return `<tr style="${released?'color:var(--sub);background:#fafafa':''}">
+    <td><b>${esc(a.student)||"-"}</b></td>
+    <td>${esc(a.assignDate)||"-"}</td>
+    <td>${esc(a.releaseDate)||"-"}</td>
+    <td>${a.releaseReason?`<span class="pill no">${esc(a.releaseReason)}</span>`:"-"}</td>
+    <td style="white-space:nowrap">
+      <button class="btn sm" onclick="editSeat('${a.id}')">수정</button>
+      <button class="btn sm" style="color:var(--red);border-color:var(--red)" onclick="delSeat('${a.id}')">삭제</button>
+    </td></tr>`;
+}
+function viewAutodesk(){
+  const rows=DB.seats.filter(s=>s.vendor==="autodesk");
+  const totalSeats=AUTODESK_PRODUCTS.reduce((a,p)=>a+p.seats,0);
+  const totalUsed=rows.filter(a=>!a.releaseDate).length;
+  let html=`<div class="panel" style="margin-top:0"><h2 style="margin:0">🅰 Autodesk 시트 관리 <span style="font-size:13px;color:var(--sub);font-weight:400">전체 ${totalSeats-totalUsed}/${totalSeats} 시트 사용 가능</span></h2></div>`;
+  AUTODESK_PRODUCTS.forEach(p=>{
+    const list=rows.filter(a=>a.product===p.key).sort((a,b)=>(a.releaseDate?1:0)-(b.releaseDate?1:0)||String(b.assignDate).localeCompare(String(a.assignDate)));
+    const used=list.filter(a=>!a.releaseDate).length;
+    const avail=p.seats-used;
+    html+=`<div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <h2 style="margin:0;font-size:16px">${esc(p.label)} <span style="font-size:13px;font-weight:400;color:${avail<=0?'var(--red)':'var(--sub)'}">사용 ${used}/${p.seats} · 남은 ${avail}</span></h2>
+        <button class="btn sm" onclick="ui.seatAdd='${p.key}';ui.seatEditId=null;render()" ${avail<=0?'disabled':''}>+ 사용자 지정</button>
+      </div>
+      ${ui.seatAdd===p.key?`<div class="formbox" style="margin-bottom:10px">
+        <label class="fld">수강생<input id="seat_stu_${p.key}" list="seatStuList" placeholder="이름 선택"></label>
+        <label class="fld">지정일<input type="date" id="seat_dt_${p.key}" value="${todayStr()}"></label>
+        <button class="btn" onclick="assignSeat('${p.key}')">지정</button>
+        <button class="btn sm" onclick="ui.seatAdd=null;render()">취소</button>
+      </div>`:""}
+      <div class="twrap"><table>
+        <thead><tr><th>수강생</th><th>지정일</th><th>지정해제일</th><th>사유</th><th></th></tr></thead>
+        <tbody>${list.length?list.map(a=>seatRow(a)).join(""):`<tr><td colspan="5" class="empty">지정된 사용자가 없습니다.</td></tr>`}</tbody>
+      </table></div>
+    </div>`;
+  });
+  html+=`<datalist id="seatStuList">${seatStudentOptions()}</datalist>`;
+  return html;
+}
 function termMonths(t){ const y=String(t||"").match(/(\d+)\s*년/); if(y)return parseInt(y[1],10)*12; const m=String(t||"").match(/(\d+)\s*개월/); if(m)return parseInt(m[1],10); return 1; }
 function calcNextPay(){
   const pd=val("g_pd"), term=val("g_term");
@@ -4854,10 +4939,17 @@ function printInspReport(){
 }
 
 function lesValidName(n){return n==="공통(전체 수업)"||DB.students.some(st=>st.name===n);}
+function canManageStudent(name){
+  if(ROLE!=="부원장")return true;                 // 원장은 전체 허용
+  if(!name||name==="공통(전체 수업)")return false;  // 부원장은 공통 불가
+  const st=DB.students.find(s=>String(s.name)===String(name));
+  return !!(st&&st.teacher==="부원장");
+}
 function viewLes(){
   const selName=ui.lesStudent;
   const isCommon=selName==="공통(전체 수업)";
   const stu=(selName&&!isCommon)?DB.students.find(st=>String(st.name)===String(selName)):null;
+  const canWrite=canManageStudent(selName);
   const myList=selName?[...DB.lessons].filter(l=>String(l.student)===selName||(isCommon&&!l.student)).sort((a,b)=>String(b.date).localeCompare(String(a.date))||(Number(b.session||0)-Number(a.session||0))):[];
   let infoBar="";
   if(stu){
@@ -4872,36 +4964,51 @@ function viewLes(){
       ${lesInfoItem("방문요일",stu.classDays||"-")}
     </div>`;
   }
+  const listStudents=DB.students.filter(st=>st.status!=="퇴원"&&(ROLE!=="부원장"||st.teacher==="부원장")).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko"));
+  const cardHtml=l=>{
+    if(ui.lesEditId===l.id){
+      return `<div class="lesson-card">
+        <div class="formbox" style="margin-bottom:0">
+          <label class="fld">작성일<input type="date" id="le_dt" value="${esc(l.date||"")}"></label>
+          <label class="fld">차시<input type="number" id="le_ss" min="1" value="${(l.session!=null&&l.session!=="")?l.session:""}"></label>
+          <label class="fld" style="grid-column:1/-1">학습 내용<textarea id="le_tx" rows="3">${esc(l.text||"")}</textarea></label>
+          <button class="btn" onclick="saveLesson('${l.id}')">저장</button>
+          <button class="btn sm" onclick="ui.lesEditId=null;render()">취소</button>
+        </div></div>`;
+    }
+    return `<div class="lesson-card">
+      <div class="top">
+        <span style="font-weight:700;color:var(--ink);font-size:13px">${esc(l.date)}${l.session?` · ${esc(l.session)}차시`:""}</span>
+        <span>${esc(l.course)?`<span class="tag">${esc(l.course)}</span> `:""}${canWrite?`<button class="btn sm" style="margin-left:8px" onclick="editLesson('${l.id}')">수정</button><button class="btn sm" style="margin-left:4px;color:var(--red);border-color:var(--red)" onclick="delLesson('${l.id}')">삭제</button>`:""}</span>
+      </div>
+      <div class="body">${esc(l.text)}</div></div>`;
+  };
   return `
   <div class="panel" style="margin-top:0"><h2>1️⃣ 수강생 선택</h2>
     <div class="toolbar" style="margin-bottom:0">
       <input list="lesStuList" value="${esc(selName)}" placeholder="이름 입력 또는 ▼ 선택" style="min-width:240px"
-        onchange="ui.lesStudent=this.value.trim();render()">
+        onchange="ui.lesStudent=this.value.trim();ui.lesEditId=null;render()">
       <datalist id="lesStuList">
-        <option value="공통(전체 수업)">
-        ${DB.students.filter(st=>st.status!=="퇴원").sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(st=>`<option value="${esc(st.name)}">`).join("")}
+        ${ROLE!=="부원장"?`<option value="공통(전체 수업)">`:""}
+        ${listStudents.map(st=>`<option value="${esc(st.name)}">`).join("")}
       </datalist>
-      ${selName?`<button class="btn sm" onclick="ui.lesStudent='';render()">↺ 선택 해제</button>`:""}
+      ${selName?`<button class="btn sm" onclick="ui.lesStudent='';ui.lesEditId=null;render()">↺ 선택 해제</button>`:""}
       ${selName?(lesValidName(selName)?`<span class="tag" style="font-size:13px;padding:6px 12px">${esc(selName)} · 기록 ${myList.length}건</span>`:`<span class="tag red" style="font-size:13px;padding:6px 12px">'${esc(selName)}' — 일치하는 수강생 없음</span>`):""}
+      ${ROLE==="부원장"?`<span class="tag" style="font-size:12px;padding:5px 10px;background:#eee;color:#555">담당 수강생만 표시</span>`:""}
     </div>
     ${infoBar}
   </div>
   ${selName?`
-  <div class="panel"><h2>2️⃣ 학습 내용 입력</h2>
+  ${canWrite?`<div class="panel"><h2>2️⃣ 학습 내용 입력</h2>
     <div class="formbox" style="margin-bottom:0">
       <label class="fld">작성일<input type="date" id="s_dt" value="${todayStr()}"></label>
       <label class="fld">차시<input type="number" id="s_ss" min="1" placeholder="예: 3"></label>
       <label class="fld" style="grid-column:1/-1">학습 내용<textarea id="s_tx" rows="3" placeholder="예: VLOOKUP 보충 지도. 절대참조 개념 재설명 필요."></textarea></label>
       <button class="btn" onclick="addLesson()">기록 저장</button>
     </div>
-  </div>
+  </div>`:`<div class="panel"><div class="empty">담당 수강생이 아니어서 작성 권한이 없습니다. (부원장은 본인 담당 수강생만 작성·수정할 수 있습니다.)</div></div>`}
   <div class="panel"><h2>3️⃣ ${esc(selName)} 학습 진행 이력</h2>
-    ${myList.length?myList.map(l=>`<div class="lesson-card">
-      <div class="top">
-        <span style="font-weight:700;color:var(--ink);font-size:13px">${esc(l.date)}${l.session?` · ${esc(l.session)}차시`:""}</span>
-        <span>${esc(l.course)?`<span class="tag">${esc(l.course)}</span> `:""}<button class="btn sm" style="margin-left:8px" onclick="delLesson('${l.id}')">삭제</button></span>
-      </div>
-      <div class="body">${esc(l.text)}</div></div>`).join(""):`<div class="empty">아직 학습 진행 이력이 없습니다. 위에서 첫 기록을 작성하세요.</div>`}
+    ${myList.length?myList.map(cardHtml).join(""):`<div class="empty">아직 학습 진행 이력이 없습니다.${canWrite?" 위에서 첫 기록을 작성하세요.":""}</div>`}
   </div>`:`<div class="panel"><div class="empty">수강생을 먼저 선택하면 입력란과 학습 진행 이력이 표시됩니다.</div></div>`}`;
 }
 function lesInfoItem(k,v){
@@ -4912,13 +5019,33 @@ function addLesson(){
   const tx=val("s_tx").trim();
   if(!ui.lesStudent){alert("수강생을 먼저 선택하세요.");return;}
   if(!lesValidName(ui.lesStudent)){alert("일치하는 수강생이 없습니다. 목록에서 선택하거나 이름을 정확히 입력하세요.");return;}
+  if(!canManageStudent(ui.lesStudent)){alert("담당 수강생만 작성할 수 있습니다.");return;}
   if(!tx){alert("학습 내용을 입력하세요.");return;}
   const isCommon=ui.lesStudent==="공통(전체 수업)";
   const stu=isCommon?null:DB.students.find(st=>String(st.name)===String(ui.lesStudent));
   DB.lessons.push({id:uid(),date:val("s_dt"),session:(val("s_ss").trim()===""?"":num("s_ss")),course:stu?(stu.course||""):"",student:isCommon?"":ui.lesStudent,text:tx});
   save();render();
 }
-function delLesson(id){if(confirm("이 기록을 삭제할까요?")){DB.lessons=DB.lessons.filter(x=>String(x.id)!==String(id));save();render();}}
+function editLesson(id){
+  const l=DB.lessons.find(x=>String(x.id)===String(id)); if(!l)return;
+  if(!canManageStudent(l.student||"공통(전체 수업)")){alert("담당 수강생만 수정할 수 있습니다.");return;}
+  ui.lesEditId=id; render();
+}
+function saveLesson(id){
+  const l=DB.lessons.find(x=>String(x.id)===String(id)); if(!l)return;
+  if(!canManageStudent(l.student||"공통(전체 수업)")){alert("담당 수강생만 수정할 수 있습니다.");return;}
+  const tx=val("le_tx").trim();
+  if(!tx){alert("학습 내용을 입력하세요.");return;}
+  l.date=val("le_dt");
+  l.session=(val("le_ss").trim()===""?"":num("le_ss"));
+  l.text=tx;
+  ui.lesEditId=null; save(); render();
+}
+function delLesson(id){
+  const l=DB.lessons.find(x=>String(x.id)===String(id));
+  if(l&&!canManageStudent(l.student||"공통(전체 수업)")){alert("담당 수강생만 삭제할 수 있습니다.");return;}
+  if(confirm("이 기록을 삭제할까요?")){DB.lessons=DB.lessons.filter(x=>String(x.id)!==String(id));save();render();}
+}
 
 /* ───── 엑셀 백업 ───── */
 
