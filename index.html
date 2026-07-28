@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.76 (2026-07-27) Supabase";
+const APP_VERSION="v5.77 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2616,7 +2616,7 @@ function stuFormHtml(s){
     <label class="fld" id="f_tswrap" style="display:${v.payCycle==='횟수제'?'flex':'none'}">1회 결제당 횟수<input type="number" id="f_ts" value="${v.totalSessions||""}"></label>
     <label class="fld" id="f_chwrap" style="display:${v.payCycle==='횟수제'?'flex':'none'}">누적 충전횟수<input type="number" id="f_ch" value="${v.charged||v.totalSessions||""}" placeholder="이전 결제 합산"></label>
     <label class="fld">최근결제일<input type="date" id="f_lp" value="${esc(v.lastPaid||"")}"></label>
-    <label class="fld">1일 수업시간<select id="f_dh"><option value="" ${!v.dailyHours?"selected":""}>-</option>${["1시간","2시간","3시간"].map(h=>`<option ${v.dailyHours===h?"selected":""}>${h}</option>`).join("")}${(v.dailyHours&&!["1시간","2시간","3시간"].includes(v.dailyHours))?`<option selected>${esc(v.dailyHours)}</option>`:""}</select></label>
+    <label class="fld">1일 수업시간<select id="f_dh"><option value="" ${!v.dailyHours?"selected":""}>-</option>${["1시간","2시간","3시간","4시간"].map(h=>`<option ${v.dailyHours===h?"selected":""}>${h}</option>`).join("")}${(v.dailyHours&&!["1시간","2시간","3시간","4시간"].includes(v.dailyHours))?`<option selected>${esc(v.dailyHours)}</option>`:""}</select></label>
     <label class="fld" style="grid-column:span 2">수업요일<span style="display:flex;gap:8px;flex-wrap:wrap;padding:6px 0">${["월","화","수","목","금","토","일"].map(d=>`<label style="display:flex;align-items:center;gap:3px;font-size:13px;color:var(--ink)"><input type="checkbox" id="f_day${d}" ${String(v.classDays||"").split(",").includes(d)?"checked":""}>${d}</label>`).join("")}</span></label>
     ${s?`<label class="fld">상태<select id="f_stat"><option ${v.status!=='퇴원'&&v.status!=='정지'?'selected':''}>재원</option><option ${v.status==='정지'?'selected':''}>정지</option><option ${v.status==='퇴원'?'selected':''}>퇴원</option></select></label>
     <label class="fld">퇴원일<input type="date" id="f_qd" value="${esc(v.quitDate||"")}"></label>`:""}
