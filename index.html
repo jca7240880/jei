@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.71 (2026-07-27) Supabase";
+const APP_VERSION="v5.72 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2258,25 +2258,44 @@ function pieColorMap(cats){ const m={}; (cats||[]).forEach((c,i)=>{m[c]=PIE_PALE
 function donutSVG(data,colorMap,opts){
   opts=opts||{};
   const size=opts.size||150, r=size/2, ir=r*0.60, cx=r, cy=r;
-  let slices=(data||[]).filter(d=>d.value>0);
-  const total=slices.reduce((a,d)=>a+d.value,0);
+  const orig=(data||[]).filter(d=>d.value>0);
+  const total=orig.reduce((a,d)=>a+d.value,0);
   if(total<=0) return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><circle cx="${cx}" cy="${cy}" r="${r-1}" fill="none" stroke="var(--line)"/><text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="12" fill="var(--sub)">데이터 없음</text></svg>`;
+  let slices=orig.slice();
   if(slices.length===1){ const o=slices[0]; slices=[{label:o.label,value:o.value/2},{label:o.label,value:o.value/2}]; }
-  let ang=-Math.PI/2, paths="";
   const P=(rad,a)=>[cx+rad*Math.cos(a),cy+rad*Math.sin(a)];
+  let ang=-Math.PI/2, paths="";
   slices.forEach(d=>{
     const frac=d.value/total, a2=ang+frac*2*Math.PI, large=frac>0.5?1:0;
     const p1=P(r,ang),p2=P(r,a2),pi2=P(ir,a2),pi1=P(ir,ang);
     paths+=`<path d="M ${p1[0].toFixed(2)} ${p1[1].toFixed(2)} A ${r} ${r} 0 ${large} 1 ${p2[0].toFixed(2)} ${p2[1].toFixed(2)} L ${pi2[0].toFixed(2)} ${pi2[1].toFixed(2)} A ${ir} ${ir} 0 ${large} 0 ${pi1[0].toFixed(2)} ${pi1[1].toFixed(2)} Z" fill="${colorMap[d.label]||'#94a3b8'}" stroke="#fff" stroke-width="1"/>`;
     ang=a2;
   });
+  // 데이터 레이블 (원본 기준, 5% 이상 슬라이스에 인원수)
+  let la=-Math.PI/2, labels="";
+  orig.forEach(d=>{
+    const frac=d.value/total, a2=la+frac*2*Math.PI;
+    if(frac>=0.05){ const mid=(la+a2)/2, lr=(r+ir)/2, lp=P(lr,mid);
+      labels+=`<text x="${lp[0].toFixed(1)}" y="${(lp[1]+3).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#fff" style="paint-order:stroke" stroke="rgba(0,0,0,.25)" stroke-width="2">${d.value}</text>`; }
+    la=a2;
+  });
   const ct=opts.centerTop||"", cs=opts.centerSub||"";
-  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" font-family="'Malgun Gothic',sans-serif">${paths}<text x="${cx}" y="${cy-1}" text-anchor="middle" font-size="15" font-weight="800" fill="var(--ink)">${ct}</text><text x="${cx}" y="${cy+13}" text-anchor="middle" font-size="10" fill="var(--sub)">${cs}</text></svg>`;
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" font-family="'Malgun Gothic',sans-serif">${paths}${labels}<text x="${cx}" y="${cy-1}" text-anchor="middle" font-size="15" font-weight="800" fill="var(--ink)">${ct}</text><text x="${cx}" y="${cy+13}" text-anchor="middle" font-size="10" fill="var(--sub)">${cs}</text></svg>`;
 }
 function pieLegend(cats,colorMap,mA,mAll,totA,totAll){
   const pc=(n,t)=>t?Math.round(n/t*100):0;
   return `<div style="display:flex;flex-wrap:wrap;gap:7px 16px;margin-top:14px;font-size:12px;justify-content:center">`+
     (cats||[]).map(c=>{const a=mA[c]||0,b=mAll[c]||0;return `<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:11px;height:11px;border-radius:2px;background:${colorMap[c]};display:inline-block"></span><b>${esc(c)}</b> <span style="color:var(--sub)">현 ${a}·${pc(a,totA)}% / 전 ${b}·${pc(b,totAll)}%</span></span>`;}).join("")+`</div>`;
+}
+function pieTable(cats,colorMap,mA,mAll,totA,totAll,firstCol){
+  const pc=(n,t)=>t?Math.round(n/t*100):0;
+  return `<div class="twrap" style="max-height:none;margin-top:14px"><table>
+    <thead><tr><th>${firstCol}</th><th>현 재원생</th><th>전체기간</th></tr></thead>
+    <tbody>${cats.map(c=>{const a=mA[c]||0,b=mAll[c]||0;return `<tr>
+      <td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${colorMap[c]};margin-right:6px;vertical-align:middle"></span>${esc(c)}</td>
+      <td>${a}명 (${pc(a,totA)}%)</td><td>${b}명 (${pc(b,totAll)}%)</td></tr>`;}).join("")}
+      <tr style="background:var(--green-light);font-weight:800"><td>합계</td><td>${totA}명</td><td>${totAll}명</td></tr>
+    </tbody></table></div>`;
 }
 function viewStuDash(){
   const isActive=s=>s.status!=="퇴원"&&s.status!=="정지";
@@ -2402,7 +2421,7 @@ function viewStuDash(){
       <div style="text-align:center">${donutSVG(ageDA,ageColor,{size:156,centerTop:active.length+"명",centerSub:"현 재원생"})}<div style="font-size:12px;color:var(--sub);margin-top:2px">현 재원생 ${active.length}명</div></div>
       <div style="text-align:center">${donutSVG(ageDAll,ageColor,{size:156,centerTop:all.length+"명",centerSub:"전체기간"})}<div style="font-size:12px;color:var(--sub);margin-top:2px">전체기간 ${all.length}명</div></div>
     </div>
-    ${pieLegend(ageCats,ageColor,ageA,ageAll,active.length,all.length)}
+    ${pieTable(ageCats,ageColor,ageA,ageAll,active.length,all.length,"연령대")}
   </div>
 
   <div class="panel">
@@ -2411,7 +2430,7 @@ function viewStuDash(){
       <div style="text-align:center">${donutSVG(coDA,coColor,{size:156,centerTop:active.length+"명",centerSub:"현 재원생"})}<div style="font-size:12px;color:var(--sub);margin-top:2px">현 재원생 ${active.length}명</div></div>
       <div style="text-align:center">${donutSVG(coDAll,coColor,{size:156,centerTop:all.length+"명",centerSub:"전체기간"})}<div style="font-size:12px;color:var(--sub);margin-top:2px">전체기간 ${all.length}명</div></div>
     </div>
-    ${pieLegend(coCats,coColor,coA,coAll,active.length,all.length)}
+    ${pieTable(coCats,coColor,coA,coAll,active.length,all.length,"과목")}
   </div>`;
 }
 
