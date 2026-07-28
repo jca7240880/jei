@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.66 (2026-07-27) Supabase";
+const APP_VERSION="v5.67 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2180,29 +2180,21 @@ function viewStuDash(){
 
   // 월별 신규/퇴원 + 해당월 재원생(등록일·퇴원일 기준)
   const pad2=k=>(k<10?"0":"")+k;
-  // 1월 진입 인원 = 전년도 말 기준 재원 (등록<1월 & 그 전까지 미퇴원)
-  const janStr=selYear+"-01";
-  let opening=0;
-  ST.forEach(s=>{
-    const sm=String(s.start||"").slice(0,7);
-    const qm=String(s.quitDate||"").slice(0,7);
-    if(sm && sm<janStr && !(qm && qm<janStr)) opening++;
-  });
-  // 재원생 총원 = 전월 인원 + 당월 신규 − 당월 퇴원 (누적)
+  // 월별 신규/퇴원(날짜 기준) + 해당월 재원생(현재 명부 기준 복원)
   const rows=[], enroll=[];
-  let running=opening;
   for(let k=1;k<=12;k++){
     const ymStr=selYear+"-"+pad2(k);
-    let n=0,q=0;
+    let n=0,q=0,e=0;
     ST.forEach(s=>{
       const sm=String(s.start||"").slice(0,7);
       const qm=String(s.quitDate||"").slice(0,7);
       if(sm===ymStr) n++;
       if(qm===ymStr) q++;
+      // 재원 = 이 달까지 등록완료 & (현재 재원 또는 퇴원일이 이 달 이후)
+      if(sm && sm<=ymStr && (isActive(s) || (qm && qm>ymStr))) e++;
     });
-    running=running+n-q;
     rows.push({label:k+"월",n:n,q:q,net:n-q});
-    enroll.push(running);
+    enroll.push(e);
   }
   const flowMax=Math.max(1,...rows.map(r=>Math.max(r.n,r.q)));
   const enrollMax=Math.max(1,...enroll);
@@ -2285,7 +2277,7 @@ function viewStuDash(){
       <span><span style="display:inline-block;width:14px;height:3px;background:var(--red);border-radius:2px;margin-right:5px;vertical-align:middle"></span>퇴원 <b>(우측축)</b></span>
     </div>
     <div style="overflow-x:auto">${svg}</div>
-    <div style="font-size:11px;color:var(--sub);margin-top:6px">※ 재원생 총원은 등록일·퇴원일 기준으로 계산됩니다(정지 이력 미반영).</div>
+    <div style="font-size:11px;color:var(--sub);margin-top:6px">※ 재원생 총원은 현재 명부 기준으로 복원합니다. 퇴원일이 비어 있는 퇴원생·정지생은 제외되어, 현재 월은 상단 «현 재원생»과 일치합니다. 과거 월을 정확히 보려면 퇴원생의 퇴원일을 채워주세요.</div>
   </div>
 
   <div class="panel">
