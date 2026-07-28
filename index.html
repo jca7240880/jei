@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v5.68 (2026-07-27) Supabase";
+const APP_VERSION="v5.69 (2026-07-27) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -525,6 +525,7 @@ function normDate(v){
   return str;
 }
 
+let SUBS=[]; // 구독관리 임시 저장(미리보기). 필드 확정 후 Supabase 연결 예정
 let DB={students:[],attendance:[],income:[],expense:[],sales:[],bookin:[],bookout:[],courses:[],methods:[],worklogs:[],consults:[],settings:[],courselogs:[],facilities:[],supplies:[],materials:[],equipments:[],inspections:[],lessons:[],leads:[],schedules:[],makeups:[],meetings:[],certs:[],exams:[],examapps:[]};
 let GAS=""; // (레거시 이름 유지) — 실제로는 Supabase URL을 저장
 let SUPA_KEY="";
@@ -533,10 +534,10 @@ try{
   SUPA_KEY=localStorage.getItem("jei_supa_key")||"";
 }catch(e){}
 
-const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["oper","장비관리"],["config","기초설정"]];
+const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["subs","구독관리"],["oper","장비관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:""};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1112,6 +1113,7 @@ function render(){
     else body=viewAssetTab(sub); // equipments/materials/supplies/facilities/inspections
     m.innerHTML=operSubBar()+body;
   }
+  if(tab==="subs")m.innerHTML=viewSubs();
   if(tab==="exam"){
     const sub=ui.examSub||"sched";
     m.innerHTML=examSubBar()+(sub==="apply"?viewExamApply():(sub==="stat"?viewExamStat():viewExamSched()));
@@ -2163,6 +2165,94 @@ function addMeeting(){
   save();render();
 }
 function delMeeting(id){if(!confirm("이 회의록을 삭제할까요?"))return;DB.meetings=DB.meetings.filter(x=>String(x.id)!==String(id));save();render();}
+function termMonths(t){ const y=String(t||"").match(/(\d+)\s*년/); if(y)return parseInt(y[1],10)*12; const m=String(t||"").match(/(\d+)\s*개월/); if(m)return parseInt(m[1],10); return 1; }
+function calcNextPay(){
+  const pd=val("g_pd"), term=val("g_term");
+  if(!pd||!term)return;
+  const d=new Date(pd+"T00:00:00"); if(isNaN(d))return;
+  const y=term.match(/(\d+)\s*년/), m=term.match(/(\d+)\s*개월/);
+  if(y)d.setFullYear(d.getFullYear()+parseInt(y[1],10));
+  else if(m)d.setMonth(d.getMonth()+parseInt(m[1],10));
+  else return;
+  const z=n=>(n<10?"0":"")+n;
+  const el=document.getElementById("g_next"); if(el)el.value=d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());
+}
+function subFormHtml(sub){
+  const v=sub||{};
+  const TERMS=["1개월","3개월","6개월","1년","2년"];
+  const RENEWS=["자동갱신","수동갱신","해지예정"];
+  const swList=["오피스","캐드","그래픽"];
+  const cardOpts=[...new Set((DB.methods||[]).map(m=>m.name).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join("");
+  return `<div class="formbox">
+    <label class="fld">소프트웨어명*<input id="g_sw" list="dl_sw" value="${esc(v.sw||"")}" placeholder="예: 오피스, 캐드, 그래픽"><datalist id="dl_sw">${swList.map(x=>`<option value="${x}">`).join("")}</datalist></label>
+    <label class="fld">플랜 이름<input id="g_plan" value="${esc(v.plan||"")}" placeholder="예: Creative Cloud 모든 앱"></label>
+    <label class="fld" style="grid-column:span 2">포함 기능<input id="g_feat" value="${esc(v.feat||"")}" placeholder="예: 포토샵, 라이트룸, 일러스트 (쉼표 구분)"></label>
+    <label class="fld">금액(원)*<input type="number" id="g_amt" value="${v.amount||""}"></label>
+    <label class="fld">결제일<input type="date" id="g_pd" value="${esc(v.payDate||"")}" onchange="calcNextPay()"></label>
+    <label class="fld">구독 기간 단위<select id="g_term" onchange="calcNextPay()">${TERMS.map(t=>`<option ${(v.term||"1개월")===t?"selected":""}>${t}</option>`).join("")}</select></label>
+    <label class="fld">다음 결제일<input type="date" id="g_next" value="${esc(v.nextDate||"")}"></label>
+    <label class="fld">갱신여부<select id="g_ren">${RENEWS.map(r=>`<option ${(v.renew||"자동갱신")===r?"selected":""}>${r}</option>`).join("")}</select></label>
+    <label class="fld">결제 카드<input id="g_card" list="dl_card" value="${esc(v.card||"")}" placeholder="예: 신한카드(1234)"><datalist id="dl_card">${cardOpts}</datalist></label>
+    <label class="fld" style="grid-column:span 2">적용 수강생<input id="g_stu" value="${esc(v.students||"")}" placeholder="예: 홍길동, 김철수 (쉼표 구분)"></label>
+    <label class="fld" style="grid-column:span 2">메모<input id="g_note" value="${esc(v.note||"")}" placeholder="비고"></label>
+    <button class="btn" onclick="${sub?`saveSub('${sub.id}')`:"addSub()"}">${sub?"수정 저장":"추가"}</button>
+    <button class="btn sm" onclick="ui.showSubForm=false;ui.subEditId=null;render()">취소</button>
+  </div>`;
+}
+function readSubForm(){
+  return {sw:val("g_sw").trim(),plan:val("g_plan").trim(),feat:val("g_feat").trim(),amount:num("g_amt"),
+    payDate:val("g_pd"),term:val("g_term"),nextDate:val("g_next"),renew:val("g_ren"),
+    card:val("g_card").trim(),students:val("g_stu").trim(),note:val("g_note").trim()};
+}
+function addSub(){
+  const f=readSubForm();
+  if(!f.sw||!f.amount){alert("소프트웨어명과 금액은 필수입니다.");return;}
+  SUBS.push(Object.assign({id:uid()},f)); ui.showSubForm=false; render();
+}
+function saveSub(id){
+  const s=SUBS.find(x=>String(x.id)===String(id)); if(!s)return;
+  const f=readSubForm();
+  if(!f.sw||!f.amount){alert("소프트웨어명과 금액은 필수입니다.");return;}
+  Object.assign(s,f); ui.subEditId=null; ui.showSubForm=false; render();
+}
+function editSub(id){ ui.subEditId=id; ui.showSubForm=true; render(); }
+function delSub(id){
+  const s=SUBS.find(x=>String(x.id)===String(id)); if(!s)return;
+  if(confirm(`'${s.sw} ${s.plan||""}' 구독을 삭제할까요?`)){ SUBS=SUBS.filter(x=>String(x.id)!==String(id)); render(); }
+}
+function viewSubs(){
+  const editing = ui.subEditId ? SUBS.find(x=>String(x.id)===String(ui.subEditId)) : null;
+  const showForm = ui.showSubForm || editing;
+  const monthlySum = SUBS.reduce((a,s)=>a + (Number(s.amount||0)/termMonths(s.term)), 0);
+  const renPill=r=>{const c=r==="자동갱신"?"ok":(r==="해지예정"?"no":"pu");return r?`<span class="pill ${c}">${esc(r)}</span>`:"-";};
+  const rowsHtml = SUBS.length ? SUBS.map(s=>`<tr>
+      <td><b>${esc(s.sw)||"-"}</b></td>
+      <td>${esc(s.plan)||"-"}${s.feat?`<div style="font-size:11px;color:var(--sub)">${esc(s.feat)}</div>`:""}</td>
+      <td style="text-align:right">${won(s.amount)}원</td>
+      <td>${esc(s.payDate)||"-"}</td>
+      <td>${esc(s.term)||"-"}</td>
+      <td>${esc(s.nextDate)||"-"}</td>
+      <td>${renPill(s.renew)}</td>
+      <td>${esc(s.card)||"-"}</td>
+      <td>${esc(s.students)||"-"}</td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" onclick="editSub('${s.id}')">수정</button>
+        <button class="btn sm" style="color:var(--red);border-color:var(--red)" onclick="delSub('${s.id}')">삭제</button>
+      </td></tr>`).join("") : `<tr><td colspan="10" class="empty">등록된 구독이 없습니다.</td></tr>`;
+  return `
+  <div class="panel" style="margin-top:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">💳 구독관리 <span style="font-size:13px;color:var(--sub);font-weight:400">총 ${SUBS.length}건 · 월 환산 합계 약 ${won(Math.round(monthlySum))}원</span></h2>
+      ${showForm?"":`<button class="btn" onclick="ui.showSubForm=true;render()">+ 구독 추가</button>`}
+    </div>
+    <div style="font-size:12px;color:var(--amber);background:var(--amber-light);border-radius:8px;padding:8px 10px;margin:10px 0">⚠ 미리보기 단계입니다. 필드 확정 후 저장 기능을 연결합니다(현재는 새로고침 시 초기화).</div>
+    ${showForm?subFormHtml(editing):""}
+    <div class="twrap"><table>
+      <thead><tr><th>소프트웨어</th><th>플랜 / 포함기능</th><th>금액</th><th>결제일</th><th>기간</th><th>다음 결제일</th><th>갱신</th><th>결제 카드</th><th>적용 수강생</th><th></th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table></div>
+  </div>`;
+}
 function viewStuDash(){
   const isActive=s=>s.status!=="퇴원"&&s.status!=="정지";
   const ST=DB.students||[];
