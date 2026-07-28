@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.2 (2026-07-28) Supabase";
+const APP_VERSION="v6.4 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -544,7 +544,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -2271,7 +2271,8 @@ function subFormHtml(sub){
     <label class="fld">구분*<select id="g_cat">${CATS.map(c=>`<option ${(v.category||"오피스")===c?"selected":""}>${c}</option>`).join("")}</select></label>
     <label class="fld">플랜 이름<input id="g_plan" value="${esc(v.plan||"")}" placeholder="예: Creative Cloud 모든 앱"></label>
     <label class="fld" style="grid-column:span 2">포함 소프트웨어<input id="g_soft" value="${esc(v.software||"")}" placeholder="예: 포토샵, 라이트룸, 일러스트 (쉼표 구분)"></label>
-    <label class="fld">금액(원)*<input type="number" id="g_amt" value="${v.amount||""}"></label>
+    <label class="fld">통화<select id="g_cur"><option value="KRW" ${(v.currency||"KRW")==="KRW"?"selected":""}>원(₩)</option><option value="USD" ${v.currency==="USD"?"selected":""}>달러($)</option></select></label>
+    <label class="fld">금액*<input type="number" id="g_amt" value="${v.amount||""}" step="0.01"></label>
     <label class="fld">결제일<input type="date" id="g_pd" value="${esc(v.payDate||"")}" onchange="calcNextPay()"></label>
     <label class="fld">구독 기간 단위<select id="g_term" onchange="calcNextPay()">${TERMS.map(t=>`<option ${(v.term||"1개월")===t?"selected":""}>${t}</option>`).join("")}</select></label>
     <label class="fld">다음 결제일<input type="date" id="g_next" value="${esc(v.nextDate||"")}"></label>
@@ -2284,7 +2285,7 @@ function subFormHtml(sub){
   </div>`;
 }
 function readSubForm(){
-  return {category:val("g_cat"),plan:val("g_plan").trim(),software:val("g_soft").trim(),amount:num("g_amt"),
+  return {category:val("g_cat"),currency:val("g_cur"),plan:val("g_plan").trim(),software:val("g_soft").trim(),amount:num("g_amt"),
     payDate:val("g_pd"),term:val("g_term"),nextDate:val("g_next"),renew:val("g_ren"),
     card:val("g_card").trim(),devices:(val("g_dev").trim()===""?"":num("g_dev")),note:val("g_note").trim()};
 }
@@ -2308,12 +2309,14 @@ function viewSubs(){
   const editing = ui.subEditId ? (DB.subs||[]).find(x=>String(x.id)===String(ui.subEditId)) : null;
   const showForm = ui.showSubForm || editing;
   const list = DB.subs||[];
-  const monthlySum = list.reduce((a,s)=>a + (Number(s.amount||0)/termMonths(s.term)), 0);
+  const monthlyKRW = list.filter(s=>s.currency!=="USD").reduce((a,s)=>a+Number(s.amount||0)/termMonths(s.term),0);
+  const monthlyUSD = list.filter(s=>s.currency==="USD").reduce((a,s)=>a+Number(s.amount||0)/termMonths(s.term),0);
+  const usd2=n=>Math.round(n*100)/100;
   const renPill=r=>{const c=r==="자동갱신"?"ok":(r==="해지예정"?"no":"pu");return r?`<span class="pill ${c}">${esc(r)}</span>`:"-";};
   const rowsHtml = list.length ? list.map(s=>`<tr>
       <td><b>${esc(s.category)||"-"}</b></td>
       <td>${esc(s.plan)||"-"}${s.software?`<div style="font-size:11px;color:var(--sub)">${esc(s.software)}</div>`:""}</td>
-      <td style="text-align:right">${won(s.amount)}원</td>
+      <td style="text-align:right">${s.currency==="USD"?("$"+won(s.amount)):(won(s.amount)+"원")}</td>
       <td>${esc(s.payDate)||"-"}</td>
       <td>${esc(s.term)||"-"}</td>
       <td>${esc(s.nextDate)||"-"}</td>
@@ -2327,7 +2330,7 @@ function viewSubs(){
   return `
   <div class="panel" style="margin-top:0">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <h2 style="margin:0">💳 구독관리 <span style="font-size:13px;color:var(--sub);font-weight:400">총 ${list.length}건 · 월 환산 합계 약 ${won(Math.round(monthlySum))}원</span></h2>
+      <h2 style="margin:0">💳 구독등록 <span style="font-size:13px;color:var(--sub);font-weight:400">총 ${list.length}건 · 월 원화 ₩${won(Math.round(monthlyKRW))} · 월 달러 $${usd2(monthlyUSD)}</span></h2>
       ${showForm?"":`<button class="btn" onclick="ui.showSubForm=true;render()">+ 구독 추가</button>`}
     </div>
     ${showForm?subFormHtml(editing):""}
