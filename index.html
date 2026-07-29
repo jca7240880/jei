@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.10 (2026-07-28) Supabase";
+const APP_VERSION="v6.11 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -786,7 +786,7 @@ function getLoginPw(){const r=DB.settings.find(x=>x.key==="loginPw");return r?St
 function getStaffPw(){const r=DB.settings.find(x=>x.key==="staffPw");return r?String(r.value):"";}
 // 강사에게 숨길 탭 (민감 정보)
 const STAFF_HIDDEN=["config"]; // 부원장에게 숨길 탭 (기초설정만)
-const STAFF_PAY_ALLOWED=["dash","sales"]; // 부원장이 수납관리에서 볼 수 있는 서브메뉴
+const STAFF_PAY_ALLOWED=["dash","sales","sms"]; // 부원장이 수납관리에서 볼 수 있는 서브메뉴
 function visibleTabs(){
   if(ROLE==="부원장")return TABS.filter(([k])=>!STAFF_HIDDEN.includes(k));
   return TABS;
@@ -4505,7 +4505,7 @@ function paymentSmsText(s){
 }
 function smsCopy(id){ const s=DB.students.find(x=>String(x.id)===String(id)); if(!s)return; const t=paymentSmsText(s); if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>alert("문자 내용이 복사되었습니다."),()=>alert("복사 실패 — 길게 눌러 복사하세요."));}else{alert("복사 미지원 — 아래 내용을 길게 눌러 복사하세요.");} }
 function viewPaySms(){
-  const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지");
+  const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지"&&(ROLE!=="부원장"||s.teacher==="부원장"));
   const rows=active.map(s=>({s,ep:eduPeriod(s)})).filter(x=>x.ep.valid&&x.ep.dday!=null&&x.ep.dday<=3&&x.ep.dday>=-7).sort((a,b)=>a.ep.dday-b.ep.dday);
   const cards=rows.map(({s,ep})=>{
     const tel=String(s.phone||"").replace(/[^0-9+]/g,"");
@@ -4525,7 +4525,7 @@ function viewPaySms(){
     </div>`;
   }).join("");
   return `<div class="panel" style="margin-top:0">
-    <h2 style="margin:0 0 4px">📱 결제안내 문자 <span style="font-size:13px;color:var(--sub);font-weight:400">결제예정일 3일 이내 · ${rows.length}명</span></h2>
+    <h2 style="margin:0 0 4px">📱 결제안내 문자 <span style="font-size:13px;color:var(--sub);font-weight:400">결제예정일 3일 이내 · ${rows.length}명</span>${ROLE==="부원장"?` <span class="tag" style="font-size:12px;padding:4px 9px;background:#eee;color:#555">담당 수강생만</span>`:""}</h2>
     <p style="font-size:12px;color:var(--sub);margin:0">[문자 보내기]를 누르면 폰 문자앱이 번호·내용이 채워진 채로 열립니다. 전송만 누르면 됩니다. (내용이 안 채워지면 [복사] 후 붙여넣기)</p>
   </div>
   ${rows.length?cards:`<div class="panel" style="margin-top:0"><div class="empty">결제예정일 3일 이내인 수강생이 없습니다.</div></div>`}`;
