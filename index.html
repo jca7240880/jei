@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.5 (2026-07-28) Supabase";
+const APP_VERSION="v6.6 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -525,7 +525,8 @@ function normDate(v){
   return str;
 }
 
-let DB={subs:[],seats:[],students:[],attendance:[],income:[],expense:[],sales:[],bookin:[],bookout:[],courses:[],methods:[],worklogs:[],consults:[],settings:[],courselogs:[],facilities:[],supplies:[],materials:[],equipments:[],inspections:[],lessons:[],leads:[],schedules:[],makeups:[],meetings:[],certs:[],exams:[],examapps:[]};
+let SUBS_CAUGHT=false;
+let DB={subs:[],seats:[],subpays:[],students:[],attendance:[],income:[],expense:[],sales:[],bookin:[],bookout:[],courses:[],methods:[],worklogs:[],consults:[],settings:[],courselogs:[],facilities:[],supplies:[],materials:[],equipments:[],inspections:[],lessons:[],leads:[],schedules:[],makeups:[],meetings:[],certs:[],exams:[],examapps:[]};
 let GAS=""; // (레거시 이름 유지) — 실제로는 Supabase URL을 저장
 let SUPA_KEY="";
 try{
@@ -536,7 +537,7 @@ try{
 const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["subs","구독관리"],["oper","장비관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null,regSub:"list",payEditId:null};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -544,7 +545,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -553,6 +554,7 @@ function toSupaRow(table, r){
     o.devices=(o.devices===""||o.devices==null)?null:Number(o.devices);
     o.amount=Number(o.amount)||0;
   }
+  if(table==="subpays"){ o.amount=Number(o.amount)||0; }
   const allow=SUPA_COLS[table];
   if(allow){ Object.keys(o).forEach(k=>{ if(!allow.includes(k)) delete o[k]; }); }
   return o;
@@ -1116,7 +1118,7 @@ function render(){
     else body=viewAssetTab(sub); // equipments/materials/supplies/facilities/inspections
     m.innerHTML=operSubBar()+body;
   }
-  if(tab==="subs")m.innerHTML=subsSubBar()+subsContent();
+  if(tab==="subs"){ if(!SUBS_CAUGHT){catchUpSubs();SUBS_CAUGHT=true;} m.innerHTML=subsSubBar()+subsContent(); }
   if(tab==="exam"){
     const sub=ui.examSub||"sched";
     m.innerHTML=examSubBar()+(sub==="apply"?viewExamApply():(sub==="stat"?viewExamStat():viewExamSched()));
@@ -2265,22 +2267,62 @@ function calcNextPay(){
   const z=n=>(n<10?"0":"")+n;
   const el=document.getElementById("g_next"); if(el)el.value=d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());
 }
+function subAddMonths(dateStr,months){const d=new Date(dateStr+"T00:00:00");if(isNaN(d))return dateStr;d.setMonth(d.getMonth()+months);const z=n=>(n<10?"0":"")+n;return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());}
+function subAddDays(dateStr,days){const d=new Date(dateStr+"T00:00:00");if(isNaN(d))return dateStr;d.setDate(d.getDate()+days);const z=n=>(n<10?"0":"")+n;return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());}
+function subNextAfter(dateStr,term){return subAddMonths(dateStr,termMonths(term));}
+function catchUpSubs(){
+  const today=todayStr(); let changed=false;
+  (DB.subs||[]).forEach(s=>{
+    if(s.status==="중지")return;
+    const start=s.startDate||s.payDate||"";
+    if(!start)return;
+    if(s.renew==="자동갱신"){
+      let cursor=start, guard=0;
+      while(cursor&&cursor<=today&&guard<300){
+        if(!(DB.subpays||[]).some(pp=>String(pp.subId)===String(s.id)&&pp.date===cursor)){
+          DB.subpays.push({id:uid(),subId:s.id,date:cursor,amount:s.amount,currency:s.currency||"KRW",auto:"자동",note:""});
+          changed=true;
+        }
+        cursor=subNextAfter(cursor,s.term); guard++;
+      }
+      if(s.nextDate!==cursor){ s.nextDate=cursor; changed=true; }
+    }else{
+      const mine=(DB.subpays||[]).filter(pp=>String(pp.subId)===String(s.id)).map(pp=>pp.date).sort();
+      const base=mine.length?mine[mine.length-1]:"";
+      const nd=base?subNextAfter(base,s.term):start;
+      if(s.nextDate!==nd){ s.nextDate=nd; changed=true; }
+    }
+  });
+  if(changed) save();
+  return changed;
+}
+function subsDue(){
+  const today=todayStr(), limit=subAddDays(today,10);
+  return (DB.subs||[]).filter(s=>s.status!=="중지"&&s.nextDate&&s.nextDate<=limit).sort((a,b)=>String(a.nextDate).localeCompare(String(b.nextDate)));
+}
+function stopSub(id){ const s=(DB.subs||[]).find(x=>String(x.id)===String(id)); if(!s)return; if(confirm(`'${s.category} ${s.plan||""}' 구독을 중지할까요? (이후 자동 등록 안 됨)`)){ s.status="중지"; save(); render(); } }
+function resumeSub(id){ const s=(DB.subs||[]).find(x=>String(x.id)===String(id)); if(!s)return; s.status="구독중"; catchUpSubs(); save(); render(); }
+function registerSubPay(id){ const s=(DB.subs||[]).find(x=>String(x.id)===String(id)); if(!s)return; const dt=s.nextDate||todayStr(); if((DB.subpays||[]).some(pp=>String(pp.subId)===String(s.id)&&pp.date===dt)){alert("이미 등록된 결제일입니다.");return;} DB.subpays.push({id:uid(),subId:s.id,date:dt,amount:s.amount,currency:s.currency||"KRW",auto:"수동",note:""}); s.nextDate=subNextAfter(dt,s.term); save(); render(); }
+function delSubPay(id){ const pp=(DB.subpays||[]).find(x=>String(x.id)===String(id)); if(!pp)return; if(confirm("이 결제 기록을 삭제할까요?")){ DB.subpays=DB.subpays.filter(x=>String(x.id)!==String(id)); save(); render(); } }
+function editSubPay(id){ ui.payEditId=id; render(); }
+function saveSubPay(id){ const pp=(DB.subpays||[]).find(x=>String(x.id)===String(id)); if(!pp)return; pp.date=val("pe_dt"); pp.amount=num("pe_amt"); pp.note=val("pe_note").trim(); ui.payEditId=null; save(); render(); }
+
 function subFormHtml(sub){
   const v=sub||{};
   const CATS=["오피스","캐드","그래픽","기타"];
   const TERMS=["1개월","3개월","6개월","1년","2년"];
-  const RENEWS=["자동갱신","수동갱신","해지예정"];
+  const RENEWS=["자동갱신","수동갱신"];
   const cardOpts=[...new Set((DB.methods||[]).map(m=>m.name).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join("");
   return `<div class="formbox">
     <label class="fld">구분*<select id="g_cat">${CATS.map(c=>`<option ${(v.category||"오피스")===c?"selected":""}>${c}</option>`).join("")}</select></label>
     <label class="fld">플랜 이름<input id="g_plan" value="${esc(v.plan||"")}" placeholder="예: Creative Cloud 모든 앱"></label>
-    <label class="fld" style="grid-column:span 2">포함 소프트웨어<input id="g_soft" value="${esc(v.software||"")}" placeholder="예: 포토샵, 라이트룸, 일러스트 (쉼표 구분)"></label>
+    <label class="fld" style="grid-column:span 2">포함 소프트웨어<input id="g_soft" value="${esc(v.software||"")}" placeholder="예: 포토샵, 라이트룸, 일러스트"></label>
     <label class="fld">통화<select id="g_cur"><option value="KRW" ${(v.currency||"KRW")==="KRW"?"selected":""}>원(₩)</option><option value="USD" ${v.currency==="USD"?"selected":""}>달러($)</option></select></label>
     <label class="fld">금액*<input type="number" id="g_amt" value="${v.amount||""}" step="0.01"></label>
-    <label class="fld">결제일<input type="date" id="g_pd" value="${esc(v.payDate||"")}" onchange="calcNextPay()"></label>
-    <label class="fld">구독 기간 단위<select id="g_term" onchange="calcNextPay()">${TERMS.map(t=>`<option ${(v.term||"1개월")===t?"selected":""}>${t}</option>`).join("")}</select></label>
-    <label class="fld">다음 결제일<input type="date" id="g_next" value="${esc(v.nextDate||"")}"></label>
-    <label class="fld">갱신여부<select id="g_ren">${RENEWS.map(r=>`<option ${(v.renew||"자동갱신")===r?"selected":""}>${r}</option>`).join("")}</select></label>
+    <label class="fld">구독 시작일*<input type="date" id="g_start" value="${esc(v.startDate||v.payDate||"")}"></label>
+    <label class="fld">구독 기간 단위<select id="g_term">${TERMS.map(t=>`<option ${(v.term||"1개월")===t?"selected":""}>${t}</option>`).join("")}</select></label>
+    <label class="fld">갱신방식<select id="g_ren">${RENEWS.map(r=>`<option ${(v.renew||"자동갱신")===r?"selected":""}>${r}</option>`).join("")}</select></label>
+    <label class="fld">상태<select id="g_st"><option ${(v.status||"구독중")==="구독중"?"selected":""}>구독중</option><option ${v.status==="중지"?"selected":""}>중지</option></select></label>
     <label class="fld">결제 카드<input id="g_card" list="dl_card" value="${esc(v.card||"")}" placeholder="예: 신한카드(1234)"><datalist id="dl_card">${cardOpts}</datalist></label>
     <label class="fld">등록 가능 기기(대)<input type="number" id="g_dev" min="0" value="${(v.devices!=null&&v.devices!=="")?v.devices:""}" placeholder="예: 2"></label>
     <label class="fld" style="grid-column:span 2">메모<input id="g_note" value="${esc(v.note||"")}" placeholder="비고"></label>
@@ -2290,57 +2332,143 @@ function subFormHtml(sub){
 }
 function readSubForm(){
   return {category:val("g_cat"),currency:val("g_cur"),plan:val("g_plan").trim(),software:val("g_soft").trim(),amount:num("g_amt"),
-    payDate:val("g_pd"),term:val("g_term"),nextDate:val("g_next"),renew:val("g_ren"),
+    startDate:val("g_start"),term:val("g_term"),renew:val("g_ren"),status:val("g_st"),
     card:val("g_card").trim(),devices:(val("g_dev").trim()===""?null:num("g_dev")),note:val("g_note").trim()};
 }
 function addSub(){
   const f=readSubForm();
   if(!f.category||!f.amount){alert("구분과 금액은 필수입니다.");return;}
-  DB.subs.push(Object.assign({id:uid()},f)); ui.showSubForm=false; save(); render();
+  if(!f.startDate){alert("구독 시작일을 입력하세요.");return;}
+  DB.subs.push(Object.assign({id:uid()},f)); ui.showSubForm=false; catchUpSubs(); save(); render();
 }
 function saveSub(id){
   const s=(DB.subs||[]).find(x=>String(x.id)===String(id)); if(!s)return;
   const f=readSubForm();
   if(!f.category||!f.amount){alert("구분과 금액은 필수입니다.");return;}
-  Object.assign(s,f); ui.subEditId=null; ui.showSubForm=false; save(); render();
+  if(!f.startDate){alert("구독 시작일을 입력하세요.");return;}
+  Object.assign(s,f); ui.subEditId=null; ui.showSubForm=false; catchUpSubs(); save(); render();
 }
 function editSub(id){ ui.subEditId=id; ui.showSubForm=true; render(); }
 function delSub(id){
   const s=(DB.subs||[]).find(x=>String(x.id)===String(id)); if(!s)return;
-  if(confirm(`'${s.category} ${s.plan||""}' 구독을 삭제할까요?`)){ DB.subs=DB.subs.filter(x=>String(x.id)!==String(id)); save(); render(); }
+  if(confirm(`'${s.category} ${s.plan||""}' 구독을 삭제할까요? (결제 내역은 유지됩니다)`)){ DB.subs=DB.subs.filter(x=>String(x.id)!==String(id)); save(); render(); }
 }
 function viewSubs(){
+  const rs=ui.regSub||"list";
+  const due=subsDue().length;
+  const nav=`<div style="display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap">${[["list","구독 목록"],["due","재구독예정"],["pay","결제내역"]].map(([k,l])=>`<button class="${rs===k?'btn':'btn sm'}" onclick="ui.regSub='${k}';render()">${l}${(k==='due'&&due)?` <span style="background:var(--red);color:#fff;border-radius:10px;padding:0 6px;font-size:11px">${due}</span>`:""}</button>`).join("")}</div>`;
+  const body = rs==="due"?viewSubDue():rs==="pay"?viewSubPays():viewSubList();
+  return nav+body;
+}
+function viewSubList(){
   const editing = ui.subEditId ? (DB.subs||[]).find(x=>String(x.id)===String(ui.subEditId)) : null;
   const showForm = ui.showSubForm || editing;
   const list = DB.subs||[];
-  const monthlyKRW = list.filter(s=>s.currency!=="USD").reduce((a,s)=>a+Number(s.amount||0)/termMonths(s.term),0);
-  const monthlyUSD = list.filter(s=>s.currency==="USD").reduce((a,s)=>a+Number(s.amount||0)/termMonths(s.term),0);
+  const act=list.filter(s=>s.status!=="중지");
+  const monthlyKRW = act.filter(s=>s.currency!=="USD").reduce((a,s)=>a+Number(s.amount||0)/termMonths(s.term),0);
+  const monthlyUSD = act.filter(s=>s.currency==="USD").reduce((a,s)=>a+Number(s.amount||0)/termMonths(s.term),0);
   const usd2=n=>Math.round(n*100)/100;
-  const renPill=r=>{const c=r==="자동갱신"?"ok":(r==="해지예정"?"no":"pu");return r?`<span class="pill ${c}">${esc(r)}</span>`:"-";};
-  const rowsHtml = list.length ? list.map(s=>`<tr>
+  const renPill=r=>r==="자동갱신"?`<span class="pill ok">자동갱신</span>`:(r==="수동갱신"?`<span class="pill pu">수동갱신</span>`:(r?esc(r):"-"));
+  const stPill=s=>s.status==="중지"?`<span class="pill no">중지</span>`:`<span class="pill ok">구독중</span>`;
+  const rowsHtml = list.length ? list.map(s=>`<tr style="${s.status==="중지"?'color:var(--sub);background:#fafafa':''}">
+      <td>${stPill(s)}</td>
       <td><b>${esc(s.category)||"-"}</b></td>
       <td>${esc(s.plan)||"-"}${s.software?`<div style="font-size:11px;color:var(--sub)">${esc(s.software)}</div>`:""}</td>
       <td style="text-align:right">${s.currency==="USD"?("$"+won(s.amount)):(won(s.amount)+"원")}</td>
-      <td>${esc(s.payDate)||"-"}</td>
       <td>${esc(s.term)||"-"}</td>
-      <td>${esc(s.nextDate)||"-"}</td>
       <td>${renPill(s.renew)}</td>
+      <td>${esc(s.startDate||s.payDate)||"-"}</td>
+      <td>${s.status==="중지"?"-":(esc(s.nextDate)||"-")}</td>
       <td>${esc(s.card)||"-"}</td>
       <td style="text-align:center">${(s.devices!=null&&s.devices!=="")?esc(s.devices)+"대":"-"}</td>
       <td style="white-space:nowrap">
         <button class="btn sm" onclick="editSub('${s.id}')">수정</button>
+        ${s.status==="중지"?`<button class="btn sm" onclick="resumeSub('${s.id}')">재개</button>`:`<button class="btn sm" onclick="stopSub('${s.id}')">중지</button>`}
         <button class="btn sm" style="color:var(--red);border-color:var(--red)" onclick="delSub('${s.id}')">삭제</button>
-      </td></tr>`).join("") : `<tr><td colspan="10" class="empty">등록된 구독이 없습니다.</td></tr>`;
+      </td></tr>`).join("") : `<tr><td colspan="11" class="empty">등록된 구독이 없습니다.</td></tr>`;
   return `
   <div class="panel" style="margin-top:0">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <h2 style="margin:0">💳 구독등록 <span style="font-size:13px;color:var(--sub);font-weight:400">총 ${list.length}건 · 월 원화 ₩${won(Math.round(monthlyKRW))} · 월 달러 $${usd2(monthlyUSD)}</span></h2>
+      <h2 style="margin:0">💳 구독 목록 <span style="font-size:13px;color:var(--sub);font-weight:400">구독중 기준 · 월 원화 ₩${won(Math.round(monthlyKRW))} · 월 달러 $${usd2(monthlyUSD)}</span></h2>
       ${showForm?"":`<button class="btn" onclick="ui.showSubForm=true;render()">+ 구독 추가</button>`}
     </div>
     ${showForm?subFormHtml(editing):""}
     <div class="twrap"><table>
-      <thead><tr><th>구분</th><th>플랜 / 포함 소프트웨어</th><th>금액</th><th>결제일</th><th>기간</th><th>다음 결제일</th><th>갱신</th><th>결제 카드</th><th>등록 가능 기기</th><th></th></tr></thead>
+      <thead><tr><th>상태</th><th>구분</th><th>플랜 / 포함 소프트웨어</th><th>금액</th><th>기간</th><th>갱신</th><th>시작일</th><th>다음 결제일</th><th>카드</th><th>기기</th><th></th></tr></thead>
       <tbody>${rowsHtml}</tbody>
+    </table></div>
+  </div>`;
+}
+function viewSubDue(){
+  const today=todayStr();
+  const list=subsDue();
+  const subName=s=>`${esc(s.category)||""}${s.plan?" · "+esc(s.plan):""}`;
+  const rowsHtml=list.length?list.map(s=>{
+    const overdue=s.nextDate<today;
+    const dday=Math.round((new Date(s.nextDate+"T00:00:00")-new Date(today+"T00:00:00"))/86400000);
+    const ddayTxt=overdue?`<span style="color:var(--red)">지남</span>`:(dday===0?`<span style="color:var(--red)">오늘</span>`:`D-${dday}`);
+    return `<tr>
+      <td><b>${subName(s)}</b></td>
+      <td>${s.renew==="자동갱신"?`<span class="pill ok">자동갱신</span>`:`<span class="pill pu">수동갱신</span>`}</td>
+      <td>${esc(s.nextDate)} <span style="font-size:11px;color:var(--sub)">${ddayTxt}</span></td>
+      <td style="text-align:right">${s.currency==="USD"?("$"+won(s.amount)):(won(s.amount)+"원")}</td>
+      <td style="white-space:nowrap">
+        ${s.renew==="수동갱신"?`<button class="btn sm" onclick="registerSubPay('${s.id}')">결제 등록</button>`:`<span style="font-size:11px;color:var(--sub)">앱 열 때 자동</span>`}
+        <button class="btn sm" style="color:var(--red);border-color:var(--red)" onclick="stopSub('${s.id}')">구독중지</button>
+      </td></tr>`;
+  }).join(""):`<tr><td colspan="5" class="empty">10일 이내 결제 예정인 구독이 없습니다.</td></tr>`;
+  return `<div class="panel" style="margin-top:0">
+    <h2 style="margin:0 0 4px">🔔 재구독예정 <span style="font-size:13px;color:var(--sub);font-weight:400">다음 결제일 10일 이내</span></h2>
+    <p style="font-size:12px;color:var(--sub);margin:0 0 10px">자동갱신은 앱을 열 때 자동으로 결제가 등록됩니다. 중지하려면 [구독중지]를 누르세요. 수동갱신은 [결제 등록]으로 직접 반영합니다.</p>
+    <div class="twrap"><table>
+      <thead><tr><th>구독</th><th>갱신</th><th>다음 결제일</th><th>금액</th><th></th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table></div>
+  </div>`;
+}
+function viewSubPays(){
+  const subById=id=>(DB.subs||[]).find(s=>String(s.id)===String(id));
+  const pays=[...(DB.subpays||[])].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const usd2=n=>Math.round(n*100)/100;
+  const groups={};
+  pays.forEach(pp=>{ const m=String(pp.date).slice(0,7); (groups[m]=groups[m]||[]).push(pp); });
+  const months=Object.keys(groups).sort().reverse();
+  let body="";
+  months.forEach(m=>{
+    const rows=groups[m];
+    const krw=rows.filter(pp=>pp.currency!=="USD").reduce((a,pp)=>a+Number(pp.amount||0),0);
+    const usd=rows.filter(pp=>pp.currency==="USD").reduce((a,pp)=>a+Number(pp.amount||0),0);
+    body+=`<tr style="background:var(--green-light);font-weight:800"><td colspan="3">${m}</td><td style="text-align:right">₩${won(Math.round(krw))}${usd?` · $${usd2(usd)}`:""}</td><td></td></tr>`;
+    rows.forEach(pp=>{
+      const s=subById(pp.subId);
+      const nm=s?`${esc(s.category)||""}${s.plan?" · "+esc(s.plan):""}`:"(삭제된 구독)";
+      if(ui.payEditId===pp.id){
+        body+=`<tr><td colspan="5"><div class="formbox" style="margin:0">
+          <label class="fld">결제일<input type="date" id="pe_dt" value="${esc(pp.date||"")}"></label>
+          <label class="fld">금액<input type="number" id="pe_amt" value="${pp.amount||""}" step="0.01"></label>
+          <label class="fld" style="grid-column:1/-1">메모<input id="pe_note" value="${esc(pp.note||"")}"></label>
+          <button class="btn" onclick="saveSubPay('${pp.id}')">저장</button>
+          <button class="btn sm" onclick="ui.payEditId=null;render()">취소</button>
+        </div></td></tr>`;
+      }else{
+        body+=`<tr>
+          <td>${esc(pp.date)}</td>
+          <td>${nm}</td>
+          <td>${pp.auto==="자동"?`<span class="pill ok">자동</span>`:`<span class="pill pu">수동</span>`}</td>
+          <td style="text-align:right">${pp.currency==="USD"?("$"+won(pp.amount)):(won(pp.amount)+"원")}</td>
+          <td style="white-space:nowrap"><button class="btn sm" onclick="editSubPay('${pp.id}')">수정</button><button class="btn sm" style="color:var(--red);border-color:var(--red)" onclick="delSubPay('${pp.id}')">삭제</button></td>
+        </tr>`;
+      }
+    });
+  });
+  const totKRW=pays.filter(pp=>pp.currency!=="USD").reduce((a,pp)=>a+Number(pp.amount||0),0);
+  const totUSD=pays.filter(pp=>pp.currency==="USD").reduce((a,pp)=>a+Number(pp.amount||0),0);
+  return `<div class="panel" style="margin-top:0">
+    <h2 style="margin:0 0 4px">🧾 결제 내역 <span style="font-size:13px;color:var(--sub);font-weight:400">총 ${pays.length}건 · 누적 ₩${won(Math.round(totKRW))}${totUSD?` · $${usd2(totUSD)}`:""}</span></h2>
+    <p style="font-size:12px;color:var(--sub);margin:0 0 10px">실제 청구 금액이 다르면 [수정]으로 조정하세요. 자동갱신 구독은 시작일 기준으로 매월 자동 기록됩니다.</p>
+    <div class="twrap"><table>
+      <thead><tr><th>결제일</th><th>구독</th><th>구분</th><th>금액</th><th></th></tr></thead>
+      <tbody>${pays.length?body:`<tr><td colspan="5" class="empty">결제 내역이 없습니다.</td></tr>`}</tbody>
     </table></div>
   </div>`;
 }
