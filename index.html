@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.9 (2026-07-28) Supabase";
+const APP_VERSION="v6.10 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -556,6 +556,7 @@ function toSupaRow(table, r){
   }
   if(table==="subpays"){ o.amount=Number(o.amount)||0; }
   if(table==="fees"){ ["sessions","minutes","fee"].forEach(k=>{ o[k]=(o[k]===""||o[k]==null)?null:Number(o[k]); }); }
+  if(table==="lessons"){ o.session=(o.session===""||o.session==null)?null:Number(o.session); }
   const allow=SUPA_COLS[table];
   if(allow){ Object.keys(o).forEach(k=>{ if(!allow.includes(k)) delete o[k]; }); }
   return o;
@@ -5304,7 +5305,7 @@ function addLesson(){
   if(!tx){alert("학습 내용을 입력하세요.");return;}
   const isCommon=ui.lesStudent==="공통(전체 수업)";
   const stu=isCommon?null:DB.students.find(st=>String(st.name)===String(ui.lesStudent));
-  DB.lessons.push({id:uid(),date:val("s_dt"),session:(val("s_ss").trim()===""?"":num("s_ss")),course:stu?(stu.course||""):"",student:isCommon?"":ui.lesStudent,text:tx});
+  DB.lessons.push({id:uid(),date:val("s_dt"),session:(val("s_ss").trim()===""?null:num("s_ss")),course:stu?(stu.course||""):"",student:isCommon?"":ui.lesStudent,text:tx});
   save();render();
 }
 function editLesson(id){
@@ -5318,7 +5319,7 @@ function saveLesson(id){
   const tx=val("le_tx").trim();
   if(!tx){alert("학습 내용을 입력하세요.");return;}
   l.date=val("le_dt");
-  l.session=(val("le_ss").trim()===""?"":num("le_ss"));
+  l.session=(val("le_ss").trim()===""?null:num("le_ss"));
   l.text=tx;
   ui.lesEditId=null; save(); render();
 }
