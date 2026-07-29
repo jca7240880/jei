@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.8 (2026-07-28) Supabase";
+const APP_VERSION="v6.9 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -537,7 +537,7 @@ try{
 const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["subs","구독관리"],["oper","장비관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null,regSub:"list",payEditId:null,feeEditId:null,showFeeForm:false};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null,regSub:"list",payEditId:null,feeEditId:null,showFeeForm:false,configSub:"teacher"};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -4670,38 +4670,39 @@ function getSources(){
   const ss=DB.settings.filter(x=>x.key==="leadSource").map(x=>x.value).filter(Boolean).sort((a,b)=>String(a).localeCompare(String(b),"ko"));
   return ss.length?ss:LEAD_SOURCES;
 }
+function configSubBar(){
+  const subs=[["teacher","강사"],["source","문의경로"],["course","과정"],["fee","수강료"],["method","결제수단"],["inexp","수입·지출 항목"],["security","보안·데이터"]];
+  const cur=ui.configSub||"teacher";
+  return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${cur===k?'on':''}" onclick="ui.configSub='${k}';render()">${l}</button>`).join("")}</div>`;
+}
 function viewConfig(){
+  const cur=ui.configSub||"teacher";
   const teachers=getTeachers(), sources=getSources();
-  return `
-  <div class="panel"><h2>👩\u200d🏫 강사 관리</h2>
+  let body="";
+  if(cur==="teacher"){
+    body=`<div class="panel" style="margin-top:0"><h2>👩\u200d🏫 강사 관리</h2>
     <p class="note" style="margin-top:0">수강생 담임·상담 담당자 드롭다운에 표시됩니다.</p>
     <div class="twrap" style="border:none"><table><thead><tr><th>강사명</th><th>작업</th></tr></thead><tbody>
     ${teachers.map(t=>`<tr><td>${esc(t)}</td><td><button class="btn sm" onclick="delConfigItem('teacher','${esc(t)}')">🗑</button></td></tr>`).join("")}
     </tbody></table></div>
     <div style="margin-top:10px"><button class="btn sm" onclick="addConfigItem('teacher','강사명을 입력하세요 (예: 김강사)')">＋ 강사 추가</button></div>
-  </div>
-
-  <div class="panel"><h2>📣 문의경로 관리</h2>
+  </div>`;
+  }else if(cur==="source"){
+    body=`<div class="panel" style="margin-top:0"><h2>📣 문의경로 관리</h2>
     <p class="note" style="margin-top:0">상담관리의 ‘문의경로’ 드롭다운에 표시됩니다.</p>
     <div class="twrap" style="border:none"><table><thead><tr><th>문의경로</th><th>작업</th></tr></thead><tbody>
     ${sources.map(t=>`<tr><td>${esc(t)}</td><td><button class="btn sm" onclick="delConfigItem('leadSource','${esc(t)}')">🗑</button></td></tr>`).join("")}
     </tbody></table></div>
     <div style="margin-top:10px"><button class="btn sm" onclick="addConfigItem('leadSource','문의경로를 입력하세요 (예: 당근마켓)')">＋ 문의경로 추가</button></div>
-  </div>
-
-  <div class="panel"><h2>📚 과정 관리</h2>
-    ${courseMgrInline()}
-  </div>
-
-  <div class="panel"><h2>💰 과정별 요금표</h2>
-    ${feeMgrHtml()}
-  </div>
-
-  <div class="panel"><h2>💳 결제수단 관리</h2>
-    ${methodMgrInline()}
-  </div>
-
-  <div class="panel"><h2>📥 수입 항목 관리</h2>
+  </div>`;
+  }else if(cur==="course"){
+    body=`<div class="panel" style="margin-top:0"><h2>📚 과정 관리</h2>${courseMgrInline()}</div>`;
+  }else if(cur==="fee"){
+    body=`<div class="panel" style="margin-top:0"><h2>💰 과정별 요금표</h2>${feeMgrHtml()}</div>`;
+  }else if(cur==="method"){
+    body=`<div class="panel" style="margin-top:0"><h2>💳 결제수단 관리</h2>${methodMgrInline()}</div>`;
+  }else if(cur==="inexp"){
+    body=`<div class="panel" style="margin-top:0"><h2>📥 수입 항목 관리</h2>
     <p class="note" style="margin-top:0">대분류별 계정과목 전체입니다. ✕로 삭제, 아래에서 추가할 수 있습니다. (기존 기록은 삭제해도 유지됩니다)</p>
     ${catTreeHtml("inc")}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
@@ -4725,9 +4726,9 @@ function viewConfig(){
       <input id="ec_newbig" placeholder="새 대분류 (예: 연구개발)" style="flex:1 1 160px">
       <button class="btn sm" onclick="addCatBig('expCat','ec_newbig')">＋ 대분류 추가</button>
     </div>
-  </div>
-
-  <div class="panel"><h2>🔑 보안 · 데이터</h2>
+  </div>`;
+  }else{
+    body=`<div class="panel" style="margin-top:0"><h2>🔑 보안 · 데이터</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn sm" onclick="setLoginPw()">원장 암호 설정</button>
       <button class="btn sm" onclick="setStaffPw()">부원장 암호 설정</button>
@@ -4736,6 +4737,8 @@ function viewConfig(){
     </div>
     <p class="note">※ <b>원장 암호</b>: 전체 기능. <b>부원장 암호</b>: 기초설정 탭 · 수납의 수입/지출 내역 · 대시보드 월간현황만 제외되고 나머지(수강생·상담·업무·운영·도서·캘린더·납입내역)는 전부 사용 가능합니다.</p>
   </div>`;
+  }
+  return configSubBar()+body;
 }
 function catTreeHtml(kind){
   const cats=kind==="inc"?getIncCat():getExpCat();
