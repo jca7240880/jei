@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.6 (2026-07-28) Supabase";
+const APP_VERSION="v6.7 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -1106,6 +1106,7 @@ function render(){
     const sub=ui.paySub||"dash";
     let body;
     if(sub==="sales")body=viewSales();
+    else if(sub==="sms")body=viewPaySms();
     else if(sub==="inc")body=viewInc();
     else if(sub==="exp")body=viewExp();
     else body=viewPay();
@@ -2109,7 +2110,7 @@ function stuSubBar(){
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.stuSub||"list")===k?'on':''}" onclick="ui.stuSub='${k}';ui.detailId=null;render()">${l}</button>`).join("")}</div>`;
 }
 function paySubBar(){
-  let subs=[["dash","📊 대시보드"],["sales","💳 수강료 납입내역"],["inc","📥 수입내역"],["exp","📤 지출내역"]];
+  let subs=[["dash","📊 대시보드"],["sales","💳 수강료 납입내역"],["sms","📱 결제안내 문자"],["inc","📥 수입내역"],["exp","📤 지출내역"]];
   if(ROLE==="부원장")subs=subs.filter(([k])=>STAFF_PAY_ALLOWED.includes(k));
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.paySub||"dash")===k?'on':''}" onclick="ui.paySub='${k}';render()">${l}</button>`).join("")}</div>`;
 }
@@ -2880,6 +2881,7 @@ function viewStuDetail(){
     <span style="flex:1"></span>
     <button class="btn sm" onclick="ui.editStu=!ui.editStu;render()">${ui.editStu?"수정 취소":"✎ 정보 수정"}</button>
     <button class="btn" onclick="payStudent('${s.id}')">💳 결제 등록</button>
+    <button class="btn sm" onclick="saveContactStu('${s.id}')">📇 연락처 저장</button>
   </div>
   ${ui.editStu?stuFormHtml(s):`
   <div class="panel" style="margin-top:0"><h2>기본 정보</h2>
@@ -4389,6 +4391,82 @@ function convertLead(id){
   save();
   ui.detailId=sid;tab="stu";render();
   alert(`'${l.name}'님이 수강생으로 등록되었습니다.\n과정·수강료를 입력해 주세요.`);
+  if(l.phone&&confirm(`'${l.name}'님을 폰 연락처에 저장할까요?`)) saveContact(l.name,l.phone);
+}
+function vcardText(name,phone){
+  const e=v=>String(v||"").replace(/([;,\\])/g,"\\$1").replace(/\n/g," ");
+  const tel=String(phone||"").replace(/[^0-9+]/g,"");
+  const nm=e(name);
+  return "BEGIN:VCARD\r\nVERSION:3.0\r\nN:"+nm+";;;\r\nFN:"+nm+"\r\nTEL;TYPE=CELL:"+tel+"\r\nEND:VCARD\r\n";
+}
+function saveContact(name,phone){
+  if(!phone){alert("전화번호가 없습니다.");return;}
+  try{
+    const blob=new Blob([vcardText(name,phone)],{type:"text/vcard;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=(name||"수강생")+".vcf";
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
+  }catch(e){ alert("연락처 파일 생성 실패: "+e.message); }
+}
+function saveContactStu(id){ const s=DB.students.find(x=>String(x.id)===String(id)); if(!s)return; saveContact(s.name,s.phone); }
+
+function smsFmtDate(dateStr){ const d=new Date(dateStr+"T00:00:00"); if(isNaN(d))return dateStr; return (d.getMonth()+1)+"월 "+d.getDate()+"일"; }
+function smsWeekday(dateStr){ const d=new Date(dateStr+"T00:00:00"); if(isNaN(d))return ""; return ["일","월","화","수","목","금","토"][d.getDay()]+"요일"; }
+function eduPeriod(s){
+  const info=nextDueInfo(s);
+  const map={"일":0,"월":1,"화":2,"수":3,"목":4,"금":5,"토":6};
+  if(info.type==="count"){
+    const start=info.proj||"";
+    const want=String(s.classDays||"").split(",").map(x=>map[x.trim()]).filter(x=>x!==undefined);
+    const n=Number(s.totalSessions)||0;
+    let end="";
+    if(start&&want.length&&n>0){
+      let cur=new Date(start+"T00:00:00"), count=0, guard=0;
+      while(count<n&&guard<400){ if(want.includes(cur.getDay())){ count++; end=ymd(cur); if(count>=n)break; } cur.setDate(cur.getDate()+1); guard++; }
+    }
+    return {due:start,start:start,end:end,dday:info.dday,valid:!!start};
+  }
+  if(info.type==="date"){
+    const due=info.due||""; let end="";
+    if(due){ const months=info.months||1; const d=new Date(due+"T00:00:00"); d.setMonth(d.getMonth()+months); d.setDate(d.getDate()-1); end=ymd(d); }
+    return {due:due,start:due,end:end,dday:info.dday,valid:!!due};
+  }
+  return {due:"",start:"",end:"",dday:null,valid:false};
+}
+function paymentSmsText(s){
+  const ep=eduPeriod(s);
+  const period=(ep.start&&ep.end)?`${smsFmtDate(ep.start)} ~ ${smsFmtDate(ep.end)}`:"";
+  const dueTxt=ep.due?`${smsFmtDate(ep.due)} ${smsWeekday(ep.due)}까지`:"";
+  const fee=Number(s.tuition)||0;
+  return `[교육비 안내]\n안녕하세요, 제이컴퓨터학원입니다.\n${s.name} 수강생의 수업료 결제일 안내드립니다.\n■ 교육과정 : ${s.course||""}\n■ 교육기간 : ${period}\n■ 수업료 : ${won(fee)}원\n■ 납부기한 : ${dueTxt}\n■ 입금계좌 : 국민은행 703001-01-564917 이주희(제이컴퓨터학원)\n기한 내 납부 부탁드리며, 카드 결제를 희망하거나 수업일정 변경의 경우 학원에 방문하시어 말씀해주시면 감사하겠습니다.`;
+}
+function smsCopy(id){ const s=DB.students.find(x=>String(x.id)===String(id)); if(!s)return; const t=paymentSmsText(s); if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>alert("문자 내용이 복사되었습니다."),()=>alert("복사 실패 — 길게 눌러 복사하세요."));}else{alert("복사 미지원 — 아래 내용을 길게 눌러 복사하세요.");} }
+function viewPaySms(){
+  const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지");
+  const rows=active.map(s=>({s,ep:eduPeriod(s)})).filter(x=>x.ep.valid&&x.ep.dday!=null&&x.ep.dday<=3&&x.ep.dday>=-7).sort((a,b)=>a.ep.dday-b.ep.dday);
+  const cards=rows.map(({s,ep})=>{
+    const tel=String(s.phone||"").replace(/[^0-9+]/g,"");
+    const txt=paymentSmsText(s);
+    const dtxt=ep.dday>0?`D-${ep.dday}`:(ep.dday===0?"오늘":`${-ep.dday}일 지남`);
+    const dcol=ep.dday<=0?"var(--red)":(ep.dday<=1?"var(--amber)":"var(--green)");
+    return `<div class="panel" style="margin-top:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:16px">${esc(s.name)} <span style="font-size:12px;color:${dcol};font-weight:700">${dtxt}</span> <span style="font-size:12px;color:var(--sub);font-weight:400">${esc(s.course||"")}</span></h2>
+        <div style="white-space:nowrap">
+          ${tel?`<a class="btn sm" style="background:var(--green);color:#fff;border:none;text-decoration:none" href="sms:${tel}?body=${encodeURIComponent(txt)}">📱 문자 보내기</a>`:`<span style="font-size:11px;color:var(--red)">번호 없음</span>`}
+          <button class="btn sm" onclick="smsCopy('${s.id}')">복사</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--sub);margin:4px 0 8px">교육기간 ${ep.start&&ep.end?smsFmtDate(ep.start)+" ~ "+smsFmtDate(ep.end):"(수업요일·횟수 입력 필요)"} · 납부기한 ${ep.due?smsFmtDate(ep.due):"-"} · 수업료 ${won(Number(s.tuition)||0)}원</div>
+      <pre style="white-space:pre-wrap;background:var(--green-light);border-radius:8px;padding:10px;font-size:12px;margin:0;font-family:inherit">${esc(txt)}</pre>
+    </div>`;
+  }).join("");
+  return `<div class="panel" style="margin-top:0">
+    <h2 style="margin:0 0 4px">📱 결제안내 문자 <span style="font-size:13px;color:var(--sub);font-weight:400">결제예정일 3일 이내 · ${rows.length}명</span></h2>
+    <p style="font-size:12px;color:var(--sub);margin:0">[문자 보내기]를 누르면 폰 문자앱이 번호·내용이 채워진 채로 열립니다. 전송만 누르면 됩니다. (내용이 안 채워지면 [복사] 후 붙여넣기)</p>
+  </div>
+  ${rows.length?cards:`<div class="panel" style="margin-top:0"><div class="empty">결제예정일 3일 이내인 수강생이 없습니다.</div></div>`}`;
 }
 function viewPay(){
   const today=todayStr();
