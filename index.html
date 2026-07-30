@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.14 (2026-07-29) Supabase";
+const APP_VERSION="v6.15 (2026-07-29) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2083,7 +2083,7 @@ function viewQuitList(){
     <div class="toolbar">
       <input placeholder="이름/연락처 검색" value="${esc(ui.quitSearch||"")}" oninput="ui.quitSearch=this.value;render()" style="min-width:200px">
     </div>
-    <div class="twrap"><table><thead><tr><th>성명</th><th>구분</th><th>연락처</th><th>과정</th><th>담임</th><th>등록일</th><th>퇴원일</th><th>참고사항</th><th></th></tr></thead><tbody>
+    <div class="twrap"><table><thead><tr><th>성명</th><th>대상</th><th>연락처</th><th>과정</th><th>담임</th><th>등록일</th><th>퇴원일</th><th>참고사항</th><th></th></tr></thead><tbody>
     ${list.length?list.map(s=>`<tr>
       <td><span class="namelink" onclick="openDetail('${s.id}')">${esc(s.name)}</span></td>
       <td>${s.gubun?`<span class="pill ${s.gubun==='학생'?'pu':'ok'}">${esc(s.gubun)}</span>`:""}</td>
@@ -2820,7 +2820,7 @@ function viewStu(){
       ${courseNames().map(c=>`<option ${ui.filter===c?'selected':''}>${esc(c)}</option>`).join("")}
     </select>
     <select onchange="ui.gubunFilter=this.value;render()" title="구분별">
-      <option ${ui.gubunFilter==='전체'?'selected':''}>구분 전체</option>
+      <option ${ui.gubunFilter==='전체'?'selected':''}>대상 전체</option>
       <option ${ui.gubunFilter==='학생'?'selected':''}>학생</option>
       <option ${ui.gubunFilter==='성인'?'selected':''}>성인</option>
     </select>
@@ -2842,7 +2842,7 @@ function viewStu(){
     <button class="btn" onclick="ui.showStuForm=!ui.showStuForm;render()">+ 수강생 등록</button>
   </div>
   ${ui.showStuForm?stuFormHtml(null):""}
-  <div class="twrap"><table><thead><tr><th>성명</th><th>구분</th><th>연락처</th><th>과정명</th><th>수업요일</th><th>담임</th><th>등록일</th><th>수강료</th><th>최근납부일</th><th>다음 결제</th><th>결제예정일</th><th>상태</th><th>관리</th></tr></thead><tbody id="stuBody">
+  <div class="twrap"><table><thead><tr><th>성명</th><th>대상</th><th>연락처</th><th>과정명</th><th>수업요일</th><th>담임</th><th>등록일</th><th>수강료</th><th>최근납부일</th><th>다음 결제</th><th>결제예정일</th><th>상태</th><th>관리</th></tr></thead><tbody id="stuBody">
   ${list.length?list.map(s=>stuRow(s)).join(""):`<tr><td colspan="13" class="empty">수강생이 없습니다. ‘+ 수강생 등록’으로 추가하세요.${courseNames().length?"":" (먼저 기초설정 → 과정 관리에서 과정을 등록하세요)"}</td></tr>`}
   </tbody></table></div>
   <p class="note">※ 이름을 클릭하면 상세 정보·상담기록 페이지가 열립니다. ‘다음 결제’는 기간제는 최근결제일+주기, 횟수제는 최근결제일 이후 출석 횟수 기준으로 자동 계산됩니다.</p>`;
@@ -2969,15 +2969,23 @@ function delCourse(id){
   const c=DB.courses.find(x=>String(x.id)===String(id));
   if(c&&confirm(`'${c.name}' 과정을 목록에서 삭제할까요? (기존 수강생 기록은 유지됩니다)`)){DB.courses=DB.courses.filter(x=>String(x.id)!==String(id));save();render();}
 }
+const GUBUNS=["OA","CAD","그래픽","기타"];
+const GUBUN_COURSES={
+  "OA":["OA 기초","OA 활용","OA 실무","ITQ OA 마스터","워드프로세서","컴활2급","사무자동화"],
+  "그래픽":["디자인 기초","디자인 실무","GTQ 그래픽 마스터"],
+  "CAD":["CAD 기초","CAD 실무","건축 기능사","토목 기능사","실내건축 기능사","기계 기능사","전기 기능사"],
+  "기타":[]
+};
+function feeGubunChange(){ const g=val("fe_gb"); const list=GUBUN_COURSES[g]||[]; const dl=document.getElementById("fe_co_dl"); if(dl)dl.innerHTML=list.map(c=>`<option value="${esc(c)}">`).join(""); }
 function feeFormHtml(fee){
   const v=fee||{};
   return `<div class="formbox">
     <label class="fld">대상<select id="fe_tg"><option ${(v.target||"성인")==="성인"?"selected":""}>성인</option><option ${v.target==="학생"?"selected":""}>학생</option></select></label>
     <label class="fld">방식<select id="fe_mt"><option ${(v.method||"횟수제")==="횟수제"?"selected":""}>횟수제</option><option ${v.method==="기간제"?"selected":""}>기간제</option></select></label>
-    <label class="fld">구분(반)<input id="fe_gb" value="${esc(v.gubun||"")}" placeholder="예: 활용반"></label>
-    <label class="fld">과목<input id="fe_co" value="${esc(v.course||"")}" placeholder="예: OA"></label>
+    <label class="fld">구분<select id="fe_gb" onchange="feeGubunChange()">${GUBUNS.map(g=>`<option ${(v.gubun||"OA")===g?"selected":""}>${g}</option>`).join("")}</select></label>
+    <label class="fld">과정명<input id="fe_co" list="fe_co_dl" value="${esc(v.course||"")}" placeholder="예: 컴활2급"><datalist id="fe_co_dl">${(GUBUN_COURSES[v.gubun||"OA"]||[]).map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
     <label class="fld">주당횟수<input id="fe_pw" value="${esc(v.perweek||"")}" placeholder="예: 주2회"></label>
-    <label class="fld">회차<input type="number" id="fe_se" value="${(v.sessions!=null&&v.sessions!=="")?v.sessions:""}" placeholder="횟수제만"></label>
+    <label class="fld">수업회차<input type="number" id="fe_se" value="${(v.sessions!=null&&v.sessions!=="")?v.sessions:""}" placeholder="횟수제만"></label>
     <label class="fld">수업시간(분)<input type="number" id="fe_mn" value="${(v.minutes!=null&&v.minutes!=="")?v.minutes:""}" placeholder="예: 60"></label>
     <label class="fld">수강료(원)*<input type="number" id="fe_fee" value="${(v.fee!=null&&v.fee!=="")?v.fee:""}"></label>
     <button class="btn" onclick="${fee?`saveFee('${fee.id}')`:"addFee()"}">${fee?"수정 저장":"추가"}</button>
@@ -3001,7 +3009,7 @@ function feeMgrHtml(){
   return `<p class="note" style="margin-top:0">수강생 등록 시 여기서 회차·수강료·수업시간을 자동으로 불러옵니다. 주3회/주2회 등 옵션마다 한 줄씩 등록하세요.</p>
     ${showForm?feeFormHtml(editing):`<button class="btn sm" onclick="ui.showFeeForm=true;render()">＋ 요금 추가</button>`}
     <div class="twrap" style="margin-top:10px"><table>
-      <thead><tr><th>대상</th><th>방식</th><th>구분</th><th>과목</th><th>주당횟수</th><th>회차</th><th>수업시간</th><th>수강료</th><th></th></tr></thead>
+      <thead><tr><th>대상</th><th>방식</th><th>구분</th><th>과정명</th><th>주당횟수</th><th>수업회차</th><th>수업시간</th><th>수강료</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
 }
 function feeLabel(f){ return [f.gubun,f.method,f.perweek,(f.method==="횟수제"&&f.sessions)?f.sessions+"회":"",f.minutes?f.minutes+"분":"",won(f.fee)+"원"].filter(Boolean).join(" · "); }
@@ -3033,7 +3041,7 @@ function stuFormHtml(s){
   return `<div class="formbox">
     ${feeLoaderHtml()}
     <label class="fld">성명*<input id="f_nm" value="${esc(v.name||"")}"></label>
-    <label class="fld">구분<select id="f_gu"><option ${v.gubun==='학생'?'selected':''}>학생</option><option ${v.gubun==='성인'?'selected':''}>성인</option></select></label>
+    <label class="fld">대상<select id="f_gu"><option ${v.gubun==='학생'?'selected':''}>학생</option><option ${v.gubun==='성인'?'selected':''}>성인</option></select></label>
     <label class="fld">연락처<input id="f_ph" value="${esc(v.phone||"")}" placeholder="010-0000-0000"></label>
     <label class="fld">보호자 연락처<input id="f_gd" value="${esc(v.guardian||"")}"></label>
     <label class="fld" style="grid-column:span 2">주소<input id="f_ad" value="${esc(v.addr||"")}" placeholder="예: 충주시 칠금동 000-0"></label>
@@ -3124,7 +3132,7 @@ function viewStuDetail(){
       const pays=DB.sales.filter(l=>String(l.name)===String(s.name)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
       if(!pays.length)return `<div class="empty">결제 이력이 없습니다. 매출상세에 '${esc(s.name)}' 이름으로 입력하면 자동으로 표시됩니다.</div>`;
       const tot=pays.reduce((a,l)=>a+Number(l.paidAmount),0);
-      return `<div class="twrap" style="border:none"><table><thead><tr><th>날짜</th><th>구분</th><th>과정명</th><th>결제수단</th><th>결제금액</th><th>입금일</th><th>입금액</th></tr></thead><tbody>
+      return `<div class="twrap" style="border:none"><table><thead><tr><th>날짜</th><th>대상</th><th>과정명</th><th>결제수단</th><th>결제금액</th><th>입금일</th><th>입금액</th></tr></thead><tbody>
       ${pays.map(l=>`<tr><td>${esc(l.date)}</td><td>${esc(l.gubun)}</td><td>${esc(l.course)}</td><td>${esc(l.method)}</td><td><b>${won(l.paidAmount)}원</b></td><td>${esc(l.depositDate)||'<span style="color:var(--amber)">대기</span>'}</td><td>${l.depositAmount?won(l.depositAmount):"-"}</td></tr>`).join("")}
       <tr style="background:var(--green-light)"><td colspan="4"><b>합계 ${pays.length}건</b></td><td><b>${won(tot)}원</b></td><td colspan="2"></td></tr></tbody></table></div>`;
     })()}
@@ -3701,7 +3709,7 @@ function printSalesReport(){
   ${keys.length?`<tr class="tot"><td style="text-align:center">총합계</td><td style="text-align:right">${won(tot.tuition)}</td><td style="text-align:right">${won(tot.paid)}</td><td style="text-align:right">${tot.disc?won(tot.disc):""}</td></tr>`:""}
   </tbody></table>
   <h2>세부내역</h2>
-  <table class="d"><thead><tr><th style="width:6%">순번</th><th style="width:9%">날짜</th><th style="width:11%">결제수단</th><th style="width:13%">결제금액</th><th style="width:8%">구분</th><th style="width:11%">성명</th><th>과정명</th><th style="width:12%">수강료</th><th style="width:9%">할인</th></tr></thead>
+  <table class="d"><thead><tr><th style="width:6%">순번</th><th style="width:9%">날짜</th><th style="width:11%">결제수단</th><th style="width:13%">결제금액</th><th style="width:8%">대상</th><th style="width:11%">성명</th><th>과정명</th><th style="width:12%">수강료</th><th style="width:9%">할인</th></tr></thead>
   <tbody>${detRows||`<tr><td colspan="9" style="text-align:center">내역 없음</td></tr>`}</tbody>
   ${_printFoot(9)}</table>
   <script>window.onload=function(){window.print();}<\/script></body></html>`;
@@ -3785,7 +3793,7 @@ function viewSales(){
   <div class="formbox">
     <label class="fld">날짜<input type="date" id="m_dt" value="${todayStr()}"></label>
     <label class="fld">결제수단<select id="m_md" onchange="document.getElementById('m_cardwrap').style.display=this.value==='카드'?'flex':'none'">${SALE_METHODS.map(m=>`<option>${m}</option>`).join("")}</select></label>
-    <label class="fld">구분<select id="m_gb"><option>성인</option><option>학생</option></select></label>
+    <label class="fld">대상<select id="m_gb"><option>성인</option><option>학생</option></select></label>
     <label class="fld">성명<input id="m_nm" value="${esc(pf.name||"")}" list="stuNames"><datalist id="stuNames">${[...DB.students].sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(s=>`<option value="${esc(s.name)}">`).join("")}</datalist></label>
     <label class="fld">과정명${courseSelect("m_co",pf.course||"",true)}</label>
     <label class="fld">수강료(원)<input type="number" id="m_tu" value="${pf.tuition||""}"></label>
@@ -3797,7 +3805,7 @@ function viewSales(){
     <label class="fld">비고<input id="m_no"></label>
     <button class="btn" onclick="addSales()">납입 기록</button>
   </div>
-  <div class="twrap"><table><thead><tr><th><input type="checkbox" onchange="salesToggleAll(this.checked)" title="전체 선택"></th><th>날짜</th><th>결제수단</th><th>결제금액</th><th>구분</th><th>성명</th><th>과정명</th><th>방식</th><th>수강료</th><th>할인</th><th>카드사</th><th>승인번호</th><th>입금일</th><th>입금액</th><th>수수료</th><th>비고</th></tr></thead><tbody id="salesBody">
+  <div class="twrap"><table><thead><tr><th><input type="checkbox" onchange="salesToggleAll(this.checked)" title="전체 선택"></th><th>날짜</th><th>결제수단</th><th>결제금액</th><th>대상</th><th>성명</th><th>과정명</th><th>방식</th><th>수강료</th><th>할인</th><th>카드사</th><th>승인번호</th><th>입금일</th><th>입금액</th><th>수수료</th><th>비고</th></tr></thead><tbody id="salesBody">
   ${salesRowsHtml(list)}
   </tbody></table></div>
   <p class="note">※ <b>계좌이체·현금</b>은 결제일에 자동으로 입금 처리됩니다. <b>카드</b>는 입금일을 비워두고, 며칠 뒤 입금되면 <b>✎ 입금</b>으로 입금일·입금액을 입력하면 <b>수수료=결제금액−입금액</b>으로 자동 계산됩니다.</p>`;
