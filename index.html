@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.13 (2026-07-28) Supabase";
+const APP_VERSION="v6.14 (2026-07-29) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -537,7 +537,7 @@ try{
 const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["subs","구독관리"],["oper","장비관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null,regSub:"list",payEditId:null,feeEditId:null,showFeeForm:false,configSub:"teacher",checkMonth:thisMonth()};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null,regSub:"list",payEditId:null,feeEditId:null,showFeeForm:false,configSub:"teacher",checkMonth:thisMonth(),assetRegKind:"equipments",checkDate:""};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1119,7 +1119,9 @@ function render(){
     let body;
     if(sub==="dash")body=viewOperDash();
     else if(sub==="check")body=viewMonthCheck();
-    else body=viewAssetTab(sub); // equipments/materials/supplies/facilities/inspections
+    else if(sub==="assets")body=viewAssetReg();
+    else if(sub==="inspections")body=viewInspections();
+    else body=viewCheckHistory(sub); // equipments/materials/supplies/facilities
     m.innerHTML=operSubBar()+body;
   }
   if(tab==="subs"){ if(!SUBS_CAUGHT){catchUpSubs();SUBS_CAUGHT=true;} m.innerHTML=subsSubBar()+subsContent(); }
@@ -2120,33 +2122,34 @@ function paySubBar(){
 const CHECK_CATS=[["equipments","🖥 장비(PC)"],["materials","🔧 기자재"],["supplies","📦 비품"],["facilities","🏢 시설"]];
 function assetSub(a){ return a.code||a.area||a.location||a.seat||""; }
 function natCmp(a,b){ return String(a||"").localeCompare(String(b||""),"ko",{numeric:true,sensitivity:"base"}); }
+function checkDateFor(m){ return (ui.checkDate&&String(ui.checkDate).startsWith(m))?ui.checkDate:(m+"-15"); }
 function setCheck(kind,assetId,name,code,result){
-  const m=ui.checkMonth||thisMonth();
+  const m=ui.checkMonth||thisMonth(); const cd=checkDateFor(m);
   let c=DB.checks.find(x=>String(x.assetId)===String(assetId)&&x.kind===kind&&x.month===m);
-  if(c){ c.result=result; c.date=todayStr(); c.name=name; c.code=code; }
-  else DB.checks.push({id:uid(),kind:kind,assetId:assetId,name:name,code:code,month:m,date:todayStr(),result:result,note:""});
+  if(c){ c.result=result; c.date=cd; c.name=name; c.code=code; }
+  else DB.checks.push({id:uid(),kind:kind,assetId:assetId,name:name,code:code,month:m,date:cd,result:result,note:""});
   save(); render();
 }
 function checkAllGood(kind){
-  const m=ui.checkMonth||thisMonth();
+  const m=ui.checkMonth||thisMonth(); const cd=checkDateFor(m);
   (DB[kind]||[]).filter(a=>!a.dispose&&a.name).forEach(a=>{
     if(!DB.checks.some(x=>String(x.assetId)===String(a.id)&&x.kind===kind&&x.month===m)){
-      DB.checks.push({id:uid(),kind:kind,assetId:a.id,name:a.name,code:assetSub(a),month:m,date:todayStr(),result:"양호",note:""});
+      DB.checks.push({id:uid(),kind:kind,assetId:a.id,name:a.name,code:assetSub(a),month:m,date:cd,result:"양호",note:""});
     }
   });
   save(); render();
 }
 function viewMonthCheck(){
-  const m=ui.checkMonth||thisMonth();
+  const m=ui.checkMonth||thisMonth(); const cd=checkDateFor(m);
   const catsHtml=CHECK_CATS.map(([kind,label])=>{
     const arr=(DB[kind]||[]).filter(a=>!a.dispose&&a.name).sort((x,y)=>natCmp(x.name,y.name)||natCmp(assetSub(x),assetSub(y)));
     const rows=arr.map(a=>{
       const c=DB.checks.find(x=>String(x.assetId)===String(a.id)&&x.kind===kind&&x.month===m);
-      const r=c?c.result:"";
-      const sub=assetSub(a);
+      const r=c?c.result:""; const sub=assetSub(a);
       const gStyle=r==="양호"?'background:var(--green);color:#fff;border:none':'';
       const bStyle=r==="부적합"?'background:var(--red);color:#fff;border:none':'';
       return `<tr>
+        <td>${c?esc(c.date):`<span style="color:var(--sub)">${esc(cd)}</span>`}</td>
         <td><b>${esc(a.name)}</b></td>
         <td>${esc(sub)||"-"}</td>
         <td style="white-space:nowrap">
@@ -2163,7 +2166,7 @@ function viewMonthCheck(){
         <h2 style="margin:0;font-size:16px">${label} <span style="font-size:12px;color:var(--sub);font-weight:400">${done}/${arr.length} 점검${bad?` · <b style="color:var(--red)">부적합 ${bad}</b>`:""}</span></h2>
         ${arr.length?`<button class="btn sm" onclick="checkAllGood('${kind}')">전체 양호 처리</button>`:""}
       </div>
-      ${arr.length?`<div class="twrap"><table><thead><tr><th>자산명</th><th>관리번호/위치</th><th>점검결과</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">등록된 항목이 없습니다. 위 탭(장비/기자재/비품/시설)에서 먼저 등록하세요.</div>`}
+      ${arr.length?`<div class="twrap"><table><thead><tr><th>점검일</th><th>자산명</th><th>관리번호/위치</th><th>점검결과</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">등록된 항목이 없습니다. 🗂 자산목록 탭에서 먼저 등록하세요.</div>`}
     </div>`;
   }).join("");
   const allArr=CHECK_CATS.flatMap(([k])=>(DB[k]||[]).filter(a=>!a.dispose&&a.name).map(a=>({k,a})));
@@ -2173,17 +2176,104 @@ function viewMonthCheck(){
   return `<div class="panel" style="margin-top:0">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <h2 style="margin:0">📋 월별 점검</h2>
-      <input type="month" value="${m}" onchange="ui.checkMonth=this.value;render()">
-      <span style="font-size:13px;color:var(--sub)">점검 완료 ${doneAll}/${total}${badAll?` · <b style="color:var(--red)">부적합 ${badAll}</b>`:""}</span>
+      <span style="font-size:12px;color:var(--sub)">점검월</span><input type="month" value="${m}" onchange="ui.checkMonth=this.value;render()">
+      <span style="font-size:12px;color:var(--sub)">점검일</span><input type="date" value="${cd}" onchange="ui.checkDate=this.value;render()">
+      <span style="font-size:13px;color:var(--sub)">완료 ${doneAll}/${total}${badAll?` · <b style="color:var(--red)">부적합 ${badAll}</b>`:""}</span>
     </div>
-    <p style="font-size:12px;color:var(--sub);margin:8px 0 0">각 항목에 <b>양호/부적합</b>만 누르면 됩니다. <b>[전체 양호 처리]</b>로 한 번에 처리한 뒤 부적합만 바꾸면 빠릅니다.</p>
+    <p style="font-size:12px;color:var(--sub);margin:8px 0 0">점검일을 정한 뒤 각 항목에 <b>양호/부적합</b>을 누르세요. <b>[전체 양호 처리]</b> 후 부적합만 바꾸면 빠릅니다. 목록은 🗂 자산목록에 등록된 자산으로 구성됩니다.</p>
   </div>${catsHtml}`;
+}
+const ASSET_REG_DEFS={
+  equipments:[["name","장비명"],["maker","제조사"],["model","규격/모델"],["cpu","CPU"],["ram","RAM"],["disk","저장장치"],["gpu","그래픽"],["os","OS"],["buyDate","취득일","date"],["price","취득가액","num"],["seat","위치(좌석)"],["note","비고"]],
+  materials:[["name","기자재명"],["maker","제조사"],["model","규격/모델"],["qty","수량","num"],["unit","단위"],["buyDate","취득일","date"],["price","취득단가","num"],["location","보관위치"],["life","내용연수(년)"],["note","비고"]],
+  supplies:[["name","비품명"],["model","규격/모델"],["qty","수량","num"],["unit","단위"],["buyDate","취득일","date"],["price","취득단가","num"],["location","보관위치"],["manager","담당자"],["note","비고"]],
+  facilities:[["name","시설명"],["area","면적"],["use","용도"],["cycle","점검주기"],["repair","보수이력"],["manager","담당자"],["note","비고"]]
+};
+const ASSET_KINDS=[["equipments","🖥 장비"],["materials","🔧 기자재"],["supplies","📦 비품"],["facilities","🏢 시설"]];
+const ASSET_LOC=[["1","1강의실"],["2","2강의실"],["9","교무실"]];
+function nextAssetCode(kind,buyDate,loc){
+  const prefix={equipments:"PC",materials:"E",supplies:"B",facilities:"F"}[kind]||"X";
+  const yy=String(buyDate||todayStr()).slice(2,4);
+  const base=prefix+"-"+yy+"-"+String(loc||"1");
+  let n=1; while((DB[kind]||[]).some(a=>String(a.code||"")===base+String(n).padStart(2,"0"))) n++;
+  return base+String(n).padStart(2,"0");
+}
+function viewAssetReg(){
+  const kind=ui.assetRegKind||"equipments";
+  const def=ASSET_REG_DEFS[kind];
+  const kl=ASSET_KINDS.find(x=>x[0]===kind)[1];
+  const inputs=def.map(c=>{const t=c[2]==="date"?"date":(c[2]==="num"?"number":"text");return `<label class="fld">${c[1]}<input type="${t}" id="ar_${c[0]}" ${c[0]==="buyDate"?`value="${todayStr()}"`:""}></label>`;}).join("");
+  const list=[...(DB[kind]||[])].sort((a,b)=>natCmp(a.name,b.name)||natCmp(a.code,b.code));
+  return `
+  <div class="toolbar" style="gap:6px">${ASSET_KINDS.map(([k,l])=>`<button class="btn sm" style="${kind===k?'background:var(--green);color:#fff;border:none':''}" onclick="ui.assetRegKind='${k}';render()">${l} (${(DB[k]||[]).length})</button>`).join("")}</div>
+  <div class="panel" style="margin-top:0"><h2>${kl} 자산 등록 <span style="font-size:12px;color:var(--sub);font-weight:400">관리번호 자동부여</span></h2>
+    <div class="formbox" style="margin-bottom:0">
+      <label class="fld">위치<select id="ar_loc">${ASSET_LOC.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></label>
+      ${inputs}
+      <button class="btn" onclick="addAssetReg('${kind}')">등록</button>
+    </div>
+    <p class="note" style="margin-bottom:0">※ 관리번호 = [구분]-[취득연도2자리]-[위치][일련번호] 자동 생성. (예: PC-25-101 = 컴퓨터·25년·1강의실·1번, PC-25-901 = 교무실·1번)</p>
+  </div>
+  <div class="panel"><h2>${kl} 목록 (${list.length})</h2>
+    <div class="twrap" style="border:none"><table><thead><tr><th>관리번호</th>${def.map(c=>`<th>${c[1]}</th>`).join("")}<th></th></tr></thead><tbody>
+    ${list.length?list.map(x=>`<tr><td><b>${esc(x.code)||"-"}</b></td>${def.map(c=>`<td>${c[2]==="num"?won(x[c[0]]):esc(x[c[0]])||"-"}</td>`).join("")}<td><button class="btn sm" style="color:var(--red);border-color:var(--red)" onclick="delAsset('${kind}','${x.id}')">삭제</button></td></tr>`).join(""):`<tr><td colspan="${def.length+2}" class="empty">등록된 항목이 없습니다.</td></tr>`}
+    </tbody></table></div>
+  </div>`;
+}
+function addAssetReg(kind){
+  const def=ASSET_REG_DEFS[kind];
+  const rec={id:uid()};
+  def.forEach(c=>{rec[c[0]]=c[2]==="num"?num("ar_"+c[0]):val("ar_"+c[0]);});
+  if(!rec.name){alert("명칭은 필수입니다.");return;}
+  const loc=val("ar_loc")||"1"; rec.loc=loc;
+  rec.code=nextAssetCode(kind,rec.buyDate,loc);
+  rec.result=""; rec.date="";
+  DB[kind].push(rec); save(); render();
+}
+function viewCheckHistory(kind){
+  const label={equipments:"🖥 장비",materials:"🔧 기자재",supplies:"📦 비품",facilities:"🏢 시설"}[kind]||"";
+  let list=DB.checks.filter(c=>c.kind===kind);
+  const fy=ui.assetFY||"", fm=ui.assetFM||"";
+  if(fy) list=list.filter(c=>{const d=String(c.date||"");if(!d.startsWith(fy))return false;if(fm&&d.slice(5,7)!==fm)return false;return true;});
+  list=list.sort((a,b)=>String(b.date).localeCompare(String(a.date))||natCmp(a.code,b.code));
+  const pg=paginate(list,ui.assetPage,15);
+  const years=[...new Set(DB.checks.filter(c=>c.kind===kind).map(c=>String(c.date||"").slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
+  const bad=list.filter(c=>c.result==="부적합").length;
+  return `<div class="panel" style="margin-top:0"><h2><span>${label} 점검 내역 (${fy?`${fy}년${fm?" "+Number(fm)+"월":""} · `:""}총 ${pg.total}건${bad?` · 부적합 ${bad}`:""})</span>
+    <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <select onchange="ui.assetFY=this.value;ui.assetFM='';ui.assetPage=1;render()" style="padding:5px"><option value="">전체 연도</option>${years.map(y=>`<option ${fy===y?'selected':''}>${y}</option>`).join("")}</select>
+      <select onchange="ui.assetFM=this.value;ui.assetPage=1;render()" style="padding:5px" ${fy?"":"disabled"}><option value="">전체 월</option>${Array.from({length:12},(_,i)=>{const mm=("0"+(i+1)).slice(-2);return `<option value="${mm}" ${fm===mm?'selected':''}>${i+1}월</option>`;}).join("")}</select>
+      ${(fy||fm)?`<button class="btn sm" onclick="ui.assetFY='';ui.assetFM='';ui.assetPage=1;render()">↺ 전체</button>`:""}
+      <button class="btn sm" onclick="printCheckReport('${kind}')">🖨 보고서 인쇄 (A4)</button>
+    </span></h2>
+    <div class="twrap" style="border:none"><table><thead><tr><th>점검일</th><th>자산명</th><th>관리번호</th><th>점검결과</th><th>비고</th></tr></thead><tbody>
+    ${pg.rows.length?pg.rows.map(c=>`<tr><td>${esc(c.date)||"-"}</td><td><b>${esc(c.name)}</b></td><td>${esc(c.code)||"-"}</td><td>${c.result==="양호"?`<span class="pill ok">양호</span>`:(c.result==="부적합"?`<span class="pill no">부적합</span>`:esc(c.result)||"-")}</td><td>${esc(c.note)||"-"}</td></tr>`).join(""):`<tr><td colspan="5" class="empty">${fy?"해당 기간 점검 내역이 없습니다.":"점검 내역이 없습니다. 📋 월별 점검에서 체크하세요."}</td></tr>`}
+    </tbody></table></div>
+    ${pagerHtmlA(pg)}
+    <p class="note">※ 연도·월(점검일 기준)로 조회합니다. 보고서 인쇄는 현재 조회 결과를 A4로 출력합니다.</p>
+  </div>`;
+}
+function printCheckReport(kind){
+  const label={equipments:"장비(PC)",materials:"기자재",supplies:"비품",facilities:"시설"}[kind]||"";
+  const fy=ui.assetFY||"", fm=ui.assetFM||"";
+  let list=DB.checks.filter(c=>c.kind===kind);
+  if(fy) list=list.filter(c=>{const d=String(c.date||"");if(!d.startsWith(fy))return false;if(fm&&d.slice(5,7)!==fm)return false;return true;});
+  list=list.sort((a,b)=>natCmp(a.code,b.code)||String(a.date).localeCompare(String(b.date)));
+  const period=fy?`${fy}년${fm?" "+Number(fm)+"월":" 전체"}`:"전체 기간";
+  const rows=list.map((c,i)=>`<tr><td style="text-align:center">${i+1}</td><td>${esc(c.date)}</td><td>${esc(c.name)}</td><td>${esc(c.code)}</td><td style="text-align:center">${esc(c.result)}</td><td>${esc(c.note)||""}</td></tr>`).join("");
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>${label} 점검보고서</title><style>@page{size:A4 portrait;margin:14mm}body{font-family:'Malgun Gothic',sans-serif;color:#000}h1{text-align:center;font-size:19px;margin:0 0 4px}.info{text-align:right;font-size:12px;margin-bottom:10px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #000;padding:6px 7px}th{background:#eee}</style></head><body>
+  <h1>제이컴퓨터학원 ${label} 점검 보고서</h1>
+  <div class="info">조회 기간(점검일): ${period} &nbsp;|&nbsp; 총 ${list.length}건 &nbsp;|&nbsp; 출력일: ${todayStr()}</div>
+  <table><thead><tr><th style="width:5%">No</th><th>점검일</th><th>자산명</th><th>관리번호</th><th>점검결과</th><th>비고</th></tr></thead>
+  <tbody>${rows||`<tr><td colspan="6" style="text-align:center">해당 기간 점검 내역 없음</td></tr>`}</tbody></table>
+  <script>window.onload=function(){window.print();}<\/script></body></html>`;
+  const w=window.open("","_blank"); if(!w){alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.");return;} w.document.write(html);w.document.close();
 }
 function viewOperDash(){
   return `${assetDashHtml()}${assetGuideHtml()}`;
 }
 function operSubBar(){
-  const subs=[["dash","📊 대시보드"],["check","📋 월별 점검"],["equipments","🖥 장비"],["materials","🔧 기자재"],["supplies","📦 비품"],["facilities","🏢 시설"],["inspections","🛠 점검·보수"]];
+  const subs=[["dash","📊 대시보드"],["check","📋 월별 점검"],["assets","🗂 자산목록"],["equipments","🖥 장비"],["materials","🔧 기자재"],["supplies","📦 비품"],["facilities","🏢 시설"],["inspections","🛠 점검·보수"]];
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.operSub||"dash")===k?'on':''}" onclick="ui.operSub='${k}';ui.assetPage=1;render()">${l}</button>`).join("")}</div>`;
 }
 function viewAssetTab(sub){
@@ -5048,21 +5138,24 @@ function assetStatusCount(key,status){
   return DB[key].filter(x=>String(x.result||"").trim()===status).reduce((a,x)=>a+(Number(x.qty)||1),0);
 }
 function assetDashHtml(){
-  const map=[["facilities","시설","시설관리대장"],["supplies","비품","비품관리대장"],["materials","기자재","기자재관리대장"],["equipments","장비(PC)","장비관리대장"]];
-  const states=["양호","점검필요","수리중","교체예정","폐기"];
-  const rows=map.map(([k,label,dname])=>{
-    const total=DB[k].reduce((a,x)=>a+(Number(x.qty)||1),0);
-    const cells=states.map(st=>`<td>${assetStatusCount(k,st)||"-"}</td>`).join("");
-    return `<tr><td><b>${label}</b></td><td>${dname}</td><td><b>${total||"-"}</b></td>${cells}</tr>`;
+  const m=ui.assetMonth;
+  const [ay,am]=m.split("-");
+  const map=[["equipments","장비(PC)"],["materials","기자재"],["supplies","비품"],["facilities","시설"]];
+  const rows=map.map(([k,label])=>{
+    const total=(DB[k]||[]).filter(a=>!a.dispose&&a.name).length;
+    const mc=DB.checks.filter(c=>c.kind===k&&c.month===m);
+    const good=mc.filter(c=>c.result==="양호").length;
+    const bad=mc.filter(c=>c.result==="부적합").length;
+    const done=good+bad;
+    const notyet=Math.max(0,total-done);
+    return `<tr><td><b>${label}</b></td><td><b>${total||"-"}</b></td><td>${done||"-"}</td><td>${good||"-"}</td><td style="${bad?'color:var(--red);font-weight:700':''}">${bad||"-"}</td><td>${notyet||"-"}</td></tr>`;
   }).join("");
-  const [ay,am]=ui.assetMonth.split("-");
-  // 해당 월의 점검·보수 건수
-  const inspCnt=DB.inspections.filter(x=>String(x.date).startsWith(ui.assetMonth)).length;
-  return `<div class="panel" style="margin-top:0"><h2><span>📋 시설·비품·기자재·장비 관리 현황</span>
+  const inspCnt=DB.inspections.filter(x=>String(x.date).startsWith(m)).length;
+  return `<div class="panel" style="margin-top:0"><h2><span>📋 시설·비품·기자재·장비 점검 현황</span>
     <span style="display:flex;gap:6px;align-items:center"><select onchange="assetYearSet(this.value)" style="padding:5px">${Array.from({length:6},(_,i)=>{const y=Number(thisYear())-i;return `<option ${String(y)===ay?'selected':''}>${y}</option>`;}).join("")}</select>
     <select onchange="assetMonthSet(this.value)" style="padding:5px">${Array.from({length:12},(_,i)=>`<option ${("0"+(i+1)).slice(-2)===am?'selected':''}>${i+1}</option>`).join("")}</select>월</span></h2>
-    <div style="overflow:auto"><table class="mini-table"><thead><tr><th>구분</th><th>관리대장</th><th>전체수량</th>${["양호","점검필요","수리중","교체예정","폐기"].map(s=>`<th>${s}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>
-    <p class="note">※ 수량·상태는 현재 보유 자산 기준 집계입니다. ${ay}년 ${Number(am)}월 점검·보수 기록: <b>${inspCnt}건</b> (점검·보수이력 탭에서 확인)</p>
+    <div style="overflow:auto"><table class="mini-table"><thead><tr><th>구분</th><th>전체 자산</th><th>점검완료</th><th>양호</th><th>부적합</th><th>미점검</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="note">※ <b>${ay}년 ${Number(am)}월 점검일 기준</b> 집계입니다. 전체 자산은 🗂 자산목록 등록 수, 나머지는 📋 월별 점검 결과입니다. 같은 달 점검·보수 기록: <b>${inspCnt}건</b></p>
   </div>`;
 }
 function assetYearSet(y){const m=ui.assetMonth.split("-")[1];ui.assetMonth=y+"-"+m;render();}
