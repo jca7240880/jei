@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.11 (2026-07-28) Supabase";
+const APP_VERSION="v6.12 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -526,7 +526,7 @@ function normDate(v){
 }
 
 let SUBS_CAUGHT=false;
-let DB={subs:[],seats:[],subpays:[],fees:[],students:[],attendance:[],income:[],expense:[],sales:[],bookin:[],bookout:[],courses:[],methods:[],worklogs:[],consults:[],settings:[],courselogs:[],facilities:[],supplies:[],materials:[],equipments:[],inspections:[],lessons:[],leads:[],schedules:[],makeups:[],meetings:[],certs:[],exams:[],examapps:[]};
+let DB={subs:[],seats:[],subpays:[],fees:[],checks:[],students:[],attendance:[],income:[],expense:[],sales:[],bookin:[],bookout:[],courses:[],methods:[],worklogs:[],consults:[],settings:[],courselogs:[],facilities:[],supplies:[],materials:[],equipments:[],inspections:[],lessons:[],leads:[],schedules:[],makeups:[],meetings:[],certs:[],exams:[],examapps:[]};
 let GAS=""; // (레거시 이름 유지) — 실제로는 Supabase URL을 저장
 let SUPA_KEY="";
 try{
@@ -537,7 +537,7 @@ try{
 const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["subs","구독관리"],["oper","장비관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null,regSub:"list",payEditId:null,feeEditId:null,showFeeForm:false,configSub:"teacher"};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null,regSub:"list",payEditId:null,feeEditId:null,showFeeForm:false,configSub:"teacher",checkMonth:thisMonth()};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -545,7 +545,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"],checks:["id","kind","assetId","name","code","month","date","result","note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -1118,6 +1118,7 @@ function render(){
     const sub=ui.operSub||"dash";
     let body;
     if(sub==="dash")body=viewOperDash();
+    else if(sub==="check")body=viewMonthCheck();
     else body=viewAssetTab(sub); // equipments/materials/supplies/facilities/inspections
     m.innerHTML=operSubBar()+body;
   }
@@ -2116,11 +2117,72 @@ function paySubBar(){
   if(ROLE==="부원장")subs=subs.filter(([k])=>STAFF_PAY_ALLOWED.includes(k));
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.paySub||"dash")===k?'on':''}" onclick="ui.paySub='${k}';render()">${l}</button>`).join("")}</div>`;
 }
+const CHECK_CATS=[["equipments","🖥 장비(PC)"],["materials","🔧 기자재"],["supplies","📦 비품"],["facilities","🏢 시설"]];
+function assetSub(a){ return a.code||a.area||a.location||a.seat||""; }
+function setCheck(kind,assetId,name,code,result){
+  const m=ui.checkMonth||thisMonth();
+  let c=DB.checks.find(x=>String(x.assetId)===String(assetId)&&x.kind===kind&&x.month===m);
+  if(c){ c.result=result; c.date=todayStr(); c.name=name; c.code=code; }
+  else DB.checks.push({id:uid(),kind:kind,assetId:assetId,name:name,code:code,month:m,date:todayStr(),result:result,note:""});
+  save(); render();
+}
+function checkAllGood(kind){
+  const m=ui.checkMonth||thisMonth();
+  (DB[kind]||[]).filter(a=>!a.dispose&&a.name).forEach(a=>{
+    if(!DB.checks.some(x=>String(x.assetId)===String(a.id)&&x.kind===kind&&x.month===m)){
+      DB.checks.push({id:uid(),kind:kind,assetId:a.id,name:a.name,code:assetSub(a),month:m,date:todayStr(),result:"양호",note:""});
+    }
+  });
+  save(); render();
+}
+function viewMonthCheck(){
+  const m=ui.checkMonth||thisMonth();
+  const catsHtml=CHECK_CATS.map(([kind,label])=>{
+    const arr=(DB[kind]||[]).filter(a=>!a.dispose&&a.name);
+    const rows=arr.map(a=>{
+      const c=DB.checks.find(x=>String(x.assetId)===String(a.id)&&x.kind===kind&&x.month===m);
+      const r=c?c.result:"";
+      const sub=assetSub(a);
+      const gStyle=r==="양호"?'background:var(--green);color:#fff;border:none':'';
+      const bStyle=r==="부적합"?'background:var(--red);color:#fff;border:none':'';
+      return `<tr>
+        <td><b>${esc(a.name)}</b></td>
+        <td>${esc(sub)||"-"}</td>
+        <td style="white-space:nowrap">
+          <button class="btn sm" style="${gStyle}" onclick="setCheck('${kind}','${a.id}',this.dataset.n,this.dataset.c,'양호')" data-n="${esc(a.name)}" data-c="${esc(sub)}">양호</button>
+          <button class="btn sm" style="${bStyle}" onclick="setCheck('${kind}','${a.id}',this.dataset.n,this.dataset.c,'부적합')" data-n="${esc(a.name)}" data-c="${esc(sub)}">부적합</button>
+        </td>
+        <td>${r?(r==="양호"?`<span class="pill ok">양호</span>`:`<span class="pill no">부적합</span>`):`<span style="color:var(--sub);font-size:12px">미점검</span>`}</td>
+      </tr>`;
+    }).join("");
+    const done=arr.filter(a=>DB.checks.some(x=>String(x.assetId)===String(a.id)&&x.kind===kind&&x.month===m)).length;
+    const bad=arr.filter(a=>DB.checks.some(x=>String(x.assetId)===String(a.id)&&x.kind===kind&&x.month===m&&x.result==="부적합")).length;
+    return `<div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <h2 style="margin:0;font-size:16px">${label} <span style="font-size:12px;color:var(--sub);font-weight:400">${done}/${arr.length} 점검${bad?` · <b style="color:var(--red)">부적합 ${bad}</b>`:""}</span></h2>
+        ${arr.length?`<button class="btn sm" onclick="checkAllGood('${kind}')">전체 양호 처리</button>`:""}
+      </div>
+      ${arr.length?`<div class="twrap"><table><thead><tr><th>자산명</th><th>관리번호/위치</th><th>점검결과</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">등록된 항목이 없습니다. 위 탭(장비/기자재/비품/시설)에서 먼저 등록하세요.</div>`}
+    </div>`;
+  }).join("");
+  const allArr=CHECK_CATS.flatMap(([k])=>(DB[k]||[]).filter(a=>!a.dispose&&a.name).map(a=>({k,a})));
+  const total=allArr.length;
+  const doneAll=allArr.filter(({k,a})=>DB.checks.some(x=>String(x.assetId)===String(a.id)&&x.kind===k&&x.month===m)).length;
+  const badAll=allArr.filter(({k,a})=>DB.checks.some(x=>String(x.assetId)===String(a.id)&&x.kind===k&&x.month===m&&x.result==="부적합")).length;
+  return `<div class="panel" style="margin-top:0">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <h2 style="margin:0">📋 월별 점검</h2>
+      <input type="month" value="${m}" onchange="ui.checkMonth=this.value;render()">
+      <span style="font-size:13px;color:var(--sub)">점검 완료 ${doneAll}/${total}${badAll?` · <b style="color:var(--red)">부적합 ${badAll}</b>`:""}</span>
+    </div>
+    <p style="font-size:12px;color:var(--sub);margin:8px 0 0">각 항목에 <b>양호/부적합</b>만 누르면 됩니다. <b>[전체 양호 처리]</b>로 한 번에 처리한 뒤 부적합만 바꾸면 빠릅니다.</p>
+  </div>${catsHtml}`;
+}
 function viewOperDash(){
   return `${assetDashHtml()}${assetGuideHtml()}`;
 }
 function operSubBar(){
-  const subs=[["dash","📊 대시보드"],["equipments","🖥 장비"],["materials","🔧 기자재"],["supplies","📦 비품"],["facilities","🏢 시설"],["inspections","🛠 점검·보수"]];
+  const subs=[["dash","📊 대시보드"],["check","📋 월별 점검"],["equipments","🖥 장비"],["materials","🔧 기자재"],["supplies","📦 비품"],["facilities","🏢 시설"],["inspections","🛠 점검·보수"]];
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.operSub||"dash")===k?'on':''}" onclick="ui.operSub='${k}';ui.assetPage=1;render()">${l}</button>`).join("")}</div>`;
 }
 function viewAssetTab(sub){
