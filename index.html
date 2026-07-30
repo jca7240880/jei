@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.19 (2026-07-29) Supabase";
+const APP_VERSION="v6.20 (2026-07-29) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -3021,7 +3021,13 @@ function delFee(id){ const x=DB.fees.find(y=>String(y.id)===String(id)); if(!x)r
 function feeMgrHtml(){
   const editing=ui.feeEditId?DB.fees.find(x=>String(x.id)===String(ui.feeEditId)):null;
   const showForm=ui.showFeeForm||editing;
-  const list=[...DB.fees].sort((a,b)=>String(a.target).localeCompare(String(b.target),"ko")||String(a.course).localeCompare(String(b.course),"ko"));
+  const TO={"성인":0,"학생":1}, GO={"OA":0,"CAD":1,"그래픽":2,"기타":3};
+  const oi=(m,k)=>m[k]!=null?m[k]:9;
+  const list=[...DB.fees].sort((a,b)=>
+    oi(TO,a.target)-oi(TO,b.target)
+    || String(a.method||"").localeCompare(String(b.method||""),"ko")
+    || oi(GO,a.gubun)-oi(GO,b.gubun)
+    || natCmp(a.course,b.course));
   const rows=list.length?list.map(f=>`<tr>
     <td>${esc(f.target)||"-"}</td><td>${esc(f.method)||"-"}</td><td>${esc(f.gubun)||"-"}</td><td><b>${esc(f.course)||"-"}</b></td>
     <td>${esc(f.perweek)||"-"}</td><td style="text-align:center">${(f.sessions!=null&&f.sessions!=="")?f.sessions+"회":"-"}</td>
