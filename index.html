@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.17 (2026-07-29) Supabase";
+const APP_VERSION="v6.18 (2026-07-29) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -545,7 +545,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name", "gubun"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"],checks:["id","kind","assetId","name","code","month","date","result","note"],loans:["id","name","method","principal","rate","startDate","endDate","interestDay","account","note"],loanpays:["id","loanId","date","kind","amount","note"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name", "gubun"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"],checks:["id","kind","assetId","name","code","month","date","result","note"],loans:["id","name","method","principal","rate","startDate","endDate","termMonths","graceMonths","rateType","intCycle","prinCycle","earlyFee","earlyFeeRate","interestDay","account","note"],loanpays:["id","loanId","date","kind","amount","note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -557,7 +557,7 @@ function toSupaRow(table, r){
   if(table==="subpays"){ o.amount=Number(o.amount)||0; }
   if(table==="fees"){ ["sessions","minutes","fee"].forEach(k=>{ o[k]=(o[k]===""||o[k]==null)?null:Number(o[k]); }); }
   if(table==="lessons"){ o.session=(o.session===""||o.session==null)?null:Number(o.session); }
-  if(table==="loans"){ ["principal","rate","interestDay"].forEach(k=>{ o[k]=(o[k]===""||o[k]==null)?null:Number(o[k]); }); }
+  if(table==="loans"){ ["principal","rate","interestDay","termMonths","graceMonths","earlyFeeRate"].forEach(k=>{ o[k]=(o[k]===""||o[k]==null)?null:Number(o[k]); }); }
   if(table==="loanpays"){ o.amount=Number(o.amount)||0; }
   const allow=SUPA_COLS[table];
   if(allow){ Object.keys(o).forEach(k=>{ if(!allow.includes(k)) delete o[k]; }); }
@@ -4718,25 +4718,39 @@ function loanCard(k,v){ return `<div style="background:var(--green-light);border
 function loanMonths(l){ if(!l.startDate||!l.endDate)return 0; const a=new Date(l.startDate+"T00:00:00"),b=new Date(l.endDate+"T00:00:00"); if(isNaN(a)||isNaN(b))return 0; return Math.max(1,(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth())); }
 function loanBalance(l){ return Number(l.principal||0)-DB.loanpays.filter(pp=>String(pp.loanId)===String(l.id)&&pp.kind==="원금상환").reduce((a,pp)=>a+Number(pp.amount||0),0); }
 function loanMonthlyInterest(l){ return Math.round(loanBalance(l)*Number(l.rate||0)/100/12); }
-function loanMonthlyPrincipal(l){ const mm=loanMonths(l); return mm?Math.round(Number(l.principal||0)/mm):0; }
+function loanRepayMonths(l){ const mm=loanMonths(l); const g=Number(l.graceMonths||0); return Math.max(1,mm-g); }
+function loanMonthlyPrincipal(l){ const rm=loanRepayMonths(l); return rm?Math.round(Number(l.principal||0)/rm):0; }
 function loanNextInterest(l){ const d=Number(l.interestDay)||0; if(!d)return ""; const t=new Date(todayStr()+"T00:00:00"); let cand=new Date(t.getFullYear(),t.getMonth(),d); if(cand<t)cand=new Date(t.getFullYear(),t.getMonth()+1,d); return ymd(cand); }
+function loanCalcEnd(){
+  const sd=val("ln_start"), tm=Number(val("ln_term"))||0;
+  if(sd&&tm){ const d=new Date(sd+"T00:00:00"); if(!isNaN(d)){ d.setMonth(d.getMonth()+tm); const z=n=>(n<10?"0":"")+n; const e=document.getElementById("ln_end"); if(e)e.value=d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate()); } }
+}
 function loanFormHtml(l){
   const v=l||{}; const M=["만기일시","원금균등","원리금균등"];
+  const CY=["매월","3개월","6개월"]; const PCY=["매월","3개월","6개월","만기일시"];
+  const sel=(cur,def,arr)=>arr.map(x=>`<option ${(cur||def)===x?"selected":""}>${x}</option>`).join("");
   return `<div class="formbox">
     <label class="fld">대출명/기관*<input id="ln_name" value="${esc(v.name||"")}" placeholder="예: 기업은행 시설자금"></label>
-    <label class="fld">상환방식<select id="ln_method">${M.map(x=>`<option ${(v.method||"원금균등")===x?"selected":""}>${x}</option>`).join("")}</select></label>
+    <label class="fld">상환방식<select id="ln_method">${sel(v.method,"원금균등",M)}</select></label>
     <label class="fld">대출원금(원)*<input type="number" id="ln_principal" value="${(v.principal!=null&&v.principal!=="")?v.principal:""}"></label>
     <label class="fld">연이율(%)<input type="number" step="0.01" id="ln_rate" value="${(v.rate!=null&&v.rate!=="")?v.rate:""}"></label>
-    <label class="fld">대출일<input type="date" id="ln_start" value="${esc(v.startDate||"")}"></label>
-    <label class="fld">만기일<input type="date" id="ln_end" value="${esc(v.endDate||"")}"></label>
+    <label class="fld">금리유형<select id="ln_ratetype"><option ${(v.rateType||"고정")==="고정"?"selected":""}>고정</option><option ${v.rateType==="변동"?"selected":""}>변동</option></select></label>
+    <label class="fld">대출일<input type="date" id="ln_start" value="${esc(v.startDate||"")}" onchange="loanCalcEnd()"></label>
+    <label class="fld">대출기간(개월)<input type="number" id="ln_term" value="${(v.termMonths!=null&&v.termMonths!=="")?v.termMonths:""}" placeholder="예: 36" onchange="loanCalcEnd()"></label>
+    <label class="fld">만기일(자동·수정가능)<input type="date" id="ln_end" value="${esc(v.endDate||"")}"></label>
+    <label class="fld">거치기간(개월)<input type="number" id="ln_grace" value="${(v.graceMonths!=null&&v.graceMonths!=="")?v.graceMonths:""}" placeholder="예: 12 (이자만)"></label>
+    <label class="fld">이자 납입주기<select id="ln_intcy">${sel(v.intCycle,"매월",CY)}</select></label>
+    <label class="fld">원금 납입주기<select id="ln_princy">${sel(v.prinCycle,"매월",PCY)}</select></label>
     <label class="fld">이자출금일(매월)<input type="number" min="1" max="31" id="ln_iday" value="${(v.interestDay!=null&&v.interestDay!=="")?v.interestDay:""}" placeholder="예: 25"></label>
+    <label class="fld">중도상환수수료<select id="ln_early" onchange="document.getElementById('ln_earlyrate_w').style.display=this.value==='있음'?'':'none'"><option ${(v.earlyFee||"없음")==="없음"?"selected":""}>없음</option><option ${v.earlyFee==="있음"?"selected":""}>있음</option></select></label>
+    <label class="fld" id="ln_earlyrate_w" style="display:${v.earlyFee==="있음"?"":"none"}">수수료율(%)<input type="number" step="0.01" id="ln_earlyrate" value="${(v.earlyFeeRate!=null&&v.earlyFeeRate!=="")?v.earlyFeeRate:""}"></label>
     <label class="fld">출금계좌<input id="ln_acct" value="${esc(v.account||"")}" placeholder="예: 기업 ○○○"></label>
     <label class="fld" style="grid-column:span 2">비고<input id="ln_note" value="${esc(v.note||"")}"></label>
     <button class="btn" onclick="${l?`saveLoan('${l.id}')`:"addLoan()"}">${l?"수정 저장":"추가"}</button>
     <button class="btn sm" onclick="ui.showLoanForm=false;ui.loanEditId=null;render()">취소</button>
   </div>`;
 }
-function readLoanForm(){ return {name:val("ln_name").trim(),method:val("ln_method"),principal:num("ln_principal"),rate:num("ln_rate"),startDate:val("ln_start"),endDate:val("ln_end"),interestDay:(val("ln_iday").trim()===""?null:num("ln_iday")),account:val("ln_acct").trim(),note:val("ln_note").trim()}; }
+function readLoanForm(){ return {name:val("ln_name").trim(),method:val("ln_method"),principal:num("ln_principal"),rate:num("ln_rate"),rateType:val("ln_ratetype"),startDate:val("ln_start"),termMonths:(val("ln_term").trim()===""?null:num("ln_term")),endDate:val("ln_end"),graceMonths:(val("ln_grace").trim()===""?null:num("ln_grace")),intCycle:val("ln_intcy"),prinCycle:val("ln_princy"),interestDay:(val("ln_iday").trim()===""?null:num("ln_iday")),earlyFee:val("ln_early"),earlyFeeRate:(val("ln_earlyrate").trim()===""?null:num("ln_earlyrate")),account:val("ln_acct").trim(),note:val("ln_note").trim()}; }
 function addLoan(){ const f=readLoanForm(); if(!f.name||!f.principal){alert("대출명과 원금은 필수입니다.");return;} DB.loans.push(Object.assign({id:uid()},f)); ui.showLoanForm=false; save(); render(); }
 function saveLoan(id){ const l=DB.loans.find(x=>String(x.id)===String(id)); if(!l)return; const f=readLoanForm(); if(!f.name||!f.principal){alert("대출명과 원금은 필수입니다.");return;} Object.assign(l,f); ui.loanEditId=null; ui.showLoanForm=false; save(); render(); }
 function editLoan(id){ ui.loanEditId=id; ui.showLoanForm=true; render(); }
@@ -4794,10 +4808,10 @@ function viewLoan(){
         ${loanCard("남은원금",won(bal)+"원")}
         ${loanCard("연이율",(l.rate||0)+"%")}
         ${loanCard("월 이자(예상)",won(loanMonthlyInterest(l))+"원")}
-        ${l.method==="원금균등"?loanCard("월 상환원금",won(loanMonthlyPrincipal(l))+"원"):""}
+        ${l.method==="원금균등"?loanCard("월 상환원금"+(Number(l.graceMonths)?"(거치후)":""),won(loanMonthlyPrincipal(l))+"원"):""}
         ${loanCard("다음 이자출금",ni?`${ni}${dday!=null?` (${dday>0?"D-"+dday:(dday===0?"오늘":(-dday)+"일 지남")})`:""}`:"-")}
       </div>
-      <div style="font-size:12px;color:var(--sub);margin-top:8px">대출일 ${esc(l.startDate)||"-"} ~ 만기 ${esc(l.endDate)||"-"} · 이자출금일 매월 ${esc(l.interestDay)||"-"}일 · 출금계좌 ${esc(l.account)||"-"}${l.note?" · "+esc(l.note):""}</div>
+      <div style="font-size:12px;color:var(--sub);margin-top:8px">대출일 ${esc(l.startDate)||"-"} ~ 만기 ${esc(l.endDate)||"-"}${l.termMonths?` (${esc(l.termMonths)}개월)`:""}${Number(l.graceMonths)?` · 거치 ${esc(l.graceMonths)}개월`:""} · 금리 ${esc(l.rateType)||"고정"} · 이자 ${esc(l.intCycle)||"매월"}·원금 ${esc(l.prinCycle)||"매월"} · 이자출금일 매월 ${esc(l.interestDay)||"-"}일 · 중도상환수수료 ${l.earlyFee==="있음"?`있음${l.earlyFeeRate?` ${esc(l.earlyFeeRate)}%`:""}`:"없음"} · 출금계좌 ${esc(l.account)||"-"}${l.note?" · "+esc(l.note):""}</div>
     </div>`;
   }).join("");
   return `<div class="panel" style="margin-top:0">
