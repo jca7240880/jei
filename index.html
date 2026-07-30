@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.21 (2026-07-29) Supabase";
+const APP_VERSION="v6.22 (2026-07-29) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -537,7 +537,7 @@ try{
 const TABS=[["dash","대시보드"],["work","업무관리"],["lead","상담관리"],["stu","수강생관리"],["exam","자격관리"],["book","도서관리"],["pay","수납관리"],["subs","구독관리"],["oper","장비관리"],["config","기초설정"]];
 let tab="dash";
 let ui={search:"",filter:"전체",attDate:todayStr(),attCourse:"전체",incMonth:thisMonth(),expMonth:thisMonth(),salesMonth:thisMonth(),workMonth:thisMonth(),
-  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null,regSub:"list",payEditId:null,feeEditId:null,showFeeForm:false,configSub:"teacher",checkMonth:thisMonth(),assetRegKind:"equipments",checkDate:"",loanEditId:null,showLoanForm:false,loanDetailId:null};
+  showStuForm:false,salesPrefill:null,detailId:null,salesEditId:null,calMonth:thisMonth(),showCourseMgr:false,showMethodMgr:false,kioskMsg:"",kioskChoices:null,kioskAction:null,editStu:false,ledgerYear:thisYear(),showBulk:false,bulk:{sid:"",month:thisMonth(),days:[]},rowEditId:null,salesName:"",salesLinkDone:null,salesFullEditId:null,salesSel:[],bookSel:"",bookPage:{stock:1,bin:1,bout:1},lesStudent:"",statusFilter:"전체",gubunFilter:"전체",teacherFilter:"전체",detailLesPage:1,assetTab:"equipments",assetPage:1,assetMonth:thisMonth(),assetFY:"",assetFM:"",leadFilter:"전체",leadEditId:null,stuSub:"dash",paySub:"dash",operSub:"equipments",leadSub:"reg",workSub:"log",bookSub:"quick",incEditId:null,expEditId:null,incCleanup:false,expCleanup:false,workWriter:"전체",wlFormDate:null,gcalMode:"WEEK",attMode:"daily",attFrom:"",attTo:"",attTeacher:"전체",attStuSel:"",stuSort:"name",quitSearch:"",leadExpandId:null,examSub:"sched",examSel:"",examYear:"",examEditId:null,examOrgSel:"",examOrgF:"전체",examYearF:"전체",statYear:"전체",statOrg:"전체",examCandQ:"",certSid:"",certKind:"confirm",certDraft:{},bookDetailTab:"flow",bookInEditId:null,bookOutEditId:null,incSel:[],expSel:[],ledgStart:"",ledgEnd:"",dashMode:"year",dashYear:"",showSubForm:false,subEditId:null,subsSub:"reg",seatAdd:null,seatEditId:null,regSub:"list",payEditId:null,feeEditId:null,showFeeForm:false,configSub:"teacher",checkMonth:thisMonth(),assetRegKind:"equipments",checkDate:"",loanEditId:null,showLoanForm:false,loanDetailId:null,wdMonth:thisMonth()};
 let syncTimer=null;
 const CAL_CACHE={};
 let LOADED_COUNTS={}; // 로드 시점의 건수 기억 (클라이언트 측 데이터 손실 방어)
@@ -1143,7 +1143,7 @@ function render(){
   if(tab==="config")m.innerHTML=viewConfig();
   if(tab==="work"){
     const sub=ui.workSub||"log";
-    m.innerHTML=workSubBar()+(sub==="meeting"?viewMeeting():viewWork(sub==="log_b"?"부원장":"원장"));
+    m.innerHTML=workSubBar()+(sub==="meeting"?viewMeeting():sub==="weekday"?viewWeekdayCal():viewWork(sub==="log_b"?"부원장":"원장"));
   }
   _restore(); // 표 스크롤 위치 복원
 }
@@ -2306,7 +2306,7 @@ function leadSubBar(){
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.leadSub||"reg")===k?'on':''}" onclick="ui.leadSub='${k}';render()">${l}</button>`).join("")}</div>`;
 }
 function workSubBar(){
-  const subs=[["log","📋 원장 업무일지"],["log_b","📋 부원장 업무일지"],["meeting","🤝 회의록"]];
+  const subs=[["log","📋 원장 업무일지"],["weekday","🗓 요일별 등원"],["log_b","📋 부원장 업무일지"],["meeting","🤝 회의록"]];
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.workSub||"log")===k?'on':''}" onclick="ui.workSub='${k}';render()">${l}</button>`).join("")}</div>`;
 }
 function viewConsultDiary(){
@@ -5178,6 +5178,42 @@ function addMakeup(){
 }
 function makeupDone(id){const m=DB.makeups.find(x=>String(x.id)===String(id));if(!m)return;m.status="완료";save();render();}
 function delMakeup(id){if(!confirm("이 보강 내역을 삭제할까요?"))return;DB.makeups=DB.makeups.filter(x=>String(x.id)!==String(id));save();render();}
+function wdMove(d){ const [y,m]=(ui.wdMonth||thisMonth()).split("-").map(Number); ui.wdMonth=ym(new Date(y,m-1+d,1)); render(); }
+function viewWeekdayCal(){
+  const mm=ui.wdMonth||thisMonth();
+  const [y,m]=mm.split("-").map(Number);
+  const dim=new Date(y,m,0).getDate();
+  const first=new Date(y,m-1,1).getDay();
+  const dows=["일","월","화","수","목","금","토"];
+  const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지"&&s.teacher==="원장");
+  const byDow={}; dows.forEach(d=>byDow[d]=[]);
+  active.forEach(s=>{ String(s.classDays||"").split(",").map(x=>x.trim()).filter(Boolean).forEach(d=>{ if(byDow[d])byDow[d].push(s); }); });
+  Object.keys(byDow).forEach(d=>byDow[d].sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")));
+  let cells="";
+  for(let i=0;i<first;i++)cells+=`<td style="background:var(--bg)"></td>`;
+  for(let d=1;d<=dim;d++){
+    const dow=(first+d-1)%7; const dname=dows[dow];
+    const date=`${mm}-${String(d).padStart(2,"0")}`;
+    const isToday=date===todayStr();
+    const studs=byDow[dname]||[];
+    const chips=studs.map(s=>`<div style="margin:2px 0;padding:2px 5px;background:var(--green-light);border-radius:6px;font-size:11.5px">${esc(s.name)}${s.dailyHours?`<span style="color:var(--sub)"> ${esc(s.dailyHours)}</span>`:""}</div>`).join("");
+    cells+=`<td style="vertical-align:top;height:90px;${isToday?'background:#fff7e6;':''}border:1px solid var(--line);padding:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:12px;color:${dow===0?'var(--red)':dow===6?'#2471a3':'var(--ink)'}">${d}</b>${studs.length?`<span style="font-size:10px;color:var(--sub)">${studs.length}명</span>`:""}</div>${chips}</td>`;
+    if(dow===6&&d<dim)cells+=`</tr><tr>`;
+  }
+  const lastDow=(first+dim-1)%7;
+  for(let i=lastDow+1;i<=6;i++)cells+=`<td style="background:var(--bg)"></td>`;
+  const summary=dows.map((d,i)=>`<div class="card" style="padding:8px 12px"><span class="lab" style="color:${i===0?'var(--red)':i===6?'#2471a3':''}">${d}요일 </span><b>${byDow[d].length}명</b></div>`).join("");
+  return `
+  <div class="toolbar">
+    <label class="fld">조회 월<input type="month" value="${mm}" onchange="ui.wdMonth=this.value;render()"></label>
+    <button class="btn sm" onclick="wdMove(-1)">◀ 이전달</button>
+    <button class="btn sm" onclick="wdMove(1)">다음달 ▶</button>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${summary}</div>
+  <div class="twrap"><table style="table-layout:fixed"><thead><tr>${dows.map((d,i)=>`<th style="color:${i===0?'var(--red)':i===6?'#2471a3':'var(--ink)'}">${d}</th>`).join("")}</tr></thead><tbody><tr>${cells}</tr></tbody></table></div>
+  <p class="note">※ 수강생 <b>방문요일</b> 기준으로 그 요일에 오는 <b>원장 담당</b> 학생을 표시합니다. 이름 옆 숫자는 1일 수업시간. 시간·변동은 구글캘린더로 관리하세요.</p>`;
+}
 function viewWork(writer){
   const [y,m]=ui.workMonth.split("-").map(Number);
   const dim=new Date(y,m,0).getDate();
@@ -5195,9 +5231,6 @@ function viewWork(writer){
   const byDay={};
   items.forEach(it=>{const d=Number(String(it.date).slice(8,10));(byDay[d]=byDay[d]||[]).push(it);});
   const doneCnt=items.filter(i=>i.done==="Y").length;
-  const lessonByDay={};
-  if(writer==="원장"){ const tOf=n=>{const st=DB.students.find(s=>String(s.name)===String(n));return st?st.teacher:"";}; DB.lessons.filter(l=>String(l.date).startsWith(ui.workMonth)&&tOf(l.student)!=="부원장").forEach(l=>{const d=Number(String(l.date).slice(8,10));(lessonByDay[d]=lessonByDay[d]||[]).push(l);}); }
-  const lessonCnt=Object.values(lessonByDay).reduce((a,arr)=>a+arr.length,0);
   const dows=["일","월","화","수","목","금","토"];
   let cells="";
   for(let i=0;i<first;i++)cells+=`<td style="background:var(--bg)"></td>`;
@@ -5219,12 +5252,11 @@ function viewWork(writer){
         <b style="cursor:pointer;color:var(--sub)" onclick="wlDel('${it.id}')">✕</b>
       </div>`;
     }).join("");
-    const lchips=writer==="원장"?(lessonByDay[d]||[]).map(l=>`<div style="margin:2px 0;padding:3px 5px;background:#e8f0fe;border-radius:6px;font-size:11px;color:#1a3d6e" title="${esc(l.text||"")}">📘 ${esc(l.student||"공통")}${l.session?" "+esc(l.session)+"차시":""}${l.text?": "+esc(String(l.text).slice(0,16))+(String(l.text).length>16?"…":""):""}</div>`).join(""):"";
     cells+=`<td style="vertical-align:top;height:86px;${isToday?'background:var(--green-light);':''}border:1px solid var(--line);padding:4px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <b style="font-size:12px;color:${dow===0?'var(--red)':dow===6?'#2471a3':'var(--ink)'}">${d}</b>
         <span style="cursor:pointer;color:var(--green);font-weight:800" onclick="wlOpenForm('${date}')">＋</span>
-      </div>${chips}${lchips}</td>`;
+      </div>${chips}</td>`;
     if(dow===6&&d<dim)cells+=`</tr><tr>`;
   }
   const lastDow=(first+dim-1)%7;
@@ -5245,12 +5277,11 @@ function viewWork(writer){
     <button class="btn sm" onclick="workMove(-1)">◀ 이전달</button>
     <button class="btn sm" onclick="workMove(1)">다음달 ▶</button>
     <div class="card" style="padding:10px 14px"><span class="lab">${writer} 이번달 완료 </span><b>${doneCnt}/${items.length}</b></div>
-    ${writer==="원장"?`<div class="card" style="padding:10px 14px"><span class="lab">📘 수업일지 </span><b>${lessonCnt}건</b></div>`:""}
   </div>
   ${form}
   <div class="twrap"><table style="table-layout:fixed"><thead><tr>${dows.map((d,i)=>`<th style="color:${i===0?'var(--red)':i===6?'#2471a3':'var(--ink)'}">${d}</th>`).join("")}</tr></thead>
   <tbody><tr>${cells}</tr></tbody></table></div>
-  <p class="note">※ 날짜의 ＋로 일정 추가 · 체크박스로 완료 표시 · 🔁 = 매월 반복 (점선 = 반복 예정, 체크하면 그 달 일정으로 확정) · 반복 중단은 🔁 원본(처음 등록한 달)을 ✕로 삭제.${writer==="원장"?" 📘 파란 칸 = 학습관리에 기록된 수업일지(원장 담당·공통, 읽기 전용).":""}</p>`;
+  <p class="note">※ 날짜의 ＋로 일정 추가 · 체크박스로 완료 표시 · 🔁 = 매월 반복 (점선 = 반복 예정, 체크하면 그 달 일정으로 확정) · 반복 중단은 🔁 원본(처음 등록한 달)을 ✕로 삭제.</p>`;
 }
 function workMove(d){
   const [y,m]=ui.workMonth.split("-").map(Number);
