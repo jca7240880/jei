@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.20 (2026-07-29) Supabase";
+const APP_VERSION="v6.21 (2026-07-29) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -5195,6 +5195,9 @@ function viewWork(writer){
   const byDay={};
   items.forEach(it=>{const d=Number(String(it.date).slice(8,10));(byDay[d]=byDay[d]||[]).push(it);});
   const doneCnt=items.filter(i=>i.done==="Y").length;
+  const lessonByDay={};
+  if(writer==="원장"){ const tOf=n=>{const st=DB.students.find(s=>String(s.name)===String(n));return st?st.teacher:"";}; DB.lessons.filter(l=>String(l.date).startsWith(ui.workMonth)&&tOf(l.student)!=="부원장").forEach(l=>{const d=Number(String(l.date).slice(8,10));(lessonByDay[d]=lessonByDay[d]||[]).push(l);}); }
+  const lessonCnt=Object.values(lessonByDay).reduce((a,arr)=>a+arr.length,0);
   const dows=["일","월","화","수","목","금","토"];
   let cells="";
   for(let i=0;i<first;i++)cells+=`<td style="background:var(--bg)"></td>`;
@@ -5216,11 +5219,12 @@ function viewWork(writer){
         <b style="cursor:pointer;color:var(--sub)" onclick="wlDel('${it.id}')">✕</b>
       </div>`;
     }).join("");
+    const lchips=writer==="원장"?(lessonByDay[d]||[]).map(l=>`<div style="margin:2px 0;padding:3px 5px;background:#e8f0fe;border-radius:6px;font-size:11px;color:#1a3d6e" title="${esc(l.text||"")}">📘 ${esc(l.student||"공통")}${l.session?" "+esc(l.session)+"차시":""}${l.text?": "+esc(String(l.text).slice(0,16))+(String(l.text).length>16?"…":""):""}</div>`).join(""):"";
     cells+=`<td style="vertical-align:top;height:86px;${isToday?'background:var(--green-light);':''}border:1px solid var(--line);padding:4px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <b style="font-size:12px;color:${dow===0?'var(--red)':dow===6?'#2471a3':'var(--ink)'}">${d}</b>
         <span style="cursor:pointer;color:var(--green);font-weight:800" onclick="wlOpenForm('${date}')">＋</span>
-      </div>${chips}</td>`;
+      </div>${chips}${lchips}</td>`;
     if(dow===6&&d<dim)cells+=`</tr><tr>`;
   }
   const lastDow=(first+dim-1)%7;
@@ -5241,11 +5245,12 @@ function viewWork(writer){
     <button class="btn sm" onclick="workMove(-1)">◀ 이전달</button>
     <button class="btn sm" onclick="workMove(1)">다음달 ▶</button>
     <div class="card" style="padding:10px 14px"><span class="lab">${writer} 이번달 완료 </span><b>${doneCnt}/${items.length}</b></div>
+    ${writer==="원장"?`<div class="card" style="padding:10px 14px"><span class="lab">📘 수업일지 </span><b>${lessonCnt}건</b></div>`:""}
   </div>
   ${form}
   <div class="twrap"><table style="table-layout:fixed"><thead><tr>${dows.map((d,i)=>`<th style="color:${i===0?'var(--red)':i===6?'#2471a3':'var(--ink)'}">${d}</th>`).join("")}</tr></thead>
   <tbody><tr>${cells}</tr></tbody></table></div>
-  <p class="note">※ 날짜의 ＋로 일정 추가 · 체크박스로 완료 표시 · 🔁 = 매월 반복 (점선 = 반복 예정, 체크하면 그 달 일정으로 확정) · 반복 중단은 🔁 원본(처음 등록한 달)을 ✕로 삭제.</p>`;
+  <p class="note">※ 날짜의 ＋로 일정 추가 · 체크박스로 완료 표시 · 🔁 = 매월 반복 (점선 = 반복 예정, 체크하면 그 달 일정으로 확정) · 반복 중단은 🔁 원본(처음 등록한 달)을 ✕로 삭제.${writer==="원장"?" 📘 파란 칸 = 학습관리에 기록된 수업일지(원장 담당·공통, 읽기 전용).":""}</p>`;
 }
 function workMove(d){
   const [y,m]=ui.workMonth.split("-").map(Number);
