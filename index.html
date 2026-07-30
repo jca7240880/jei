@@ -465,7 +465,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.12 (2026-07-28) Supabase";
+const APP_VERSION="v6.13 (2026-07-28) Supabase";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2119,6 +2119,7 @@ function paySubBar(){
 }
 const CHECK_CATS=[["equipments","🖥 장비(PC)"],["materials","🔧 기자재"],["supplies","📦 비품"],["facilities","🏢 시설"]];
 function assetSub(a){ return a.code||a.area||a.location||a.seat||""; }
+function natCmp(a,b){ return String(a||"").localeCompare(String(b||""),"ko",{numeric:true,sensitivity:"base"}); }
 function setCheck(kind,assetId,name,code,result){
   const m=ui.checkMonth||thisMonth();
   let c=DB.checks.find(x=>String(x.assetId)===String(assetId)&&x.kind===kind&&x.month===m);
@@ -2138,7 +2139,7 @@ function checkAllGood(kind){
 function viewMonthCheck(){
   const m=ui.checkMonth||thisMonth();
   const catsHtml=CHECK_CATS.map(([kind,label])=>{
-    const arr=(DB[kind]||[]).filter(a=>!a.dispose&&a.name);
+    const arr=(DB[kind]||[]).filter(a=>!a.dispose&&a.name).sort((x,y)=>natCmp(x.name,y.name)||natCmp(assetSub(x),assetSub(y)));
     const rows=arr.map(a=>{
       const c=DB.checks.find(x=>String(x.assetId)===String(a.id)&&x.kind===kind&&x.month===m);
       const r=c?c.result:"";
