@@ -888,7 +888,7 @@ function enterKiosk(){
   try{localStorage.setItem("jei_kiosk","1");}catch(e){}
   try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}catch(e){}
   requestWakeLock(); // 화면 꺼짐 방지
-  if(!kioskClock)kioskClock=setInterval(()=>{const el=document.getElementById("kClock");if(el)el.textContent=nowTime();if(KIOSK&&new Date().getSeconds()<2)loadCloud(true);},30000);
+  if(!kioskClock){let _kReloadTick=0;kioskClock=setInterval(()=>{const el=document.getElementById("kClock");if(el)el.textContent=nowTime();_kReloadTick++;if(KIOSK&&_kReloadTick>=6){_kReloadTick=0;loadCloud(true);}},30000);} // egress 절감: 시계는 30초마다, 데이터 조회는 3분(30초×6)마다
   render();
 }
 function exitKioskPrompt(){
@@ -6073,7 +6073,7 @@ setInterval(()=>{
   if(tab==="cal")return; // 캘린더 보는 중엔 화면 갱신 안 함 (내장 캘린더 깜빡임 방지)
   if(document.visibilityState!=="visible")return;
   loadCloud(true);
-}, 15000);
+}, 90000); // egress 절감: 15초 → 90초 자동 새로고침
 
 </script>
 </body>
