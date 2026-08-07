@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>제이컴퓨터학원 통합관리시스템 v4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --green:#196B24; --green-dark:#114A19; --green-light:#E8F3EA; --green-mid:#CDE5D1;
@@ -465,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.24 (2026-07-31) Supabase";
+const APP_VERSION="v6.25 (2026-08-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -572,7 +573,7 @@ function fromSupaRow(table, r){
 function supaHeaders(){
   return {
     "apikey": SUPA_KEY,
-    "Authorization": "Bearer "+SUPA_KEY,
+    "Authorization": "Bearer "+(AUTH_TOKEN||SUPA_KEY),
     "Content-Type": "application/json",
     "Prefer": "return=minimal"
   };
@@ -783,6 +784,12 @@ async function saveCloud(){
 let KIOSK=false;
 try{KIOSK=localStorage.getItem("jei_kiosk")==="1";}catch(e){}
 let AUTHED=false;
+let SB=null; // supabase-js 인증 클라이언트
+let AUTH_TOKEN=""; // 로그인 사용자 access_token
+let AUTH_EMAIL=""; // 로그인 이메일
+function initAuthClient(){ if(SB||!GAS||!SUPA_KEY||typeof supabase==="undefined")return; try{SB=supabase.createClient(GAS,SUPA_KEY);}catch(e){SB=null;} }
+function getStaffEmail(){const r=DB.settings.find(x=>x.key==="staffEmail");return r?String(r.value).toLowerCase():"";}
+function applyRoleFromEmail(){const se=getStaffEmail();ROLE=(se&&AUTH_EMAIL&&AUTH_EMAIL.toLowerCase()===se)?"부원장":"원장";}
 let ROLE=""; // "원장"(전체) 또는 "부원장"(수납 제외 + 담당 수강생만)
 function getLoginPw(){const r=DB.settings.find(x=>x.key==="loginPw");return r?String(r.value):"";}
 function getStaffPw(){const r=DB.settings.find(x=>x.key==="staffPw");return r?String(r.value):"";}
@@ -794,23 +801,49 @@ function visibleTabs(){
   return TABS;
 }
 function viewLogin(){
-  const hasStaff=getStaffPw();
   return `<div style="max-width:380px;margin:8vh auto 0;text-align:center;background:#fff;border:1px solid var(--line);border-radius:16px;padding:36px 28px">
     <div style="font-size:12px;letter-spacing:3px;color:var(--sub)">J COMPUTER ACADEMY</div>
     <h1 style="font-size:21px;margin:6px 0 4px;color:var(--green-dark)">통합관리시스템</h1>
-    <div style="font-size:14px;color:var(--sub);margin-bottom:6px">관리자 암호를 입력하세요</div>
+    <div style="font-size:14px;color:var(--sub);margin-bottom:6px">계정으로 로그인하세요</div>
     <div style="font-size:12px;color:var(--green);font-weight:700;margin-bottom:16px">${APP_VERSION}</div>
-    <input type="password" id="loginInput" style="width:100%;font-size:18px;text-align:center;letter-spacing:4px;padding:12px" placeholder="암호" onkeydown="if(event.key==='Enter')doLogin()" autofocus>
+    <input type="email" id="loginEmail" autocomplete="username" style="width:100%;font-size:16px;padding:11px;margin-bottom:8px" placeholder="이메일" onkeydown="if(event.key==='Enter'){var p=document.getElementById('loginPw2');if(p)p.focus();}" autofocus>
+    <input type="password" id="loginPw2" autocomplete="current-password" style="width:100%;font-size:16px;padding:11px" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
     <div id="loginMsg" style="color:var(--red);font-size:13px;min-height:18px;margin:8px 0"></div>
     <button class="btn" style="width:100%;font-size:16px;padding:12px" onclick="doLogin()">로그인</button>
-    ${hasStaff?`<div style="font-size:11px;color:var(--sub);margin-top:12px">원장 암호: 전체 기능 · 부원장 암호: 기초설정·수입/지출·월간현황 제외</div>`:""}
+    <div style="font-size:11px;color:var(--sub);margin-top:12px">계정은 Supabase에서 발급된 이메일·비밀번호입니다.</div>
   </div>`;
 }
-function doLogin(){
-  const v=val("loginInput");
-  if(v===getLoginPw()){AUTHED=true;ROLE="원장";render();}
-  else if(getStaffPw()&&v===getStaffPw()){AUTHED=true;ROLE="부원장";render();}
-  else{const m=document.getElementById("loginMsg");if(m)m.textContent="암호가 일치하지 않습니다.";const i=document.getElementById("loginInput");if(i){i.value="";i.focus();}}
+async function doLogin(){
+  initAuthClient();
+  const msg=document.getElementById("loginMsg");
+  if(!SB){ if(msg)msg.textContent="보안 로그인 모듈을 불러오지 못했습니다. 인터넷 연결 확인 후 새로고침하세요."; return; }
+  const email=(val("loginEmail")||"").trim();
+  const pw=val("loginPw2")||"";
+  if(!email||!pw){ if(msg)msg.textContent="이메일과 비밀번호를 입력하세요."; return; }
+  if(msg)msg.textContent="로그인 중…";
+  try{
+    const {data,error}=await SB.auth.signInWithPassword({email:email,password:pw});
+    if(error||!data||!data.session){ if(msg)msg.textContent="이메일 또는 비밀번호가 올바르지 않습니다."; return; }
+    AUTH_TOKEN=data.session.access_token;
+    AUTH_EMAIL=(data.session.user&&data.session.user.email)||email;
+    AUTHED=true;
+    await loadCloud();
+    applyRoleFromEmail();
+    render();
+  }catch(e){ if(msg)msg.textContent="로그인 오류: "+(e.message||e); }
+}
+function setStaffEmail(){
+  const cur=getStaffEmail();
+  const nw=prompt("부원장 계정으로 사용할 이메일을 입력하세요.\n(Supabase에서 이 이메일로 계정을 만들어야 합니다.)\n비우고 확인하면 부원장 지정이 해제되어 모두 원장 권한이 됩니다.",cur||"");
+  if(nw===null)return;
+  const v=(nw||"").trim().toLowerCase();
+  let r=DB.settings.find(x=>x.key==="staffEmail");
+  if(v){ if(r)r.value=v; else DB.settings.push({id:uid(),key:"staffEmail",value:v}); }
+  else if(r){ DB.settings=DB.settings.filter(x=>x.key!=="staffEmail"); }
+  saveNow();
+  applyRoleFromEmail();
+  alert(v?("부원장 이메일이 "+v+" (으)로 지정되었습니다."):"부원장 지정이 해제되었습니다.");
+  render();
 }
 function setStaffPw(){
   const cur=getLoginPw();
@@ -1056,14 +1089,14 @@ function renderHeader(){
     <button class="hbtn ghost" onclick="loadCloud()">⟳ 새로고침</button>
     ${ROLE!=="부원장"?`<button class="hbtn" onclick="exportExcel()">⬇ 엑셀 백업</button>
     <button class="hbtn ghost" onclick="document.getElementById('restoreFile').click()">⬆ 백업 복원</button>
-    <input type="file" id="restoreFile" accept=".xlsx,.xls" style="display:none" onchange="restoreExcel(this)">
-    <button class="hbtn ghost" onclick="setLoginPw()">🔑 로그인암호</button>`:""}
-    ${getLoginPw()?`<button class="hbtn ghost" onclick="doLogout()">로그아웃</button>`:""}
+    <input type="file" id="restoreFile" accept=".xlsx,.xls" style="display:none" onchange="restoreExcel(this)">`:""}
+    ${AUTHED?`<button class="hbtn ghost" onclick="doLogout()">로그아웃</button>`:""}
     <button class="hbtn ghost" onclick="openSetup()">설정</button>`:"";
 }
-function doLogout(){AUTHED=false;ROLE="";render();}
+function doLogout(){try{if(SB)SB.auth.signOut();}catch(e){}AUTHED=false;ROLE="";AUTH_TOKEN="";AUTH_EMAIL="";render();}
 function goHome(){tab="dash";ui.detailId=null;ui.rowEditId=null;if(GAS)loadCloud();else render();}
 function render(){
+  if(GAS&&SUPA_KEY&&!AUTHED){document.getElementById("hbtns").innerHTML="";document.getElementById("tabs").innerHTML="";document.querySelector("header").style.display="none";document.body.classList.remove("kioskbody");document.getElementById("main").innerHTML=viewLogin();return;}
   // 로드 전(GAS는 있으나 아직 안 불러옴): 잠깐 로딩 표시 — 메뉴가 먼저 노출되는 것 방지
   if(GAS&&!LOADED_OK&&!KIOSK){
     document.getElementById("hbtns").innerHTML="";
@@ -1072,15 +1105,7 @@ function render(){
     document.getElementById("main").innerHTML=`<div style="text-align:center;margin-top:18vh;color:var(--sub)">⟳ 불러오는 중…</div>`;
     return;
   }
-  // 로그인 잠금: GAS 연결돼 있고, 암호가 설정돼 있고, 아직 로그인 안 했으면 로그인 화면
-  if(GAS&&!KIOSK&&!AUTHED&&getLoginPw()){
-    document.getElementById("hbtns").innerHTML="";
-    document.getElementById("tabs").innerHTML="";
-    document.querySelector("header").style.display="none";
-    document.body.classList.remove("kioskbody");
-    document.getElementById("main").innerHTML=viewLogin();
-    return;
-  }
+  // (로그인 화면은 render() 최상단에서 처리)
   if(GAS&&KIOSK){
     document.getElementById("hbtns").innerHTML="";
     document.getElementById("tabs").innerHTML="";
@@ -1186,7 +1211,8 @@ function connectSupa(){
     localStorage.setItem("jei_supa_url",url);
     localStorage.setItem("jei_supa_key",key);
   }catch(e){}
-  render();loadCloud();
+  initAuthClient();
+  render();
 }
 function openSetup(){GAS_backup=GAS;GAS="";render();GAS=GAS_backup;}
 let GAS_backup="";
@@ -5043,12 +5069,11 @@ function viewConfig(){
   }else{
     body=`<div class="panel" style="margin-top:0"><h2>🔑 보안 · 데이터</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn sm" onclick="setLoginPw()">원장 암호 설정</button>
-      <button class="btn sm" onclick="setStaffPw()">부원장 암호 설정</button>
+      <button class="btn sm" onclick="setStaffEmail()">부원장 이메일 지정</button>
       <button class="btn sm" onclick="setKioskPw()">키오스크 암호 설정</button>
       <button class="btn sm" onclick="exportExcel()">⬇ 엑셀 백업</button>
     </div>
-    <p class="note">※ <b>원장 암호</b>: 전체 기능. <b>부원장 암호</b>: 기초설정 탭 · 수납의 수입/지출 내역 · 대시보드 월간현황만 제외되고 나머지(수강생·상담·업무·운영·도서·캘린더·납입내역)는 전부 사용 가능합니다.</p>
+    <p class="note">※ 로그인은 <b>Supabase 계정(이메일+비밀번호)</b>으로 합니다. <b>부원장 이메일</b>로 지정된 계정은 기초설정·수입/지출·월간현황이 제외되고, 그 외 계정은 원장(전체) 권한입니다. 계정 생성·비밀번호 변경은 Supabase 대시보드에서 합니다.</p>
   </div>`;
   }
   return configSubBar()+body;
@@ -6082,9 +6107,16 @@ function exportExcel(){
 }
 
 /* ───── 시작 ───── */
-render();
-if(GAS)loadCloud();
-if(KIOSK)requestWakeLock(); // 재실행 시 키오스크면 화면 꺼짐 방지
+initAuthClient();
+(async function bootAuth(){
+  if(SB&&GAS&&SUPA_KEY){
+    try{ const {data}=await SB.auth.getSession(); if(data&&data.session){AUTH_TOKEN=data.session.access_token;AUTH_EMAIL=(data.session.user&&data.session.user.email)||"";AUTHED=true;} }catch(e){}
+    try{ SB.auth.onAuthStateChange((ev,session)=>{ if(session){AUTH_TOKEN=session.access_token;AUTH_EMAIL=(session.user&&session.user.email)||AUTH_EMAIL;} else {AUTH_TOKEN="";AUTHED=false;} }); }catch(e){}
+  }
+  render();
+  if(GAS&&AUTHED){ await loadCloud(); applyRoleFromEmail(); render(); }
+  if(KIOSK)requestWakeLock(); // 재실행 시 키오스크면 화면 꺼짐 방지
+})();
 // 자동 새로고침: 수동 새로고침 없이 최신 데이터 유지
 // (저장 중·저장 대기·행 편집 중·입력칸 포커스 중에는 건드리지 않아 작업이 끊기지 않음)
 function isEditingNow(){
