@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.25 (2026-08-07) Supabase+Auth";
+const APP_VERSION="v6.26 (2026-08-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -830,6 +830,7 @@ async function doLogin(){
     await loadCloud();
     applyRoleFromEmail();
     render();
+    resetIdleTimer();
   }catch(e){ if(msg)msg.textContent="로그인 오류: "+(e.message||e); }
 }
 function setStaffEmail(){
@@ -1093,7 +1094,15 @@ function renderHeader(){
     ${AUTHED?`<button class="hbtn ghost" onclick="doLogout()">로그아웃</button>`:""}
     <button class="hbtn ghost" onclick="openSetup()">설정</button>`:"";
 }
-function doLogout(){try{if(SB)SB.auth.signOut();}catch(e){}AUTHED=false;ROLE="";AUTH_TOKEN="";AUTH_EMAIL="";render();}
+function doLogout(){try{if(SB)SB.auth.signOut();}catch(e){}AUTHED=false;ROLE="";AUTH_TOKEN="";AUTH_EMAIL="";if(_idleTimer)clearTimeout(_idleTimer);render();}
+const IDLE_LOGOUT_MIN=20; // ★ 자동 로그아웃 시간(분). 이 숫자만 바꾸면 됩니다.
+let _idleTimer=null;
+function resetIdleTimer(){
+  if(_idleTimer)clearTimeout(_idleTimer);
+  if(!AUTHED||KIOSK)return; // 키오스크는 자동 로그아웃 안 함
+  _idleTimer=setTimeout(()=>{ if(AUTHED&&!KIOSK){ alert(IDLE_LOGOUT_MIN+"분 동안 사용이 없어 보안을 위해 자동 로그아웃합니다."); doLogout(); } }, IDLE_LOGOUT_MIN*60000);
+}
+["mousemove","mousedown","keydown","touchstart","scroll"].forEach(ev=>document.addEventListener(ev,resetIdleTimer,{passive:true}));
 function goHome(){tab="dash";ui.detailId=null;ui.rowEditId=null;if(GAS)loadCloud();else render();}
 function render(){
   if(GAS&&SUPA_KEY&&!AUTHED){document.getElementById("hbtns").innerHTML="";document.getElementById("tabs").innerHTML="";document.querySelector("header").style.display="none";document.body.classList.remove("kioskbody");document.getElementById("main").innerHTML=viewLogin();return;}
@@ -6114,7 +6123,7 @@ initAuthClient();
     try{ SB.auth.onAuthStateChange((ev,session)=>{ if(session){AUTH_TOKEN=session.access_token;AUTH_EMAIL=(session.user&&session.user.email)||AUTH_EMAIL;} else {AUTH_TOKEN="";AUTHED=false;} }); }catch(e){}
   }
   render();
-  if(GAS&&AUTHED){ await loadCloud(); applyRoleFromEmail(); render(); }
+  if(GAS&&AUTHED){ await loadCloud(); applyRoleFromEmail(); render(); resetIdleTimer(); }
   if(KIOSK)requestWakeLock(); // 재실행 시 키오스크면 화면 꺼짐 방지
 })();
 // 자동 새로고침: 수동 새로고침 없이 최신 데이터 유지
