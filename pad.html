@@ -41,6 +41,7 @@
   .note{font-size:12px;color:var(--sub);line-height:1.6;}
   @media (max-width:420px){ .kpad{grid-template-columns:repeat(3,30vw);} .kkey{height:64px;} .kdot{width:46px;height:56px;} }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -53,7 +54,7 @@
    - 관리시스템을 업데이트해도 이 파일은 수정할 필요가 없습니다.
    ═══════════════════════════════════════════════════ */
 
-const PAD_VERSION="출결패드 v2.1 Supabase";
+const PAD_VERSION="출결패드 v2.2 Supabase+Auth";
 
 /* 저장된 Supabase URL·키 (localStorage) */
 let GAS = (function(){try{return localStorage.getItem("jei_pad_supa_url")||"";}catch(e){return "";}})();
@@ -66,6 +67,8 @@ let SETTINGS=[];      // 로고 등
 let ATTENDANCE=[];    // 출결 기록 (관리자 모드에서 오늘 현황 보기용)
 let ui={input:"",msg:"",choices:null,action:null,screen:"kiosk",adminPwInput:""};
 let loaded=false;
+let SB=null,AUTH_TOKEN="",AUTH_EMAIL="",AUTHED=false;
+function initAuthClient(){if(SB||!GAS||!SUPA_KEY||typeof supabase==="undefined")return;try{SB=supabase.createClient(GAS,SUPA_KEY);}catch(e){SB=null;}}
 
 /* ───── 공통 헬퍼 ───── */
 const $=id=>document.getElementById(id);
@@ -79,12 +82,42 @@ function normDate(v){if(!v)return"";const s=String(v);const m=s.match(/(\d{4})\D
 function findStu(id){return STUDENTS.find(s=>String(s.id)===String(id));}
 
 /* ───── 화면 그리기 ───── */
+function loginView(){
+  return `<div class="setup">
+    <h1>출결패드 로그인</h1>
+    <p class="note">이 태블릿을 <b>한 번만</b> 로그인하면, 이후 학생들은 그대로 사용합니다.</p>
+    <label style="margin-top:12px;display:block">이메일</label>
+    <input type="email" id="padEmail" placeholder="이메일" autocomplete="username">
+    <label style="margin-top:10px;display:block">비밀번호</label>
+    <input type="password" id="padPw" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doPadLogin()">
+    <div id="padLoginMsg" style="color:#d33;font-size:13px;min-height:18px;margin:8px 0"></div>
+    <button class="btn" style="width:100%;margin-top:4px" onclick="doPadLogin()">로그인</button>
+    <p class="note" style="margin-top:14px">※ 관리시스템과 같은 Supabase 계정입니다. 태블릿 전용 계정을 만들어 쓰는 것을 권장합니다.</p>
+  </div>`;
+}
+async function doPadLogin(){
+  initAuthClient();
+  const msg=$("padLoginMsg");
+  if(!SB){ if(msg)msg.textContent="보안 로그인 모듈을 불러오지 못했습니다. 인터넷 확인 후 새로고침하세요."; return; }
+  const email=($("padEmail")?$("padEmail").value:"").trim();
+  const pw=$("padPw")?$("padPw").value:"";
+  if(!email||!pw){ if(msg)msg.textContent="이메일과 비밀번호를 입력하세요."; return; }
+  if(msg)msg.textContent="로그인 중…";
+  try{
+    const {data,error}=await SB.auth.signInWithPassword({email:email,password:pw});
+    if(error||!data||!data.session){ if(msg)msg.textContent="이메일 또는 비밀번호가 올바르지 않습니다."; return; }
+    AUTH_TOKEN=data.session.access_token; AUTH_EMAIL=(data.session.user&&data.session.user.email)||email; AUTHED=true;
+    ui.screen="kiosk"; render(); loadStudents();
+  }catch(e){ if(msg)msg.textContent="로그인 오류: "+(e.message||e); }
+}
+function padLogout(){ try{if(SB)SB.auth.signOut();}catch(e){} AUTHED=false;AUTH_TOKEN="";AUTH_EMAIL="";ui.screen="kiosk";render(); }
 function render(){
+  if(!GAS||!SUPA_KEY){ $("app").innerHTML=setupView(); return; }
+  if(!AUTHED){ $("app").innerHTML=loginView(); return; }
   // 관리자 암호 입력 화면
   if(ui.screen==="adminPw"){ $("app").innerHTML=adminPwView(); return; }
   // 관리자 모드 화면
   if(ui.screen==="admin"){ $("app").innerHTML=adminView(); return; }
-  if(!GAS){ $("app").innerHTML=setupView(); return; }
   if(!loaded){ $("app").innerHTML=`<div style="text-align:center;margin-top:30vh;color:var(--sub)">⟳ 수강생 명단 불러오는 중…</div>`; return; }
   $("app").innerHTML=kioskView();
 }
@@ -144,6 +177,7 @@ function adminView(){
 
     <div style="margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:10px">
       <button class="btn sm" onclick="reconnect()">⟳ 새로고침 (명단·출결)</button>
+      <button class="btn sm" onclick="padLogout()" style="margin-left:8px">↩ 다른 계정으로 로그인</button>
       <p class="note" style="margin-top:8px">${PAD_VERSION} · 연결 ${GAS?"됨":"안 됨"} · 명단 ${STUDENTS.length}명</p>
     </div>
   </div>`;
@@ -184,7 +218,7 @@ function adminSaveSupa(){
   GAS=u;SUPA_KEY=k;
   try{localStorage.setItem("jei_pad_supa_url",u);localStorage.setItem("jei_pad_supa_key",k);}catch(e){}
   alert("연결 정보를 변경했습니다. 다시 연결합니다.");
-  loaded=false;ui.screen="kiosk";render();loadStudents();
+  loaded=false;ui.screen="kiosk";initAuthClient();render();
 }
 function adminChangePw(){
   const np=($("adminNewPw").value||"").trim();
@@ -214,7 +248,7 @@ function saveSupa(){
   if(!k.startsWith("sb_publishable_")&&!k.startsWith("eyJ")){alert("Publishable Key가 올바르지 않습니다.");return;}
   GAS=u;SUPA_KEY=k;
   try{localStorage.setItem("jei_pad_supa_url",u);localStorage.setItem("jei_pad_supa_key",k);}catch(e){}
-  loaded=false;render();loadStudents();
+  loaded=false;initAuthClient();render();
 }
 
 function logoHtml(){
@@ -306,7 +340,7 @@ function kioskDo(type){
 function supaHeaders(){
   return {
     "apikey": SUPA_KEY,
-    "Authorization": "Bearer "+SUPA_KEY,
+    "Authorization": "Bearer "+(AUTH_TOKEN||SUPA_KEY),
     "Content-Type": "application/json",
     "Prefer": "return=minimal"
   };
@@ -338,7 +372,7 @@ async function saveAtt(rec,_try){
 /* ───── 수강생 명단·설정·출결 불러오기 (Supabase 3개 테이블 병렬) ───── */
 async function supaFetch(table){
   const url=GAS.replace(/\/+$/,'')+"/rest/v1/"+table+"?select=*";
-  const h={"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY};
+  const h={"apikey":SUPA_KEY,"Authorization":"Bearer "+(AUTH_TOKEN||SUPA_KEY)};
   const res=await fetch(url,{headers:h});
   if(!res.ok)throw new Error(table+" "+res.status);
   return await res.json();
@@ -379,8 +413,15 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 
 /* ───── 시작 ───── */
 keepAwake();
-render();
-if(GAS)loadStudents();
+initAuthClient();
+(async function bootAuth(){
+  if(SB&&GAS&&SUPA_KEY){
+    try{const {data}=await SB.auth.getSession();if(data&&data.session){AUTH_TOKEN=data.session.access_token;AUTH_EMAIL=(data.session.user&&data.session.user.email)||"";AUTHED=true;}}catch(e){}
+    try{SB.auth.onAuthStateChange((ev,session)=>{if(session){AUTH_TOKEN=session.access_token;}else{AUTH_TOKEN="";AUTHED=false;}});}catch(e){}
+  }
+  render();
+  if(GAS&&SUPA_KEY&&AUTHED)loadStudents();
+})();
 </script>
 </body>
 </html>
