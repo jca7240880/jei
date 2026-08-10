@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.26 (2026-08-07) Supabase+Auth";
+const APP_VERSION="v6.27 (2026-08-11) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -3123,14 +3123,14 @@ function stuFormHtml(s){
     <label class="fld" id="f_chwrap" style="display:${v.payCycle==='횟수제'?'flex':'none'}">누적 충전횟수<input type="number" id="f_ch" value="${v.charged||v.totalSessions||""}" placeholder="이전 결제 합산"></label>
     <label class="fld">최근결제일<input type="date" id="f_lp" value="${esc(v.lastPaid||"")}"></label>
     <label class="fld">1일 수업시간<select id="f_dh"><option value="" ${!v.dailyHours?"selected":""}>-</option>${["1시간","2시간","3시간","4시간"].map(h=>`<option ${v.dailyHours===h?"selected":""}>${h}</option>`).join("")}${(v.dailyHours&&!["1시간","2시간","3시간","4시간"].includes(v.dailyHours))?`<option selected>${esc(v.dailyHours)}</option>`:""}</select></label>
-    <label class="fld" style="grid-column:span 2">수업요일 · 등원시간<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0"><input type="time" id="f_allTime" style="width:auto"><button type="button" class="btn sm" onclick="applyAllTimes()">＝ 모든 요일 같은 시간 적용</button></span><span style="display:flex;gap:12px;flex-wrap:wrap;padding:2px 0">${["월","화","수","목","금","토","일"].map(d=>`<label style="display:flex;align-items:center;gap:3px;font-size:13px;color:var(--ink)"><input type="checkbox" id="f_day${d}" ${String(v.classDays||"").split(",").includes(d)?"checked":""}>${d}<input type="time" id="f_daytime${d}" value="${parseTimes(v.classTimes)[d]||""}" style="width:auto;font-size:12px"></label>`).join("")}</span></label>
+    <input type="hidden" id="f_classDays" value="${esc(v.classDays||"")}"><input type="hidden" id="f_classTimes" value="${esc(v.classTimes||"")}">
     ${s?`<label class="fld">상태<select id="f_stat"><option ${v.status!=='퇴원'&&v.status!=='정지'?'selected':''}>재원</option><option ${v.status==='정지'?'selected':''}>정지</option><option ${v.status==='퇴원'?'selected':''}>퇴원</option></select></label>
     <label class="fld">퇴원일<input type="date" id="f_qd" value="${esc(v.quitDate||"")}"></label>`:""}
     <button class="btn" onclick="${s?`saveStudent('${s.id}')`:"addStudent()"}">${s?"수정 저장":"등록"}</button>
   </div>`;
 }
 function readStuForm(){
-  return {name:val("f_nm").trim(),gubun:val("f_gu"),phone:val("f_ph"),guardian:val("f_gd"),addr:val("f_ad"),email:val("f_em"),birth:val("f_bt"),gender:val("f_sx"),school:val("f_sc"),grade:val("f_gr"),teacher:val("f_tc"),course:val("f_co").trim(),start:val("f_st"),tuition:num("f_tu"),payCycle:val("f_pc"),cycleMonths:num("f_cm")||1,totalSessions:num("f_ts"),charged:num("f_ch")||num("f_ts"),lastPaid:val("f_lp"),dailyHours:val("f_dh"),classDays:["월","화","수","목","금","토","일"].filter(d=>{const e=document.getElementById("f_day"+d);return e&&e.checked;}).join(","),classTimes:["월","화","수","목","금","토","일"].filter(d=>{const e=document.getElementById("f_day"+d);return e&&e.checked;}).map(d=>{const e=document.getElementById("f_daytime"+d);const t=e?e.value:"";return t?`${d}=${t}`:null;}).filter(Boolean).join(",")};
+  return {name:val("f_nm").trim(),gubun:val("f_gu"),phone:val("f_ph"),guardian:val("f_gd"),addr:val("f_ad"),email:val("f_em"),birth:val("f_bt"),gender:val("f_sx"),school:val("f_sc"),grade:val("f_gr"),teacher:val("f_tc"),course:val("f_co").trim(),start:val("f_st"),tuition:num("f_tu"),payCycle:val("f_pc"),cycleMonths:num("f_cm")||1,totalSessions:num("f_ts"),charged:num("f_ch")||num("f_ts"),lastPaid:val("f_lp"),dailyHours:val("f_dh"),classDays:val("f_classDays"),classTimes:val("f_classTimes")};
 }
 function addStudent(){
   const f=readStuForm();
@@ -3180,7 +3180,7 @@ function viewStuDetail(){
       <div class="item"><div class="k">학교 / 학년</div><div class="v">${esc(s.school)||"-"} ${esc(s.grade)?esc(s.grade)+"학년":""}</div></div>
       <div class="item"><div class="k">담임</div><div class="v">${esc(s.teacher)||"-"}</div></div>
       <div class="item"><div class="k">과정명</div><div class="v">${esc(s.course)}</div></div>
-      <div class="item"><div class="k">수업요일</div><div class="v">${esc(s.classDays)||"-"}</div></div>
+      <div class="item"><div class="k">수업요일 · 등원시간</div><div class="v">${(function(){const tm=parseTimes(s.classTimes);const ds=String(s.classDays||"").split(",").filter(Boolean);return ds.length?ds.map(d=>d+(tm[d]?" "+tm[d]:"")).join(", "):"-";})()}</div></div>
       <div class="item"><div class="k">등록일</div><div class="v">${esc(s.start)||"-"}</div></div>
       <div class="item"><div class="k">수강료</div><div class="v">${won(s.tuition)}원 / ${esc(s.payCycle||"기간제")}${s.payCycle==='횟수제'?` (1회 결제당 ${s.totalSessions}회)`:` ${s.cycleMonths||1}개월`}</div></div>
       <div class="item"><div class="k">최근 결제일</div><div class="v">${esc(lastPaidOf(s))||"-"}<div style="font-size:11px;color:var(--sub);font-weight:400">매출상세(성명+과정) 자동 연동</div></div></div>
@@ -3188,6 +3188,19 @@ function viewStuDetail(){
       ${info.type==="count"?`<div class="item"><div class="k">횟수 현황</div><div class="v">충전 ${info.charged}회 · 사용 ${info.used}회 · 잔여 ${info.remain}회${info.proj?` · 결제예정 ${info.proj}`:""}</div></div>`:""}
     </div>
   </div>`}
+
+  <div class="panel"><h2>🕐 수업요일 · 등원시간</h2>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-size:13px;color:var(--sub)">일괄 적용:</span>
+      <input type="time" id="sd_allTime" style="width:auto">
+      <button type="button" class="btn sm" onclick="sdApplyAll()">＝ 모든 요일 같은 시간</button>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      ${["월","화","수","목","금","토","일"].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:15px"><input type="checkbox" id="sd_day${d}" ${String(s.classDays||"").split(",").includes(d)?"checked":""}>${d}<input type="time" id="sd_time${d}" value="${parseTimes(s.classTimes)[d]||""}" style="width:auto;font-size:13px"></label>`).join("")}
+    </div>
+    <div style="margin-top:12px"><button class="btn" onclick="saveClassSchedule('${s.id}')">💾 저장</button></div>
+    <p class="note">※ 체크한 요일과 등원시간이 <b>🕐 시간표</b>에 반영됩니다. 시간 없이 요일만 체크해도 됩니다.</p>
+  </div>
 
   <div class="panel"><h2>💳 결제 이력 (매출상세 연동, 성명 기준)</h2>
     ${(function(){
@@ -5215,6 +5228,15 @@ function delMakeup(id){if(!confirm("이 보강 내역을 삭제할까요?"))retu
 function wdMove(d){ const [y,m]=(ui.wdMonth||thisMonth()).split("-").map(Number); ui.wdMonth=ym(new Date(y,m-1+d,1)); render(); }
 function parseTimes(ct){const m={};String(ct||"").split(",").map(x=>x.trim()).filter(Boolean).forEach(p=>{const i=p.indexOf("=");if(i>0){const d=p.slice(0,i).trim(),t=p.slice(i+1).trim();if(d&&t)m[d]=t;}});return m;}
 function applyAllTimes(){const t=(document.getElementById("f_allTime")||{}).value||"";["월","화","수","목","금","토","일"].forEach(d=>{const e=document.getElementById("f_daytime"+d);if(e)e.value=t;});}
+function sdApplyAll(){const t=(document.getElementById("sd_allTime")||{}).value||"";["월","화","수","목","금","토","일"].forEach(d=>{const e=document.getElementById("sd_time"+d);if(e)e.value=t;});}
+function saveClassSchedule(id){
+  const s=findStu(id);if(!s)return;
+  const days=["월","화","수","목","금","토","일"];
+  s.classDays=days.filter(d=>{const e=document.getElementById("sd_day"+d);return e&&e.checked;}).join(",");
+  s.classTimes=days.filter(d=>{const e=document.getElementById("sd_day"+d);return e&&e.checked;}).map(d=>{const e=document.getElementById("sd_time"+d);const t=e?e.value:"";return t?`${d}=${t}`:null;}).filter(Boolean).join(",");
+  save();render();
+  alert("수업요일·등원시간이 저장되었습니다.");
+}
 function viewTimetable(){
   const dows=["월","화","수","목","금","토","일"];
   const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지"&&s.teacher==="원장");
