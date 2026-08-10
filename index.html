@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.27 (2026-08-11) Supabase+Auth";
+const APP_VERSION="v6.28 (2026-08-11) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -4353,26 +4353,29 @@ function latestBuyPrice(title){
   return list.length?Number(list[0].buyPrice):0;
 }
 function printStock(){
-  const stock={};
-  DB.bookin.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,outQ:0};stock[t].inQ+=Number(b.qty);});
-  DB.bookout.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,outQ:0};stock[t].outQ+=Number(b.qty);});
-  const titles=Object.keys(stock).sort();
-  const rows=titles.map((t,i)=>{const x=stock[t],rem=x.inQ-x.outQ;return `<tr><td style="text-align:center">${i+1}</td><td>${esc(t)}</td><td style="text-align:center">${x.inQ}</td><td style="text-align:center">${x.outQ}</td><td style="text-align:center;font-weight:bold">${rem}</td><td></td><td></td></tr>`;}).join("");
+  const V=_bookStockView();
+  const stock=V.stock, subjF=V.subjF, venF=V.venF, hideZero=V.hideZero;
+  const titles=[...V.fTitles].sort((a,b)=>String(a).localeCompare(String(b),"ko"));
+  const rows=titles.map((t,i)=>{const x=stock[t],rem=x.inQ-x.outQ;return `<tr><td style="text-align:center">${i+1}</td><td>${esc(t)}</td><td>${esc(x.subject)||"-"}</td><td>${esc((x.vendors||[]).join(", "))||"-"}</td><td style="text-align:center">${x.inQ}</td><td style="text-align:center">${x.outQ}</td><td style="text-align:center;font-weight:bold">${rem}</td><td></td><td></td></tr>`;}).join("");
+  const fparts=["과목: "+(subjF==="전체"?"전체":subjF), "구입처: "+(venF==="전체"?"전체":venF)];
+  if(hideZero)fparts.push("재고 있는 것만");
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>도서 재고조사표</title>
   <style>
-    @page{size:A4;margin:15mm}
+    @page{size:A4 landscape;margin:12mm}
     body{font-family:'Malgun Gothic',sans-serif;color:#000}
     h1{text-align:center;font-size:20px;margin:0 0 4px}
-    .info{text-align:right;font-size:12px;margin-bottom:10px}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th,td{border:1px solid #000;padding:7px 6px}
+    .info{text-align:right;font-size:12px;margin-bottom:4px}
+    .filt{font-size:12px;margin-bottom:10px;padding:5px 8px;background:#f2f2f2;border:1px solid #ccc;border-radius:4px}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    th,td{border:1px solid #000;padding:6px 5px}
     th{background:#eee}
     .sign{margin-top:20px;text-align:right;font-size:13px}
   </style></head><body>
   <h1>제이컴퓨터학원 도서 재고조사표</h1>
   <div class="info">조사일: ${todayStr()} &nbsp;&nbsp; 조사자: ____________</div>
-  <table><thead><tr><th style="width:8%">No</th><th>교재명</th><th style="width:11%">입고</th><th style="width:11%">출고</th><th style="width:13%">전산재고</th><th style="width:13%">실재고</th><th style="width:13%">비고</th></tr></thead>
-  <tbody>${rows||'<tr><td colspan="7" style="text-align:center">재고 없음</td></tr>'}</tbody></table>
+  <div class="filt"><b>조회조건</b> — ${fparts.join(" / ")} &nbsp;&nbsp;(${titles.length}종)</div>
+  <table><thead><tr><th style="width:5%">No</th><th>교재명</th><th style="width:11%">과목</th><th style="width:14%">구입처</th><th style="width:8%">입고</th><th style="width:8%">출고</th><th style="width:10%">전산재고</th><th style="width:10%">실재고</th><th style="width:12%">비고</th></tr></thead>
+  <tbody>${rows||'<tr><td colspan="9" style="text-align:center">조건에 맞는 재고가 없습니다</td></tr>'}</tbody></table>
   <p style="font-size:12px;margin-top:8px">※ 전산재고 = 입고−출고. ‘실재고’ 칸에 실제 조사 수량을 적고 차이를 비고에 기록하세요.</p>
   <div class="sign">확인: 원장 ____________ (인)</div>
   <script>window.onload=function(){window.print();}<\/script>
@@ -4392,9 +4395,24 @@ function viewBookSub(sub){
 }
 function _bookStock(){
   const stock={};
-  DB.bookin.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,inA:0,outQ:0,outA:0};stock[t].inQ+=Number(b.qty);stock[t].inA+=Number(b.amount);});
-  DB.bookout.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,inA:0,outQ:0,outA:0};stock[t].outQ+=Number(b.qty);stock[t].outA+=Number(b.amount);});
+  DB.bookin.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,inA:0,outQ:0,outA:0,subject:"",vendors:[]};stock[t].inQ+=Number(b.qty);stock[t].inA+=Number(b.amount);if(b.subject)stock[t].subject=b.subject;if(b.vendor&&!stock[t].vendors.includes(b.vendor))stock[t].vendors.push(b.vendor);});
+  DB.bookout.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,inA:0,outQ:0,outA:0,subject:"",vendors:[]};stock[t].outQ+=Number(b.qty);stock[t].outA+=Number(b.amount);});
   return stock;
+}
+function _bookStockView(){
+  const stock=_bookStock();
+  const allTitles=Object.keys(stock).sort();
+  const subjects=[...new Set(DB.bookin.map(b=>b.subject).filter(Boolean))].sort();
+  const vendors=[...new Set(DB.bookin.map(b=>b.vendor).filter(Boolean))].sort();
+  const subjF=ui.bookFilterSubject||"전체", venF=ui.bookFilterVendor||"전체", hideZero=ui.bookHideZero||false;
+  const fTitles=allTitles.filter(t=>{
+    const x=stock[t];
+    if(subjF!=="전체" && (x.subject||"")!==subjF) return false;
+    if(venF!=="전체" && !(x.vendors||[]).includes(venF)) return false;
+    if(hideZero && (x.inQ-x.outQ)<=0) return false;
+    return true;
+  });
+  return {stock,titles:allTitles,fTitles,subjects,vendors,subjF,venF,hideZero};
 }
 function bookDetailHtml(title){
   const ins=DB.bookin.filter(b=>b.title===title).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
@@ -4439,8 +4457,9 @@ function bookDetailHtml(title){
   ${outs.length?`<tr style="background:var(--green-light)"><td colspan="2"><b>합계</b></td><td style="text-align:right"><b>${outQ}권</b></td><td colspan="2"></td></tr>`:""}</tbody></table></div>`)}`;
 }
 function viewBookQuick(){
-  const stock=_bookStock();
-  const titles=Object.keys(stock).sort();
+  const V=_bookStockView();
+  const stock=V.stock, titles=V.titles, fTitles=V.fTitles;
+  const subjF=V.subjF, venF=V.venF, hideZero=V.hideZero;
   const sel=ui.bookSel&&stock[ui.bookSel]?ui.bookSel:"";
   const q=sel?stock[sel]:null;
   const quick=`<div class="panel" style="margin-top:0"><h2>🔍 도서 빠른 조회</h2>
@@ -4460,10 +4479,10 @@ function viewBookQuick(){
     ${bookDetailHtml(sel)}`:""}
   </div>`;
   const tot={inQ:0,inA:0,outQ:0,outA:0,rem:0};
-  titles.forEach(t=>{const x=stock[t];tot.inQ+=x.inQ;tot.inA+=x.inA;tot.outQ+=x.outQ;tot.outA+=x.outA;tot.rem+=x.inQ-x.outQ;});
+  fTitles.forEach(t=>{const x=stock[t];tot.inQ+=x.inQ;tot.inA+=x.inA;tot.outQ+=x.outQ;tot.outA+=x.outA;tot.rem+=x.inQ-x.outQ;});
   // 정렬 (교재명·잔여재고·입고·출고 수량)
   const sMode=ui.bookStockSort||"title";
-  const sorted=[...titles].sort((a,b)=>{
+  const sorted=[...fTitles].sort((a,b)=>{
     const xa=stock[a],xb=stock[b];
     const remA=xa.inQ-xa.outQ, remB=xb.inQ-xb.outQ;
     switch(sMode){
@@ -4482,6 +4501,7 @@ function viewBookQuick(){
     const rate=x.inQ?Math.round(x.outQ/x.inQ*100):0; // 소진율(참고 수치)
     return `<tr>
       <td><b>${esc(t)}</b></td>
+      <td>${esc(x.subject)||"-"}</td><td>${esc((x.vendors||[]).join(", "))||"-"}</td>
       <td>${x.inQ}</td><td>${won(x.inA)}원</td>
       <td>${x.outQ}</td><td>${x.outA?won(x.outA)+"원":"-"}</td>
       <td style="text-align:center">${x.inQ?rate+"%":"-"}</td>
@@ -4489,8 +4509,17 @@ function viewBookQuick(){
     </tr>`;
   }).join("");
   return `${quick}
-  <div class="panel"><h2><span>재고 현황 (자동 집계 · 총 ${titles.length}종)</span>
+  <div class="panel"><h2><span>재고 현황 (${fTitles.length}종 표시 / 전체 ${titles.length}종)</span>
     <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <select onchange="ui.bookFilterSubject=this.value;ui.bookPage.stock=1;render()" style="padding:5px">
+        <option value="전체" ${subjF==='전체'?'selected':''}>과목: 전체</option>
+        ${V.subjects.map(x=>`<option value="${esc(x)}" ${subjF===x?'selected':''}>${esc(x)}</option>`).join("")}
+      </select>
+      <select onchange="ui.bookFilterVendor=this.value;ui.bookPage.stock=1;render()" style="padding:5px">
+        <option value="전체" ${venF==='전체'?'selected':''}>구입처: 전체</option>
+        ${V.vendors.map(x=>`<option value="${esc(x)}" ${venF===x?'selected':''}>${esc(x)}</option>`).join("")}
+      </select>
+      <label style="font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap"><input type="checkbox" ${hideZero?'checked':''} onchange="ui.bookHideZero=this.checked;ui.bookPage.stock=1;render()">재고 있는 것만</label>
       <select onchange="ui.bookStockSort=this.value;ui.bookPage.stock=1;render()" style="padding:5px">
         <option value="title" ${sMode==='title'?'selected':''}>교재명순</option>
         <option value="remainDesc" ${sMode==='remainDesc'?'selected':''}>잔여재고 많은순</option>
@@ -4502,9 +4531,9 @@ function viewBookQuick(){
       </select>
       <button class="btn sm" onclick="printStock()">🖨 재고조사표 인쇄 (A4)</button>
     </span></h2>
-    <div style="overflow:auto"><table><thead><tr><th>교재명</th><th>입고수량</th><th>입고금액</th><th>출고수량</th><th>출고금액</th><th>소진율</th><th>잔여재고</th></tr></thead>
-    <tbody>${stockRows||`<tr><td colspan="7" class="empty">‘입고 기록’ 탭에서 교재를 등록하면 재고가 자동 집계됩니다.</td></tr>`}
-    ${titles.length?`<tr style="background:var(--green-light)"><td><b>전체 합계</b></td><td><b>${tot.inQ}</b></td><td><b>${won(tot.inA)}원</b></td><td><b>${tot.outQ}</b></td><td><b>${won(tot.outA)}원</b></td><td style="text-align:center"><b>${tot.inQ?Math.round(tot.outQ/tot.inQ*100)+"%":"-"}</b></td><td><b>${tot.rem}권</b></td></tr>`:""}
+    <div style="overflow:auto"><table><thead><tr><th>교재명</th><th>과목</th><th>구입처</th><th>입고수량</th><th>입고금액</th><th>출고수량</th><th>출고금액</th><th>소진율</th><th>잔여재고</th></tr></thead>
+    <tbody>${stockRows||`<tr><td colspan="9" class="empty">‘입고 기록’ 탭에서 교재를 등록하면 재고가 자동 집계됩니다.</td></tr>`}
+    ${titles.length?`<tr style="background:var(--green-light)"><td><b>전체 합계</b></td><td></td><td></td><td><b>${tot.inQ}</b></td><td><b>${won(tot.inA)}원</b></td><td><b>${tot.outQ}</b></td><td><b>${won(tot.outA)}원</b></td><td style="text-align:center"><b>${tot.inQ?Math.round(tot.outQ/tot.inQ*100)+"%":"-"}</b></td><td><b>${tot.rem}권</b></td></tr>`:""}
     </tbody></table></div>
     ${pagerHtml('stock',pgS)}
     <p class="note">※ <b>소진율</b> = 출고÷입고 (참고 수치). 잔여가 음수인 경우만 빨간색으로 표시됩니다(입출고 기록 확인용). 화면은 10행씩 표시되며, 인쇄 시 전체가 출력됩니다.</p>
