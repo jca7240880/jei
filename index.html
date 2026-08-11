@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.28 (2026-08-11) Supabase+Auth";
+const APP_VERSION="v6.29 (2026-08-11) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -3235,11 +3235,17 @@ function viewStuDetail(){
   </div>
 
   <div class="panel"><h2>📘 학습관리 기록</h2>
+    ${canManageStudent(s.name)?`<div class="formbox" style="margin-bottom:12px">
+      <label class="fld">일자<input type="date" id="sd_les_dt" value="${todayStr()}"></label>
+      <label class="fld">회차<input type="number" id="sd_les_ss" placeholder="선택"></label>
+      <label class="fld" style="grid-column:span 2">학습 내용<textarea id="sd_les_tx" rows="2" placeholder="예: 엑셀 VLOOKUP 실습, 과제 확인"></textarea></label>
+      <button class="btn" onclick="addLessonFromDetail('${s.id}')">＋ 학습기록 추가</button>
+    </div>`:""}
     ${(function(){
       const all=DB.lessons.filter(l=>String(l.student)===String(s.name)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-      if(!all.length)return `<div class="empty">학습관리 기록이 없습니다. 학습관리 탭에서 '${esc(s.name)}' 선택 후 입력하면 여기에 표시됩니다.</div>`;
+      if(!all.length)return `<div class="empty">아직 학습관리 기록이 없습니다. 위 입력칸에서 바로 추가할 수 있습니다.</div>`;
       const pg=paginate(all,ui.detailLesPage,10);
-      return `<div style="max-height:420px;overflow:auto">${pg.rows.map(l=>`<div class="lesson-card"><div class="top"><span><span class="tag">${esc(l.course)||"과정 미지정"}</span></span><span>${esc(l.date)}</span></div><div class="body">${esc(l.text)}</div></div>`).join("")}</div>
+      return `<div style="max-height:420px;overflow:auto">${pg.rows.map(l=>`<div class="lesson-card"><div class="top"><span><span class="tag">${esc(l.course)||"과정 미지정"}</span>${(l.session!=null&&l.session!=="")?` <span class="tag">${l.session}회차</span>`:""}</span><span>${esc(l.date)}${canManageStudent(s.name)?` <button class="btn sm" onclick="delLesson('${l.id}')" style="padding:1px 7px;font-size:11px">삭제</button>`:""}</span></div><div class="body">${esc(l.text)}</div></div>`).join("")}</div>
       ${pg.totalPages>1?`<div style="display:flex;gap:5px;justify-content:center;margin-top:10px;flex-wrap:wrap">${Array.from({length:pg.totalPages},(_,i)=>`<button class="btn sm" style="${i+1===pg.page?'background:var(--green);color:#fff;border:none':''}" onclick="ui.detailLesPage=${i+1};render()">${i+1}</button>`).join("")}</div>`:""}
       <p class="note">전체 ${pg.total}건 · 10건씩 표시</p>`;
     })()}
@@ -5770,6 +5776,14 @@ function addLesson(){
   const isCommon=ui.lesStudent==="공통(전체 수업)";
   const stu=isCommon?null:DB.students.find(st=>String(st.name)===String(ui.lesStudent));
   DB.lessons.push({id:uid(),date:val("s_dt"),session:(val("s_ss").trim()===""?null:num("s_ss")),course:stu?(stu.course||""):"",student:isCommon?"":ui.lesStudent,text:tx});
+  save();render();
+}
+function addLessonFromDetail(sid){
+  const s=findStu(sid); if(!s)return;
+  if(!canManageStudent(s.name)){alert("담당 수강생만 작성할 수 있습니다.");return;}
+  const tx=val("sd_les_tx").trim();
+  if(!tx){alert("학습 내용을 입력하세요.");return;}
+  DB.lessons.push({id:uid(),date:val("sd_les_dt"),session:(val("sd_les_ss").trim()===""?null:num("sd_les_ss")),course:s.course||"",student:s.name,text:tx});
   save();render();
 }
 function editLesson(id){
