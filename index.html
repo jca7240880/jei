@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.29 (2026-08-11) Supabase+Auth";
+const APP_VERSION="v6.30 (2026-08-11) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -3236,16 +3236,16 @@ function viewStuDetail(){
 
   <div class="panel"><h2>📘 학습관리 기록</h2>
     ${canManageStudent(s.name)?`<div class="formbox" style="margin-bottom:12px">
-      <label class="fld">일자<input type="date" id="sd_les_dt" value="${todayStr()}"></label>
-      <label class="fld">회차<input type="number" id="sd_les_ss" placeholder="선택"></label>
-      <label class="fld" style="grid-column:span 2">학습 내용<textarea id="sd_les_tx" rows="2" placeholder="예: 엑셀 VLOOKUP 실습, 과제 확인"></textarea></label>
-      <button class="btn" onclick="addLessonFromDetail('${s.id}')">＋ 학습기록 추가</button>
+      <label class="fld">작성일<input type="date" id="sd_les_dt" value="${todayStr()}"></label>
+      <label class="fld">차시<input type="number" id="sd_les_ss" min="1" placeholder="예: 3"></label>
+      <label class="fld" style="grid-column:1/-1">학습 내용<textarea id="sd_les_tx" rows="3" placeholder="예: VLOOKUP 보충 지도. 절대참조 개념 재설명 필요."></textarea></label>
+      <button class="btn" onclick="addLessonFromDetail('${s.id}')">기록 저장</button>
     </div>`:""}
     ${(function(){
       const all=DB.lessons.filter(l=>String(l.student)===String(s.name)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
       if(!all.length)return `<div class="empty">아직 학습관리 기록이 없습니다. 위 입력칸에서 바로 추가할 수 있습니다.</div>`;
       const pg=paginate(all,ui.detailLesPage,10);
-      return `<div style="max-height:420px;overflow:auto">${pg.rows.map(l=>`<div class="lesson-card"><div class="top"><span><span class="tag">${esc(l.course)||"과정 미지정"}</span>${(l.session!=null&&l.session!=="")?` <span class="tag">${l.session}회차</span>`:""}</span><span>${esc(l.date)}${canManageStudent(s.name)?` <button class="btn sm" onclick="delLesson('${l.id}')" style="padding:1px 7px;font-size:11px">삭제</button>`:""}</span></div><div class="body">${esc(l.text)}</div></div>`).join("")}</div>
+      return `<div style="max-height:420px;overflow:auto">${pg.rows.map(l=>lessonCardHtml(l,canManageStudent(s.name))).join("")}</div>
       ${pg.totalPages>1?`<div style="display:flex;gap:5px;justify-content:center;margin-top:10px;flex-wrap:wrap">${Array.from({length:pg.totalPages},(_,i)=>`<button class="btn sm" style="${i+1===pg.page?'background:var(--green);color:#fff;border:none':''}" onclick="ui.detailLesPage=${i+1};render()">${i+1}</button>`).join("")}</div>`:""}
       <p class="note">전체 ${pg.total}건 · 10건씩 표시</p>`;
     })()}
@@ -5717,24 +5717,7 @@ function viewLes(){
     </div>`;
   }
   const listStudents=DB.students.filter(st=>st.status!=="퇴원"&&(ROLE!=="부원장"||st.teacher==="부원장")).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko"));
-  const cardHtml=l=>{
-    if(ui.lesEditId===l.id){
-      return `<div class="lesson-card">
-        <div class="formbox" style="margin-bottom:0">
-          <label class="fld">작성일<input type="date" id="le_dt" value="${esc(l.date||"")}"></label>
-          <label class="fld">차시<input type="number" id="le_ss" min="1" value="${(l.session!=null&&l.session!=="")?l.session:""}"></label>
-          <label class="fld" style="grid-column:1/-1">학습 내용<textarea id="le_tx" rows="3">${esc(l.text||"")}</textarea></label>
-          <button class="btn" onclick="saveLesson('${l.id}')">저장</button>
-          <button class="btn sm" onclick="ui.lesEditId=null;render()">취소</button>
-        </div></div>`;
-    }
-    return `<div class="lesson-card">
-      <div class="top">
-        <span style="font-weight:700;color:var(--ink);font-size:13px">${esc(l.date)}${l.session?` · ${esc(l.session)}차시`:""}</span>
-        <span>${esc(l.course)?`<span class="tag">${esc(l.course)}</span> `:""}${canWrite?`<button class="btn sm" style="margin-left:8px" onclick="editLesson('${l.id}')">수정</button><button class="btn sm" style="margin-left:4px;color:var(--red);border-color:var(--red)" onclick="delLesson('${l.id}')">삭제</button>`:""}</span>
-      </div>
-      <div class="body">${esc(l.text)}</div></div>`;
-  };
+  const cardHtml=l=>lessonCardHtml(l,canWrite);
   return `
   <div class="panel" style="margin-top:0"><h2>1️⃣ 수강생 선택</h2>
     <div class="toolbar" style="margin-bottom:0">
@@ -5766,6 +5749,24 @@ function viewLes(){
 function lesInfoItem(k,v){
   return `<div style="background:var(--green-light);border:1px solid var(--green-mid);border-radius:8px;padding:7px 12px;min-width:88px">
     <div style="font-size:11px;color:var(--sub)">${k}</div><div style="font-size:13px;font-weight:700;color:var(--ink)">${esc(v)}</div></div>`;
+}
+function lessonCardHtml(l,canWrite){
+  if(ui.lesEditId===l.id){
+    return `<div class="lesson-card">
+      <div class="formbox" style="margin-bottom:0">
+        <label class="fld">작성일<input type="date" id="le_dt" value="${esc(l.date||"")}"></label>
+        <label class="fld">차시<input type="number" id="le_ss" min="1" value="${(l.session!=null&&l.session!=="")?l.session:""}"></label>
+        <label class="fld" style="grid-column:1/-1">학습 내용<textarea id="le_tx" rows="3">${esc(l.text||"")}</textarea></label>
+        <button class="btn" onclick="saveLesson('${l.id}')">저장</button>
+        <button class="btn sm" onclick="ui.lesEditId=null;render()">취소</button>
+      </div></div>`;
+  }
+  return `<div class="lesson-card">
+    <div class="top">
+      <span style="font-weight:700;color:var(--ink);font-size:13px">${esc(l.date)}${l.session?` · ${esc(l.session)}차시`:""}</span>
+      <span>${esc(l.course)?`<span class="tag">${esc(l.course)}</span> `:""}${canWrite?`<button class="btn sm" style="margin-left:8px" onclick="editLesson('${l.id}')">수정</button><button class="btn sm" style="margin-left:4px;color:var(--red);border-color:var(--red)" onclick="delLesson('${l.id}')">삭제</button>`:""}</span>
+    </div>
+    <div class="body">${esc(l.text)}</div></div>`;
 }
 function addLesson(){
   const tx=val("s_tx").trim();
@@ -6194,7 +6195,7 @@ initAuthClient();
 // 자동 새로고침: 수동 새로고침 없이 최신 데이터 유지
 // (저장 중·저장 대기·행 편집 중·입력칸 포커스 중에는 건드리지 않아 작업이 끊기지 않음)
 function isEditingNow(){
-  if(ui.salesFullEditId||ui.salesEditId||ui.incEditId||ui.expEditId||ui.leadEditId||ui.rowEditId||ui.editStu||ui.showStuForm||ui.showBulk)return true;
+  if(ui.salesFullEditId||ui.salesEditId||ui.incEditId||ui.expEditId||ui.leadEditId||ui.rowEditId||ui.editStu||ui.showStuForm||ui.showBulk||ui.lesEditId)return true;
   const ae=document.activeElement;
   if(ae&&(ae.tagName==="INPUT"||ae.tagName==="SELECT"||ae.tagName==="TEXTAREA"))return true;
   return false;
