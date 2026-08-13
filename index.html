@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.30 (2026-08-11) Supabase+Auth";
+const APP_VERSION="v6.31 (2026-08-11) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -5273,6 +5273,92 @@ function saveClassSchedule(id){
   alert("수업요일·등원시간이 저장되었습니다.");
 }
 function viewTimetable(){
+  const mode=ui.ttMode||"actual";
+  const btn=(m,label)=>`<button class="btn sm" style="${mode===m?'background:var(--green);color:#fff;border:none':''}" onclick="ui.ttMode='${m}';render()">${label}</button>`;
+  const bar=`<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">${btn("actual","✅ 실제 등원(주간)")}${btn("avg","📊 4주 평균")}${btn("plan","📋 계획")}</div>`;
+  const body=mode==="plan"?_ttPlan():mode==="avg"?_ttAvg():_ttActual();
+  return bar+body;
+}
+function _ttColumn(dow,i,headerExtra,rowsHtml,count){
+  return `<td style="vertical-align:top;border:1px solid var(--line);padding:6px;min-width:118px">
+    <div style="text-align:center;font-weight:700;color:${i===5?'#2471a3':i===6?'var(--red)':'var(--green-dark)'};padding-bottom:4px;border-bottom:2px solid var(--green);margin-bottom:4px">${dow}${headerExtra||""} <span style="font-size:11px;color:var(--sub);font-weight:400">${count}명</span></div>${rowsHtml||`<div style="color:var(--sub);font-size:12px;padding:6px 2px">-</div>`}</td>`;
+}
+function _ttRow(time,name,extra){
+  return `<div style="display:flex;gap:6px;align-items:center;margin:3px 0;padding:3px 6px;background:var(--green-light);border-radius:6px;font-size:12.5px"><b style="color:var(--green-dark);min-width:44px">${time||"–"}</b><span>${esc(name)}</span>${extra?`<span style="color:var(--sub);font-size:11px;margin-left:auto">${extra}</span>`:""}</div>`;
+}
+function _dowIdx(dateStr){const q=String(dateStr).split("-").map(Number);if(q.length<3||!q[0])return -1;return new Date(q[0],q[1]-1,q[2]).getDay();}
+function _dowName(dateStr){return ["일","월","화","수","목","금","토"][_dowIdx(dateStr)]||"";}
+function _mondayOf(offset){const t=new Date();t.setHours(0,0,0,0);const day=(t.getDay()+6)%7;t.setDate(t.getDate()-day+(offset||0)*7);return t;}
+function _fmtMD(dt){return (dt.getMonth()+1)+"/"+dt.getDate();}
+function _dateStr(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
+function _t2min(t){const m=String(t||"").match(/^(\d{1,2}):(\d{2})/);return m?(+m[1])*60+(+m[2]):null;}
+function _min2t(n){if(n==null)return "";n=Math.round(n);const h=Math.floor(n/60),mm=n%60;return String(h).padStart(2,"0")+":"+String(mm).padStart(2,"0");}
+function _ttActual(){
+  const dows=["월","화","수","목","금","토","일"];
+  const off=ui.ttWeekOffset||0;
+  const mon=_mondayOf(off);
+  const dates=dows.map((_,k)=>{const dt=new Date(mon);dt.setDate(mon.getDate()+k);return dt;});
+  const dstrs=dates.map(_dateStr);
+  const stuById={};DB.students.forEach(x=>stuById[String(x.id)]=x);
+  const byDow={};dows.forEach(d=>byDow[d]=[]);
+  DB.attendance.forEach(a=>{
+    if(!a.inTime)return;
+    const di=dstrs.indexOf(String(a.date));
+    if(di<0)return;
+    const st=stuById[String(a.sid)];
+    if(st&&st.teacher!=="원장")return;
+    byDow[dows[di]].push({name:a.name||(st?st.name:""),time:a.inTime});
+  });
+  dows.forEach(d=>byDow[d].sort((a,b)=>((_t2min(a.time)==null?9999:_t2min(a.time))-(_t2min(b.time)==null?9999:_t2min(b.time)))||String(a.name).localeCompare(String(b.name),"ko")));
+  const cols=dows.map((d,i)=>{
+    const rows=byDow[d].map(x=>_ttRow(x.time,x.name,"")).join("");
+    return _ttColumn(d,i,` <span style="font-size:11px;font-weight:400;color:var(--sub)">${_fmtMD(dates[i])}</span>`,rows,byDow[d].length);
+  }).join("");
+  const total=dows.reduce((n,d)=>n+byDow[d].length,0);
+  const lbl=off===0?"이번주":off<0?(Math.abs(off)+"주 전"):(off+"주 후");
+  return `
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+    <button class="btn sm" onclick="ui.ttWeekOffset=(ui.ttWeekOffset||0)-1;render()">◀ 이전주</button>
+    <button class="btn sm" onclick="ui.ttWeekOffset=0;render()">이번주</button>
+    <button class="btn sm" onclick="ui.ttWeekOffset=(ui.ttWeekOffset||0)+1;render()">다음주 ▶</button>
+    <b style="font-size:15px;color:var(--green-dark)">${_fmtMD(dates[0])} ~ ${_fmtMD(dates[6])}</b>
+    <span class="tag">${lbl} · 등원 ${total}건</span>
+  </div>
+  <div class="twrap"><table style="table-layout:fixed"><tbody><tr>${cols}</tr></tbody></table></div>
+  <p class="note">※ <b>출결패드 등원 기록</b> 기준 실제 시간표입니다. 보강·변동·결석이 자동 반영됩니다(원장 담당, 등원시각 순).</p>`;
+}
+function _ttAvg(){
+  const dows=["월","화","수","목","금","토","일"];
+  const today=new Date();today.setHours(0,0,0,0);
+  const from=new Date(today);from.setDate(today.getDate()-27);
+  const fromStr=_dateStr(from), toStr=_dateStr(today);
+  const stuById={};DB.students.forEach(x=>stuById[String(x.id)]=x);
+  const agg={};
+  DB.attendance.forEach(a=>{
+    if(!a.inTime)return;
+    const ds=String(a.date); if(ds<fromStr||ds>toStr)return;
+    const st=stuById[String(a.sid)];
+    if(st&&st.teacher!=="원장")return;
+    const dn=_dowName(ds); if(!dn)return;
+    const mn=_t2min(a.inTime); if(mn==null)return;
+    const nm=a.name||(st?st.name:""); if(!nm)return;
+    agg[nm]=agg[nm]||{};
+    agg[nm][dn]=agg[nm][dn]||{sum:0,cnt:0};
+    agg[nm][dn].sum+=mn; agg[nm][dn].cnt++;
+  });
+  const byDow={};dows.forEach(d=>byDow[d]=[]);
+  Object.keys(agg).forEach(nm=>dows.forEach(d=>{const v=agg[nm][d];if(v&&v.cnt>0)byDow[d].push({name:nm,time:_min2t(v.sum/v.cnt),cnt:v.cnt});}));
+  dows.forEach(d=>byDow[d].sort((a,b)=>((_t2min(a.time)==null?9999:_t2min(a.time))-(_t2min(b.time)==null?9999:_t2min(b.time)))||String(a.name).localeCompare(String(b.name),"ko")));
+  const cols=dows.map((d,i)=>{
+    const rows=byDow[d].map(x=>_ttRow(x.time,x.name,`${x.cnt}회`)).join("");
+    return _ttColumn(d,i,"",rows,byDow[d].length);
+  }).join("");
+  return `
+  <div style="margin-bottom:10px"><span class="tag" style="font-size:13px;padding:6px 12px">최근 4주 (${_fmtMD(from)} ~ ${_fmtMD(today)}) 평균 등원 패턴</span></div>
+  <div class="twrap"><table style="table-layout:fixed"><tbody><tr>${cols}</tr></tbody></table></div>
+  <p class="note">※ 최근 4주 <b>실제 등원시각 평균</b>과 <b>출석 횟수</b>입니다. 요일별 등원 패턴 파악용입니다(원장 담당).</p>`;
+}
+function _ttPlan(){
   const dows=["월","화","수","목","금","토","일"];
   const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지"&&s.teacher==="원장");
   const byDow={}; dows.forEach(d=>byDow[d]=[]);
@@ -5288,15 +5374,12 @@ function viewTimetable(){
     return String(a.name).localeCompare(String(b.name),"ko");
   }));
   const cols=dows.map((d,i)=>{
-    const list=byDow[d];
-    const rows=list.map(x=>`<div style="display:flex;gap:6px;align-items:center;margin:3px 0;padding:3px 6px;background:var(--green-light);border-radius:6px;font-size:12.5px"><b style="color:var(--green-dark);min-width:44px">${x.time||"–"}</b><span>${esc(x.name)}</span>${x.hours?`<span style="color:var(--sub);font-size:11px;margin-left:auto">${esc(x.hours)}</span>`:""}</div>`).join("")||`<div style="color:var(--sub);font-size:12px;padding:6px 2px">-</div>`;
-    return `<td style="vertical-align:top;border:1px solid var(--line);padding:6px;min-width:118px">
-      <div style="text-align:center;font-weight:700;color:${i===5?'#2471a3':i===6?'var(--red)':'var(--green-dark)'};padding-bottom:4px;border-bottom:2px solid var(--green);margin-bottom:4px">${d} <span style="font-size:11px;color:var(--sub);font-weight:400">${list.length}명</span></div>${rows}</td>`;
+    const rows=byDow[d].map(x=>_ttRow(x.time,x.name,x.hours?esc(x.hours):"")).join("");
+    return _ttColumn(d,i,"",rows,byDow[d].length);
   }).join("");
   return `
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${dows.map((d,i)=>`<div class="card" style="padding:8px 12px"><span class="lab" style="color:${i===5?'#2471a3':i===6?'var(--red)':''}">${d} </span><b>${byDow[d].length}명</b></div>`).join("")}</div>
   <div class="twrap"><table style="table-layout:fixed"><tbody><tr>${cols}</tr></tbody></table></div>
-  <p class="note">※ 수강생 <b>방문요일 · 등원시간</b> 기준의 <b>원장 담당</b> 주간 시간표입니다(등원시간 순 정렬). 당일 변동·보강은 구글캘린더로 관리하세요.</p>`;
+  <p class="note">※ 수강생 <b>방문요일 · 등원시간</b> 기준의 <b>계획</b> 시간표입니다(원장 담당). 실제 변동은 ‘실제 등원’ 탭을 보세요.</p>`;
 }
 function viewWeekdayCal(){
   const mm=ui.wdMonth||thisMonth();
