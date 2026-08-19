@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.35 (2026-08-19) Supabase+Auth";
+const APP_VERSION="v6.36 (2026-08-19) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -944,17 +944,20 @@ function setTab(t){
 function guardTab(){ if(tab==="cal")tab="dash"; if(ROLE==="부원장"&&STAFF_HIDDEN.includes(tab))tab="dash"; }
 function courseNames(){return DB.courses.map(c=>c.name).sort((a,b)=>String(a).localeCompare(String(b),"ko"));}
 function courseDatalist(id){return `<datalist id="${id}">${courseNames().map(c=>`<option value="${esc(c)}">`).join("")}</datalist>`;}
-function courseSelect(id,cur,allowEmpty){
+function courseOptions(cur, lead){
   const withG=DB.courses.filter(c=>c.name);
   const names=withG.map(c=>c.name);
   const groups={};
   withG.forEach(c=>{const g=c.gubun||"미분류";(groups[g]=groups[g]||[]).push(c.name);});
   const order=["OA","CAD","디자인","기타","미분류"];
   const gkeys=[...new Set([...order.filter(g=>groups[g]),...Object.keys(groups)])];
-  let opts=allowEmpty?`<option value=""></option>`:"";
-  if(cur&&!names.includes(cur))opts+=`<option selected>${esc(cur)}</option>`;
+  let opts=lead||"";
+  if(cur&&cur!=="전체"&&!names.includes(cur))opts+=`<option selected>${esc(cur)}</option>`;
   gkeys.forEach(g=>{ opts+=`<optgroup label="${esc(g)}">`+[...new Set(groups[g])].sort((a,b)=>String(a).localeCompare(String(b),"ko")).map(n=>`<option ${cur===n?'selected':''}>${esc(n)}</option>`).join("")+`</optgroup>`; });
-  return `<select id="${id}">${opts}</select>`;
+  return opts;
+}
+function courseSelect(id,cur,allowEmpty){
+  return `<select id="${id}">${courseOptions(cur, allowEmpty?`<option value=""></option>`:"")}</select>`;
 }
 function methodOptions(sel){return `<option value=""></option>`+[...DB.methods].sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(m=>`<option ${sel===m.name?'selected':''}>${esc(m.name)}</option>`).join("");}
 function findStu(id){return DB.students.find(x=>String(x.id)===String(id));}
@@ -2872,10 +2875,7 @@ function viewStu(){
   ${courseMgrHtml()}
   <div class="toolbar">
     <input id="stuSearch" style="flex:1 1 180px" placeholder="이름 또는 연락처 검색" value="${esc(ui.search)}" oninput="ui.search=this.value;refreshStuTable()">
-    <select onchange="ui.filter=this.value;render()" title="과정별">
-      <option ${ui.filter==='전체'?'selected':''}>과정 전체</option>
-      ${courseNames().map(c=>`<option ${ui.filter===c?'selected':''}>${esc(c)}</option>`).join("")}
-    </select>
+    <select onchange="ui.filter=this.value;render()" title="과정별">${courseOptions(ui.filter, `<option value="전체" ${(!ui.filter||ui.filter==='전체')?'selected':''}>과정 전체</option>`)}</select>
     <select onchange="ui.gubunFilter=this.value;render()" title="구분별">
       <option ${ui.gubunFilter==='전체'?'selected':''}>대상 전체</option>
       <option ${ui.gubunFilter==='학생'?'selected':''}>학생</option>
@@ -2894,6 +2894,7 @@ function viewStu(){
       <option value="name" ${(ui.stuSort||'name')==='name'?'selected':''}>이름순</option>
       <option value="remain" ${ui.stuSort==='remain'?'selected':''}>잔여회차 적은순</option>
       <option value="course" ${ui.stuSort==='course'?'selected':''}>과정순</option>
+      <option value="recent" ${ui.stuSort==='recent'?'selected':''}>최근등록일 순</option>
     </select>
     <button class="btn sm" onclick="resetStuFilter()">↺ 필터 해제</button>
     <button class="btn" onclick="ui.showStuForm=!ui.showStuForm;render()">+ 수강생 등록</button>
@@ -2932,6 +2933,9 @@ function stuFiltered(){
       }else if(mode==="course"){ // 과정순 → 같은 과정 안에서 이름순
         const c=String(a.course||"").localeCompare(String(b.course||""),"ko");
         if(c)return c;
+      }else if(mode==="recent"){ // 최근등록일 순 (등록일 내림차순)
+        const c=String(b.start||"").localeCompare(String(a.start||""));
+        if(c)return c;
       }
       return String(a.name).localeCompare(String(b.name),"ko");
     });
@@ -2949,7 +2953,7 @@ function stuRow(s){
     <td><b>${esc(s.name)}</b></td>
     <td>${s.gubun?`<span class="pill ${s.gubun==='학생'?'pu':'ok'}">${esc(s.gubun)}</span>`:""}</td>
     <td><input id="r_ph" value="${esc(s.phone)}" style="width:110px;padding:5px"></td>
-    <td><select id="r_co" style="padding:5px">${coOpts}</select></td>
+    <td><select id="r_co" style="padding:5px">${courseOptions(s.course,"")}</select></td>
     <td>${esc(s.classDays)||"-"}</td>
     <td><select id="r_tc" style="padding:5px">${tcOpts}</select></td>
     <td>${esc(s.start)}</td>
@@ -3040,7 +3044,7 @@ function feeFormHtml(fee){
     <label class="fld">대상<select id="fe_tg"><option ${(v.target||"성인")==="성인"?"selected":""}>성인</option><option ${v.target==="학생"?"selected":""}>학생</option></select></label>
     <label class="fld">방식<select id="fe_mt"><option ${(v.method||"횟수제")==="횟수제"?"selected":""}>횟수제</option><option ${v.method==="기간제"?"selected":""}>기간제</option></select></label>
     <label class="fld">구분<select id="fe_gb" onchange="feeGubunChange()">${GUBUNS.map(g=>`<option ${(v.gubun||"OA")===g?"selected":""}>${g}</option>`).join("")}</select></label>
-    <label class="fld">과정명<input id="fe_co" list="fe_co_dl" value="${esc(v.course||"")}" placeholder="예: 컴활2급"><datalist id="fe_co_dl">${(GUBUN_COURSES[v.gubun||"OA"]||[]).map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
+    <label class="fld">과정명${courseSelect("fe_co", v.course||"", true)}</label>
     <label class="fld">주당횟수<input id="fe_pw" value="${esc(v.perweek||"")}" placeholder="예: 주2회"></label>
     <label class="fld">수업회차<input type="number" id="fe_se" value="${(v.sessions!=null&&v.sessions!=="")?v.sessions:""}" placeholder="횟수제만"></label>
     <label class="fld">수업시간(분)<input type="number" id="fe_mn" value="${(v.minutes!=null&&v.minutes!=="")?v.minutes:""}" placeholder="예: 60"></label>
@@ -3611,7 +3615,7 @@ function viewAtt(){
     ${ui.showBulk?bulkHtml():""}
     <div class="toolbar">
       <label class="fld">일자<input type="date" value="${ui.attDate}" onchange="ui.attDate=this.value;render()"></label>
-      <label class="fld">과정<select onchange="ui.attCourse=this.value;render()"><option ${ui.attCourse==='전체'?'selected':''}>전체</option>${courseNames().map(c=>`<option ${ui.attCourse===c?'selected':''}>${esc(c)}</option>`).join("")}</select></label>
+      <label class="fld">과정<select onchange="ui.attCourse=this.value;render()">${courseOptions(ui.attCourse, `<option value="전체" ${(!ui.attCourse||ui.attCourse==='전체')?'selected':''}>전체</option>`)}</select></label>
       ${(ui.attDate!==todayStr()||ui.attCourse!=='전체')?`<button class="btn sm" onclick="ui.attDate=todayStr();ui.attCourse='전체';render()">↺ 필터 해제 (오늘로)</button>`:""}
     </div>
     <div class="twrap" style="border:none"><table><thead><tr><th>성명</th><th>과정</th><th>입실</th><th>퇴실</th><th>비고 (사유·인정여부)</th><th></th></tr></thead><tbody>
@@ -3955,7 +3959,7 @@ function salesRowsHtml(list){
         <td>${won(l.paidAmount)}</td>
         <td><select id="fe_gb" style="padding:4px"><option ${l.gubun==='성인'?'selected':''}>성인</option><option ${l.gubun==='학생'?'selected':''}>학생</option></select></td>
         <td><input id="fe_nm" value="${esc(l.name)}" style="padding:4px;width:80px"></td>
-        <td><select id="fe_co" style="padding:4px"><option value=""></option>${coOpts}</select></td>
+        <td>${courseSelect("fe_co", l.course, true)}</td>
         <td><select id="fe_pt" style="padding:4px"><option value="" ${!l.payType?'selected':''}></option><option ${l.payType==='기간제'?'selected':''}>기간제</option><option ${l.payType==='횟수제'?'selected':''}>횟수제</option></select><input id="fe_pc" value="${esc(l.payCycle)}" style="padding:4px;width:50px" placeholder="주기/횟수"></td>
         <td><input type="number" id="fe_tu" value="${l.tuition}" style="padding:4px;width:80px"></td>
         <td><input type="number" id="fe_dc" value="${l.discount||0}" style="padding:4px;width:60px"></td>
@@ -4726,7 +4730,7 @@ function viewLead(){
     <label class="fld">성명<input id="ld_nm" placeholder="문의자 이름"></label>
     <label class="fld">연락처<input id="ld_ph" placeholder="010-..."></label>
     <label class="fld">문의경로<select id="ld_src">${getSources().map(x=>`<option>${esc(x)}</option>`).join("")}</select></label>
-    <label class="fld">관심과정<select id="ld_co"><option value=""></option>${courseNames().map(c=>`<option>${esc(c)}</option>`).join("")}</select></label>
+    <label class="fld">관심과정<select id="ld_co">${courseOptions("", '<option value=""></option>')}</select></label>
     <label class="fld">담당자<select id="ld_staff">${getTeachers().map(t=>`<option>${esc(t)}</option>`).join("")}</select></label>
     <label class="fld">방문예정일<input type="date" id="ld_recall"></label>
     <label class="fld">방문시간<input type="time" id="ld_vtime"></label>
@@ -5303,7 +5307,7 @@ function viewSched(){
     <label class="fld">요일<select id="sc_day">${WEEKDAYS.map(d=>`<option>${d}</option>`).join("")}</select></label>
     <label class="fld">시작<input type="time" id="sc_st" value="10:00"></label>
     <label class="fld">종료<input type="time" id="sc_en" value="12:00"></label>
-    <label class="fld">과정명<select id="sc_co"><option value=""></option>${courseNames().map(c=>`<option>${esc(c)}</option>`).join("")}</select></label>
+    <label class="fld">과정명<select id="sc_co">${courseOptions("", '<option value=""></option>')}</select></label>
     <label class="fld">강사<select id="sc_tc">${getTeachers().map(t=>`<option>${esc(t)}</option>`).join("")}</select></label>
     <label class="fld">강의실<input id="sc_rm" placeholder="예: 1강의실"></label>
     <button class="btn" onclick="addSched()">수업 추가</button>
@@ -5313,7 +5317,7 @@ function viewSched(){
     <div class="formbox" style="margin-top:0">
       <label class="fld">결석일<input type="date" id="mk_ad" value="${today}"></label>
       <label class="fld">수강생<input id="mk_su" list="stuNames2" placeholder="이름"><datalist id="stuNames2">${DB.students.filter(s=>s.status!=="퇴원").sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(s=>`<option value="${esc(s.name)}">`).join("")}</datalist></label>
-      <label class="fld">과정명<select id="mk_co"><option value=""></option>${courseNames().map(c=>`<option>${esc(c)}</option>`).join("")}</select></label>
+      <label class="fld">과정명<select id="mk_co">${courseOptions("", '<option value=""></option>')}</select></label>
       <label class="fld">보강예정일<input type="date" id="mk_md"></label>
       <label class="fld">보강시간<input type="time" id="mk_mt"></label>
       <label class="fld">강사<select id="mk_tc">${getTeachers().map(t=>`<option>${esc(t)}</option>`).join("")}</select></label>
