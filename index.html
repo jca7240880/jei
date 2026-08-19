@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.34 (2026-08-19) Supabase+Auth";
+const APP_VERSION="v6.35 (2026-08-19) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -949,7 +949,7 @@ function courseSelect(id,cur,allowEmpty){
   const names=withG.map(c=>c.name);
   const groups={};
   withG.forEach(c=>{const g=c.gubun||"미분류";(groups[g]=groups[g]||[]).push(c.name);});
-  const order=["OA","CAD","그래픽","기타","미분류"];
+  const order=["OA","CAD","디자인","기타","미분류"];
   const gkeys=[...new Set([...order.filter(g=>groups[g]),...Object.keys(groups)])];
   let opts=allowEmpty?`<option value=""></option>`:"";
   if(cur&&!names.includes(cur))opts+=`<option selected>${esc(cur)}</option>`;
@@ -2522,7 +2522,7 @@ function saveSubPay(id){ const pp=(DB.subpays||[]).find(x=>String(x.id)===String
 
 function subFormHtml(sub){
   const v=sub||{};
-  const CATS=["오피스","캐드","그래픽","기타"];
+  const CATS=["오피스","캐드","디자인","기타"];
   const TERMS=["1개월","3개월","6개월","1년","2년"];
   const RENEWS=["자동갱신","수동갱신"];
   const cardOpts=[...new Set((DB.methods||[]).map(m=>m.name).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join("");
@@ -3026,10 +3026,10 @@ function delCourse(id){
   const c=DB.courses.find(x=>String(x.id)===String(id));
   if(c&&confirm(`'${c.name}' 과정을 목록에서 삭제할까요? (기존 수강생 기록은 유지됩니다)`)){DB.courses=DB.courses.filter(x=>String(x.id)!==String(id));save();render();}
 }
-const GUBUNS=["OA","CAD","그래픽","기타"];
+const GUBUNS=["OA","CAD","디자인","기타"];
 const GUBUN_COURSES={
   "OA":["OA 기초","OA 활용","OA 실무","ITQ OA 마스터","워드프로세서","컴활2급","사무자동화"],
-  "그래픽":["디자인 기초","디자인 실무","GTQ 그래픽 마스터"],
+  "디자인":["디자인 기초","디자인 실무","GTQ 그래픽 마스터"],
   "CAD":["CAD 기초","CAD 실무","건축 기능사","토목 기능사","실내건축 기능사","기계 기능사","전기 기능사"],
   "기타":[]
 };
@@ -3057,7 +3057,7 @@ function delFee(id){ const x=DB.fees.find(y=>String(y.id)===String(id)); if(!x)r
 function feeMgrHtml(){
   const editing=ui.feeEditId?DB.fees.find(x=>String(x.id)===String(ui.feeEditId)):null;
   const showForm=ui.showFeeForm||editing;
-  const TO={"성인":0,"학생":1}, GO={"OA":0,"CAD":1,"그래픽":2,"기타":3};
+  const TO={"성인":0,"학생":1}, GO={"OA":0,"CAD":1,"디자인":2,"기타":3};
   const oi=(m,k)=>m[k]!=null?m[k]:9;
   const list=[...DB.fees].sort((a,b)=>
     oi(TO,a.target)-oi(TO,b.target)
@@ -4084,7 +4084,7 @@ function delSales(id){if(confirm("이 매출 기록을 삭제할까요?")){DB.sa
 function courseMgrInline(){
   const groups={};
   DB.courses.forEach(c=>{ const g=c.gubun||"미분류"; (groups[g]=groups[g]||[]).push(c); });
-  const order=["OA","CAD","그래픽","기타","미분류"];
+  const order=["OA","CAD","디자인","기타","미분류"];
   const gkeys=[...new Set([...order.filter(g=>groups[g]),...Object.keys(groups)])];
   const body=gkeys.length?gkeys.map(g=>`<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:700;color:var(--green-dark);margin-bottom:4px">${esc(g)} <span style="color:var(--sub);font-weight:400">(${groups[g].length})</span></div>
     <div class="chips">${groups[g].sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(c=>`<span class="chip">${esc(c.name)} <b onclick="delCourse('${c.id}')">✕</b></span>`).join("")}</div></div>`).join(""):'<span style="font-size:12px;color:var(--sub)">등록된 과정이 없습니다. [표준 과정 일괄 등록]을 눌러보세요.</span>';
