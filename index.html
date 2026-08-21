@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.37 (2026-08-19) Supabase+Auth";
+const APP_VERSION="v6.38 (2026-08-19) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -1339,13 +1339,13 @@ function viewDash(){
   <div class="panel" style="margin-top:0"><h2>D-7 이내 / 잔여 2회 이하 (${dueSoon.length}명)</h2>
     ${dueSoon.length?`<div class="twrap" style="border:none"><table><thead><tr><th>성명</th><th>과정</th><th>연락처</th><th>다음 결제</th><th></th></tr></thead><tbody>
     ${dueSoon.map(x=>`<tr><td><span class="namelink" onclick="openDetail('${x.s.id}')">${esc(x.s.name)}</span></td><td>${esc(x.s.course)}</td><td>${esc(x.s.phone)}</td><td>${dueBadge(x.s)}</td>
-    <td><button class="btn sm" onclick="payStudent('${x.s.id}')">결제 등록</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">임박한 재결제 대상이 없습니다.</div>`}
+    <td style="white-space:nowrap"><button class="btn sm" onclick="payStudent('${x.s.id}')">결제 등록</button> <button class="btn sm" onclick="markNoRenew('${x.s.id}',true)" style="color:#c0392b;border-color:#c0392b">재등록 안함</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">임박한 재결제 대상이 없습니다.</div>`}
   </div>
   <h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">🚪 퇴소 예정 <span style="font-size:12px;color:var(--sub);font-weight:400">재등록 안 함 · 수강 마무리 임박</span></h2>
   <div class="panel" style="margin-top:0"><h2>${leaveSoon.length}명</h2>
     ${leaveSoon.length?`<div class="twrap" style="border:none"><table><thead><tr><th>성명</th><th>과정</th><th>연락처</th><th>수강 종료</th><th></th></tr></thead><tbody>
     ${leaveSoon.map(x=>`<tr><td><span class="namelink" onclick="openDetail('${x.s.id}')">${esc(x.s.name)}</span></td><td>${esc(x.s.course)}</td><td>${esc(x.s.phone)}</td><td>${dueBadge(x.s)}</td>
-    <td><button class="btn sm" onclick="quitStudent('${x.s.id}')">퇴원 처리</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">퇴소 예정 수강생이 없습니다.</div>`}
+    <td style="white-space:nowrap"><button class="btn sm" onclick="markNoRenew('${x.s.id}',false)">↩ 재등록</button> <button class="btn sm" onclick="quitStudent('${x.s.id}')" style="color:#c0392b;border-color:#c0392b">퇴원 처리</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">퇴소 예정 수강생이 없습니다.</div>`}
   </div>
   <p class="note">※ 장부 상세(연간 매출·수입·지출 현황과 차트, 수강생 추이)는 수납관리·장비관리 등 각 탭에서 확인하세요.</p>`;
 }
@@ -3137,7 +3137,7 @@ function stuFormHtml(s){
     <label class="fld" id="f_chwrap" style="display:${v.payCycle==='횟수제'?'flex':'none'}">누적 충전횟수<input type="number" id="f_ch" value="${v.charged||v.totalSessions||""}" placeholder="이전 결제 합산"></label>
     <label class="fld">최근결제일<input type="date" id="f_lp" value="${esc(v.lastPaid||"")}"></label>
     <label class="fld">1일 수업시간<select id="f_dh"><option value="" ${!v.dailyHours?"selected":""}>-</option>${["1시간","2시간","3시간","4시간"].map(h=>`<option ${v.dailyHours===h?"selected":""}>${h}</option>`).join("")}${(v.dailyHours&&!["1시간","2시간","3시간","4시간"].includes(v.dailyHours))?`<option selected>${esc(v.dailyHours)}</option>`:""}</select></label>
-    <label class="fld" style="grid-column:span 2;flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="f_nr" ${v.noRenew?"checked":""} style="width:auto">🚪 시험 후 등 재등록 안 함 (퇴소예정)</label>
+    <input type="hidden" id="f_nr" value="${v.noRenew?'1':''}">
     <input type="hidden" id="f_classDays" value="${esc(v.classDays||"")}"><input type="hidden" id="f_classTimes" value="${esc(v.classTimes||"")}">
     ${s?`<label class="fld">상태<select id="f_stat"><option ${v.status!=='퇴원'&&v.status!=='정지'?'selected':''}>재원</option><option ${v.status==='정지'?'selected':''}>정지</option><option ${v.status==='퇴원'?'selected':''}>퇴원</option></select></label>
     <label class="fld">퇴원일<input type="date" id="f_qd" value="${esc(v.quitDate||"")}"></label>`:""}
@@ -3145,7 +3145,7 @@ function stuFormHtml(s){
   </div>`;
 }
 function readStuForm(){
-  return {name:val("f_nm").trim(),gubun:val("f_gu"),phone:val("f_ph"),guardian:val("f_gd"),addr:val("f_ad"),email:val("f_em"),birth:val("f_bt"),gender:val("f_sx"),school:val("f_sc"),grade:val("f_gr"),teacher:val("f_tc"),course:val("f_co").trim(),start:val("f_st"),tuition:num("f_tu"),payCycle:val("f_pc"),cycleMonths:num("f_cm")||1,totalSessions:num("f_ts"),charged:num("f_ch")||num("f_ts"),lastPaid:val("f_lp"),dailyHours:val("f_dh"),classDays:val("f_classDays"),classTimes:val("f_classTimes"),noRenew:(document.getElementById("f_nr")&&document.getElementById("f_nr").checked)||false};
+  return {name:val("f_nm").trim(),gubun:val("f_gu"),phone:val("f_ph"),guardian:val("f_gd"),addr:val("f_ad"),email:val("f_em"),birth:val("f_bt"),gender:val("f_sx"),school:val("f_sc"),grade:val("f_gr"),teacher:val("f_tc"),course:val("f_co").trim(),start:val("f_st"),tuition:num("f_tu"),payCycle:val("f_pc"),cycleMonths:num("f_cm")||1,totalSessions:num("f_ts"),charged:num("f_ch")||num("f_ts"),lastPaid:val("f_lp"),dailyHours:val("f_dh"),classDays:val("f_classDays"),classTimes:val("f_classTimes"),noRenew:!!val("f_nr")};
 }
 function addStudent(){
   const f=readStuForm();
@@ -3167,6 +3167,7 @@ function saveStudent(id){
 }
 function openDetail(id){tab="stu";ui.detailId=id;ui.editStu=false;ui.detailLesPage=1;render();}
 function quitStudent(id){ const s=DB.students.find(x=>String(x.id)===String(id)); if(!s)return; if(!confirm(`'${s.name}' 수강생을 퇴원 처리할까요?\n(상태=퇴원, 퇴원일=오늘)`))return; s.status="퇴원"; if(!s.quitDate)s.quitDate=todayStr(); save(); render(); }
+function markNoRenew(id,val){ const s=DB.students.find(x=>String(x.id)===String(id)); if(!s)return; s.noRenew=!!val; save(); render(); }
 
 /* ───── 수강생 상세 ───── */
 function viewStuDetail(){
