@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.36 (2026-08-19) Supabase+Auth";
+const APP_VERSION="v6.37 (2026-08-19) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -546,7 +546,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours", "classTimes"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle", "cashReceipt"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name", "gubun"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"],checks:["id","kind","assetId","name","code","month","date","result","note"],loans:["id","name","method","principal","rate","startDate","endDate","termMonths","graceMonths","rateType","intCycle","prinCycle","earlyFee","earlyFeeRate","interestDay","account","note"],loanpays:["id","loanId","date","kind","amount","note"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours", "classTimes", "noRenew"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle", "cashReceipt"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name", "gubun"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"],checks:["id","kind","assetId","name","code","month","date","result","note"],loans:["id","name","method","principal","rate","startDate","endDate","termMonths","graceMonths","rateType","intCycle","prinCycle","earlyFee","earlyFeeRate","interestDay","account","note"],loanpays:["id","loanId","date","kind","amount","note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -1240,13 +1240,15 @@ function viewDash(){
   const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지");
   const newThisMonth=DB.students.filter(s=>String(s.start).startsWith(mo)).length;
 
-  const dueSoon=active.map(s=>({s,info:nextDueInfo(s)})).filter(x=>
+  const runningOut=active.map(s=>({s,info:nextDueInfo(s)})).filter(x=>
     (x.info.type==="count"&&x.info.remain<=2)||(x.info.type==="date"&&x.info.dday<=7)
   ).sort((a,b)=>{
     const av=a.info.type==="date"?a.info.dday:a.info.remain;
     const bv=b.info.type==="date"?b.info.dday:b.info.remain;
     return av-bv;
   });
+  const dueSoon=runningOut.filter(x=>!x.s.noRenew);
+  const leaveSoon=runningOut.filter(x=>x.s.noRenew);
 
   const todayConsult=DB.leads.filter(l=>normDate(l.recallDate)===today&&l.status!=="등록완료"&&l.status!=="미등록");
   const todayAtt=DB.attendance.filter(a=>a.date===today);
@@ -1260,6 +1262,7 @@ function viewDash(){
     <div class="card"><div class="lab">오늘 등원</div><div class="val">${attIn}명</div></div>
     <div class="card"><div class="lab">오늘 하원</div><div class="val">${attOut}명</div></div>
     <div class="card"><div class="lab">재결제 임박</div><div class="val ${dueSoon.length?'neg':''}">${dueSoon.length}명</div></div>
+    <div class="card"><div class="lab">🚪 퇴소 예정</div><div class="val ${leaveSoon.length?'neg':''}">${leaveSoon.length}명</div></div>
   </div>
 
   ${ROLE!=="부원장"?`<h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">📊 월간 현황 <span style="font-size:13px;color:var(--sub);font-weight:400">${mo}</span></h2>
@@ -1337,6 +1340,12 @@ function viewDash(){
     ${dueSoon.length?`<div class="twrap" style="border:none"><table><thead><tr><th>성명</th><th>과정</th><th>연락처</th><th>다음 결제</th><th></th></tr></thead><tbody>
     ${dueSoon.map(x=>`<tr><td><span class="namelink" onclick="openDetail('${x.s.id}')">${esc(x.s.name)}</span></td><td>${esc(x.s.course)}</td><td>${esc(x.s.phone)}</td><td>${dueBadge(x.s)}</td>
     <td><button class="btn sm" onclick="payStudent('${x.s.id}')">결제 등록</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">임박한 재결제 대상이 없습니다.</div>`}
+  </div>
+  <h2 style="margin:18px 0 10px;font-size:17px;color:var(--green-dark)">🚪 퇴소 예정 <span style="font-size:12px;color:var(--sub);font-weight:400">재등록 안 함 · 수강 마무리 임박</span></h2>
+  <div class="panel" style="margin-top:0"><h2>${leaveSoon.length}명</h2>
+    ${leaveSoon.length?`<div class="twrap" style="border:none"><table><thead><tr><th>성명</th><th>과정</th><th>연락처</th><th>수강 종료</th><th></th></tr></thead><tbody>
+    ${leaveSoon.map(x=>`<tr><td><span class="namelink" onclick="openDetail('${x.s.id}')">${esc(x.s.name)}</span></td><td>${esc(x.s.course)}</td><td>${esc(x.s.phone)}</td><td>${dueBadge(x.s)}</td>
+    <td><button class="btn sm" onclick="quitStudent('${x.s.id}')">퇴원 처리</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">퇴소 예정 수강생이 없습니다.</div>`}
   </div>
   <p class="note">※ 장부 상세(연간 매출·수입·지출 현황과 차트, 수강생 추이)는 수납관리·장비관리 등 각 탭에서 확인하세요.</p>`;
 }
@@ -3128,6 +3137,7 @@ function stuFormHtml(s){
     <label class="fld" id="f_chwrap" style="display:${v.payCycle==='횟수제'?'flex':'none'}">누적 충전횟수<input type="number" id="f_ch" value="${v.charged||v.totalSessions||""}" placeholder="이전 결제 합산"></label>
     <label class="fld">최근결제일<input type="date" id="f_lp" value="${esc(v.lastPaid||"")}"></label>
     <label class="fld">1일 수업시간<select id="f_dh"><option value="" ${!v.dailyHours?"selected":""}>-</option>${["1시간","2시간","3시간","4시간"].map(h=>`<option ${v.dailyHours===h?"selected":""}>${h}</option>`).join("")}${(v.dailyHours&&!["1시간","2시간","3시간","4시간"].includes(v.dailyHours))?`<option selected>${esc(v.dailyHours)}</option>`:""}</select></label>
+    <label class="fld" style="grid-column:span 2;flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="f_nr" ${v.noRenew?"checked":""} style="width:auto">🚪 시험 후 등 재등록 안 함 (퇴소예정)</label>
     <input type="hidden" id="f_classDays" value="${esc(v.classDays||"")}"><input type="hidden" id="f_classTimes" value="${esc(v.classTimes||"")}">
     ${s?`<label class="fld">상태<select id="f_stat"><option ${v.status!=='퇴원'&&v.status!=='정지'?'selected':''}>재원</option><option ${v.status==='정지'?'selected':''}>정지</option><option ${v.status==='퇴원'?'selected':''}>퇴원</option></select></label>
     <label class="fld">퇴원일<input type="date" id="f_qd" value="${esc(v.quitDate||"")}"></label>`:""}
@@ -3135,7 +3145,7 @@ function stuFormHtml(s){
   </div>`;
 }
 function readStuForm(){
-  return {name:val("f_nm").trim(),gubun:val("f_gu"),phone:val("f_ph"),guardian:val("f_gd"),addr:val("f_ad"),email:val("f_em"),birth:val("f_bt"),gender:val("f_sx"),school:val("f_sc"),grade:val("f_gr"),teacher:val("f_tc"),course:val("f_co").trim(),start:val("f_st"),tuition:num("f_tu"),payCycle:val("f_pc"),cycleMonths:num("f_cm")||1,totalSessions:num("f_ts"),charged:num("f_ch")||num("f_ts"),lastPaid:val("f_lp"),dailyHours:val("f_dh"),classDays:val("f_classDays"),classTimes:val("f_classTimes")};
+  return {name:val("f_nm").trim(),gubun:val("f_gu"),phone:val("f_ph"),guardian:val("f_gd"),addr:val("f_ad"),email:val("f_em"),birth:val("f_bt"),gender:val("f_sx"),school:val("f_sc"),grade:val("f_gr"),teacher:val("f_tc"),course:val("f_co").trim(),start:val("f_st"),tuition:num("f_tu"),payCycle:val("f_pc"),cycleMonths:num("f_cm")||1,totalSessions:num("f_ts"),charged:num("f_ch")||num("f_ts"),lastPaid:val("f_lp"),dailyHours:val("f_dh"),classDays:val("f_classDays"),classTimes:val("f_classTimes"),noRenew:(document.getElementById("f_nr")&&document.getElementById("f_nr").checked)||false};
 }
 function addStudent(){
   const f=readStuForm();
@@ -3156,6 +3166,7 @@ function saveStudent(id){
   ui.editStu=false;save();render();
 }
 function openDetail(id){tab="stu";ui.detailId=id;ui.editStu=false;ui.detailLesPage=1;render();}
+function quitStudent(id){ const s=DB.students.find(x=>String(x.id)===String(id)); if(!s)return; if(!confirm(`'${s.name}' 수강생을 퇴원 처리할까요?\n(상태=퇴원, 퇴원일=오늘)`))return; s.status="퇴원"; if(!s.quitDate)s.quitDate=todayStr(); save(); render(); }
 
 /* ───── 수강생 상세 ───── */
 function viewStuDetail(){
@@ -3186,7 +3197,7 @@ function viewStuDetail(){
       <div class="item"><div class="k">담임</div><div class="v">${esc(s.teacher)||"-"}</div></div>
       <div class="item"><div class="k">과정명</div><div class="v">${esc(s.course)}</div></div>
       <div class="item"><div class="k">수업요일 · 등원시간</div><div class="v">${(function(){const tm=parseTimes(s.classTimes);const ds=String(s.classDays||"").split(",").filter(Boolean);return ds.length?ds.map(d=>d+(tm[d]?" "+tm[d]:"")).join(", "):"-";})()}</div></div>
-      <div class="item"><div class="k">등록일</div><div class="v">${esc(s.start)||"-"}</div></div>
+      <div class="item"><div class="k">등록일</div><div class="v">${esc(s.start)||"-"}</div></div>${s.noRenew?`<div class="item"><div class="k">퇴소 예정</div><div class="v"><span class="tag" style="background:#fdecea;color:#c0392b">🚪 재등록 안 함</span></div></div>`:""}
       <div class="item"><div class="k">수강료</div><div class="v">${won(s.tuition)}원 / ${esc(s.payCycle||"기간제")}${s.payCycle==='횟수제'?` (1회 결제당 ${s.totalSessions}회)`:` ${s.cycleMonths||1}개월`}</div></div>
       <div class="item"><div class="k">최근 결제일</div><div class="v">${esc(lastPaidOf(s))||"-"}<div style="font-size:11px;color:var(--sub);font-weight:400">매출상세(성명+과정) 자동 연동</div></div></div>
       <div class="item"><div class="k">다음 결제</div><div class="v">${dueBadge(s)}</div></div>
