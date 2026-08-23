@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.38 (2026-08-19) Supabase+Auth";
+const APP_VERSION="v6.39 (2026-08-19) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -3286,23 +3286,23 @@ function attYearGridHtml(s){
   });
   const yearTotal=Object.values(byMonth).reduce((a,st)=>a+st.size,0);
   const daysInMonth=(y,m)=>new Date(Number(y),m,0).getDate();
-  const head=`<tr><th style="min-width:42px">월</th>${Array.from({length:31},(_,i)=>`<th style="min-width:22px;padding:4px 2px;text-align:center">${i+1}</th>`).join("")}<th style="min-width:36px">합계</th></tr>`;
+  const head=`<tr><th style="min-width:42px;border-right:2px solid #ccc">월</th>${Array.from({length:31},(_,i)=>`<th style="min-width:22px;padding:4px 2px;text-align:center;border-left:1px solid #e5e5e5;${(i+1)%2===0?'background:#e9eee9':''}">${i+1}</th>`).join("")}<th style="min-width:36px;border-left:2px solid #ccc">합계</th></tr>`;
   const rows=Array.from({length:12},(_,i)=>{
     const m=i+1,dim=daysInMonth(yr,m),set=byMonth[m]||new Set();
     const cells=Array.from({length:31},(_,j)=>{
       const day=j+1;
-      if(day>dim)return `<td style="background:var(--bg);padding:4px 2px"></td>`;
-      return `<td style="text-align:center;padding:4px 2px;${set.has(day)?'color:var(--green);font-weight:800':''}">${set.has(day)?"O":""}</td>`;
+      if(day>dim)return `<td style="background:var(--bg);padding:4px 2px;border-left:1px solid #e5e5e5"></td>`;
+      return `<td style="text-align:center;padding:4px 2px;border-left:1px solid #e5e5e5;${day%2===0?'background:#e9eee9;':''}${set.has(day)?'color:var(--green);font-weight:800':''}">${set.has(day)?"O":""}</td>`;
     }).join("");
-    return `<tr><td style="font-weight:700">${m}월</td>${cells}<td style="text-align:center;font-weight:800;color:${set.size?'var(--green)':'var(--sub)'}">${set.size||""}</td></tr>`;
+    return `<tr><td style="font-weight:700;border-right:2px solid #ccc">${m}월</td>${cells}<td style="text-align:center;font-weight:800;border-left:2px solid #ccc;color:${set.size?'var(--green)':'var(--sub)'}">${set.size||""}</td></tr>`;
   }).join("");
   return `
   <div class="panel"><h2><span>📅 연간 출석 현황 <span style="font-size:13px;color:var(--sub)">(${yr}년 총 ${yearTotal}회 출석)</span></span>
     <select onchange="ui.stuAttYear=this.value;render()" style="padding:5px">
       ${(years.length?years:[yr]).map(y=>`<option ${y===yr?'selected':''}>${y}</option>`).join("")}
     </select></h2>
-    ${allAtt.length?`<div style="overflow:auto"><table style="font-size:12px;border-collapse:collapse">${head}${rows}</table></div>
-    <p class="note">※ O = 출석한 날. 회색 칸은 없는 날짜. 오른쪽 끝은 월별 출석 횟수 합계입니다.</p>`
+    ${allAtt.length?`<div style="overflow:auto"><table style="font-size:12px;border-collapse:collapse;border:1px solid #ddd">${head}${rows}</table></div>
+    <p class="note">※ O = 출석한 날. 회색 칸은 없는 날짜. 짝수 일자 열은 음영으로 구분했습니다. 오른쪽 끝은 월별 출석 횟수 합계입니다.</p>`
     :`<div class="empty">출결 기록이 없습니다.</div>`}
   </div>`;
 }
