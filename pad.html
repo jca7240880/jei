@@ -370,8 +370,9 @@ async function saveAtt(rec,_try){
 }
 
 /* ───── 수강생 명단·설정·출결 불러오기 (Supabase 3개 테이블 병렬) ───── */
-async function supaFetch(table){
-  const url=GAS.replace(/\/+$/,'')+"/rest/v1/"+table+"?select=*";
+async function supaFetch(table,query){
+  const q=query||"select=*";
+  const url=GAS.replace(/\/+$/,'')+"/rest/v1/"+table+"?"+q;
   const h={"apikey":SUPA_KEY,"Authorization":"Bearer "+(AUTH_TOKEN||SUPA_KEY)};
   const res=await fetch(url,{headers:h});
   if(!res.ok)throw new Error(table+" "+res.status);
@@ -383,7 +384,7 @@ async function loadStudents(_retry){
     const [students,settings,attendance]=await Promise.all([
       supaFetch("students"),
       supaFetch("settings"),
-      supaFetch("attendance")
+      supaFetch("attendance","select=*&date=eq."+todayStr())
     ]);
     STUDENTS=students||[];
     SETTINGS=settings||[];
@@ -401,8 +402,8 @@ function reconnect(){ loadStudents(); }
 setInterval(()=>{
   const el=$("kClock");if(el)el.textContent=nowTime();
 }, 10000);
-// 5분마다 수강생 명단만 조용히 갱신 (새 수강생 반영)
-setInterval(()=>{ if(GAS&&loaded&&!ui.action&&document.visibilityState==="visible")loadStudents(true); }, 300000);
+// 15분마다 조용히 갱신 (새 수강생·출결 반영) — 단, 야간 0~6시에는 멈춤
+setInterval(()=>{ const hh=new Date().getHours(); if(GAS&&loaded&&!ui.action&&document.visibilityState==="visible"&&hh>=6)loadStudents(true); }, 900000);
 
 /* ───── 화면 꺼짐 방지 (Wake Lock) ───── */
 let wakeLock=null;
