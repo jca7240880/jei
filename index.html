@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.39 (2026-08-19) Supabase+Auth";
+const APP_VERSION="v6.40 (2026-08-19) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -4849,8 +4849,10 @@ const DEFAULT_SMS_TEMPLATE=`[교육비 안내]\n안녕하세요, 제이컴퓨터
 function getSmsTemplate(){ const r=DB.settings.find(x=>x.key==="smsTemplate"); return (r&&r.value)?String(r.value):DEFAULT_SMS_TEMPLATE; }
 function paymentSmsText(s){
   const ep=eduPeriod(s);
+  const _di=nextDueInfo(s);
   const period=(ep.start&&ep.end)?`${smsFmtDate(ep.start)} ~ ${smsFmtDate(ep.end)}`:"";
-  const dueTxt=ep.due?`${smsFmtDate(ep.due)} ${smsWeekday(ep.due)}까지`:"";
+  let dueTxt=ep.due?`${smsFmtDate(ep.due)} ${smsWeekday(ep.due)}까지`:"";
+  if(!dueTxt&&_di.type==="count"&&_di.remain!=null)dueTxt=`잔여 ${_di.remain}회 소진 시`;
   const fee=Number(s.tuition)||0;
   return getSmsTemplate()
     .replace(/{이름}/g, s.name||"")
@@ -4877,13 +4879,18 @@ function smsResetOne(id){ if(ui.smsOverride){delete ui.smsOverride[id];} render(
 function smsCopy(id){ const s=DB.students.find(x=>String(x.id)===String(id)); if(!s)return; const t=smsTextOf(s); if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>alert("문자 내용이 복사되었습니다."),()=>alert("복사 실패 — 길게 눌러 복사하세요."));}else{alert("복사 미지원 — 아래 내용을 길게 눌러 복사하세요.");} }
 function viewPaySms(){
   const active=DB.students.filter(s=>s.status!=="퇴원"&&s.status!=="정지"&&(ROLE!=="부원장"||s.teacher==="부원장"));
-  const rows=active.map(s=>({s,ep:eduPeriod(s)})).filter(x=>x.ep.valid&&x.ep.dday!=null&&x.ep.dday<=7&&x.ep.dday>=-7).sort((a,b)=>a.ep.dday-b.ep.dday);
-  const cards=rows.map(({s,ep})=>{
+  const rows=active.map(s=>({s,info:nextDueInfo(s),ep:eduPeriod(s)})).filter(x=>(x.info.type==="count"&&x.info.remain<=2)||(x.info.type==="date"&&x.info.dday<=7)).sort((a,b)=>{
+    const av=a.info.type==="date"?a.info.dday:(a.info.dday!=null?a.info.dday:9999);
+    const bv=b.info.type==="date"?b.info.dday:(b.info.dday!=null?b.info.dday:9999);
+    return av-bv;
+  });
+  const cards=rows.map(({s,info,ep})=>{
     const tel=String(s.phone||"").replace(/[^0-9+]/g,"");
     const isOver=ui.smsOverride&&ui.smsOverride[s.id]!=null;
     const txt=smsTextOf(s);
-    const dtxt=ep.dday>0?`D-${ep.dday}`:(ep.dday===0?"오늘":`${-ep.dday}일 지남`);
-    const dcol=ep.dday<=0?"var(--red)":(ep.dday<=1?"var(--amber)":"var(--green)");
+    const dd=info.dday;
+    const dtxt=dd!=null?(dd>0?`D-${dd}`:(dd===0?"오늘":`${-dd}일 지남`)):(info.type==="count"?`잔여 ${info.remain}회`:"");
+    const dcol=dd!=null?(dd<=0?"var(--red)":(dd<=1?"var(--amber)":"var(--green)")):"var(--amber)";
     return `<div class="panel" style="margin-top:0">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <h2 style="margin:0;font-size:16px">${esc(s.name)} <span style="font-size:12px;color:${dcol};font-weight:700">${dtxt}</span> <span style="font-size:12px;color:var(--sub);font-weight:400">${esc(s.course||"")}</span></h2>
@@ -4898,7 +4905,7 @@ function viewPaySms(){
     </div>`;
   }).join("");
   return `<div class="panel" style="margin-top:0">
-    <h2 style="margin:0 0 4px">📱 결제안내 문자 <span style="font-size:13px;color:var(--sub);font-weight:400">결제예정일 7일 이내 · ${rows.length}명</span>${ROLE==="부원장"?` <span class="tag" style="font-size:12px;padding:4px 9px;background:#eee;color:#555">담당 수강생만</span>`:""}</h2>
+    <h2 style="margin:0 0 4px">📱 결제안내 문자 <span style="font-size:13px;color:var(--sub);font-weight:400">재결제 임박 · ${rows.length}명 (대시보드 기준)</span>${ROLE==="부원장"?` <span class="tag" style="font-size:12px;padding:4px 9px;background:#eee;color:#555">담당 수강생만</span>`:""}</h2>
     <p style="font-size:12px;color:var(--sub);margin:0">[문자 보내기]를 누르면 폰 문자앱이 번호·내용이 채워진 채로 열립니다. 전송만 누르면 됩니다. (내용이 안 채워지면 [복사] 후 붙여넣기)<br><b>각 학생 문자칸을 직접 고치면 그 학생만 수정</b>됩니다(보낼 때 반영). 되돌리려면 [↺ 원래대로].</p>
     ${ROLE!=="부원장"?`<details style="margin-top:10px">
       <summary style="cursor:pointer;font-size:13px;font-weight:700;color:var(--green-dark)">✏️ 문자 문구 편집 (방학·휴강 공지 추가 등)</summary>
@@ -4910,7 +4917,7 @@ function viewPaySms(){
       </div>
     </details>`:""}
   </div>
-  ${rows.length?cards:`<div class="panel" style="margin-top:0"><div class="empty">결제예정일 7일 이내인 수강생이 없습니다.</div></div>`}`;
+  ${rows.length?cards:`<div class="panel" style="margin-top:0"><div class="empty">재결제 임박 수강생이 없습니다.</div></div>`}`;
 }
 function loanCard(k,v){ return `<div style="background:var(--green-light);border:1px solid var(--green-mid);border-radius:8px;padding:7px 12px;min-width:100px"><div style="font-size:11px;color:var(--sub)">${k}</div><div style="font-size:14px;font-weight:700;color:var(--ink)">${v}</div></div>`; }
 function loanMonths(l){ if(!l.startDate||!l.endDate)return 0; const a=new Date(l.startDate+"T00:00:00"),b=new Date(l.endDate+"T00:00:00"); if(isNaN(a)||isNaN(b))return 0; return Math.max(1,(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth())); }
