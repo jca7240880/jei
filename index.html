@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.40 (2026-08-19) Supabase+Auth";
+const APP_VERSION="v6.41 (2026-08-31) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -603,6 +603,8 @@ async function supaFetchTable(table){
 function setSync(t,err){const b=document.getElementById("syncBadge");if(b){b.textContent=t;b.style.background=err?"rgba(192,57,43,.5)":"rgba(255,255,255,.18)";}}
 async function loadCloud(silent, _retry){
   if(!GAS||!SUPA_KEY)return;
+  if(LOADING)return; // 동시 실행 잠금: 이전 조회가 안 끝났으면 건너뜀 (여러 기기·느린 조회 시 중복 다운로드 방지)
+  LOADING=true;
   Object.keys(CAL_CACHE).forEach(k=>delete CAL_CACHE[k]);
   if(!silent)setSync("⟳ 불러오는 중…");
   try{
@@ -619,19 +621,21 @@ async function loadCloud(silent, _retry){
     render();
   }catch(e){
     LOAD_FAILS=(LOAD_FAILS||0)+1;
-    if(LOAD_FAILS<=3){
-      setSync(`⟳ 연결 지연 — 다시 시도 중… (${LOAD_FAILS}/3)`,false);
-      setTimeout(()=>loadCloud(true,true),2500);
+    if(LOAD_FAILS<=2){
+      setSync(`⟳ 연결 지연 — 다시 시도 중… (${LOAD_FAILS}/2)`,false);
+      setTimeout(()=>loadCloud(true,true),3000);
       return;
     }
     LOAD_FAILS=0;
     if(LOADED_OK){
-      setSync("⚠ 연결 지연 — 잠시 후 자동 재연결",true);
+      setSync("⚠ 연결 지연 — 다음 자동 새로고침 때 재시도",true);
     }else{
       setSync("⚠ 연결 실패",true);
       alert("Supabase에서 데이터를 불러오지 못했습니다.\n\n확인할 것:\n1) 인터넷 연결\n2) Supabase 주소·키 (상단 ‘설정’)\n3) 테이블이 만들어졌는지 (Supabase → Table Editor)\n\n오류: "+(e.message||e));
     }
-    setTimeout(()=>loadCloud(true,true),8000);
+    // 8초 재시도 루프 제거: 다음 정기 폴링(90초)에 맡겨 중복 다운로드 방지
+  }finally{
+    LOADING=false;
   }
 }
 function normalizeIds(){
@@ -657,6 +661,7 @@ function save(){
 }
 let LOADED_OK=false; // 클라우드에서 정상 로드된 적이 있는지
 let LOAD_FAILS=0;
+let LOADING=false; // loadCloud 동시 실행 잠금
 let SAVE_FAILS=0; // 연속 저장 실패 횟수 (5회 후 중단·원인 표시)
 let SERVER_IDS={}; // 로드 시점의 서버 행 id 스냅샷 (정밀 삭제용 — 출결패드가 쓴 행 보호) // 연속 불러오기 실패 횟수 (자동 재시도용)
 let VERSION_MATCH=true; // HTML과 GAS 버전 일치 여부
@@ -1098,7 +1103,7 @@ function renderHeader(){
     <button class="hbtn ghost" onclick="openSetup()">설정</button>`:"";
 }
 function doLogout(){try{if(SB)SB.auth.signOut();}catch(e){}AUTHED=false;ROLE="";AUTH_TOKEN="";AUTH_EMAIL="";if(_idleTimer)clearTimeout(_idleTimer);render();}
-const IDLE_LOGOUT_MIN=20; // ★ 자동 로그아웃 시간(분). 이 숫자만 바꾸면 됩니다.
+const IDLE_LOGOUT_MIN=10; // ★ 자동 로그아웃 시간(분). 이 숫자만 바꾸면 됩니다.
 let _idleTimer=null;
 function resetIdleTimer(){
   if(_idleTimer)clearTimeout(_idleTimer);
@@ -6391,9 +6396,9 @@ setInterval(()=>{
   if(PENDING_SAVE||SAVING)return;
   if(isEditingNow())return;
   if(tab==="cal")return; // 캘린더 보는 중엔 화면 갱신 안 함 (내장 캘린더 깜빡임 방지)
-  if(document.visibilityState!=="visible")return;
+  if(document.visibilityState!=="visible"||!AUTHED)return; // 화면 꺼짐/로그아웃 시 폴링 중단
   loadCloud(true);
-}, 90000); // egress 절감: 15초 → 90초 자동 새로고침
+}, 90000); // egress 절감: 90초 + 로그아웃 시 폴링 중단
 
 </script>
 </body>
