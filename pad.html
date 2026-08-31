@@ -54,7 +54,7 @@
    - 관리시스템을 업데이트해도 이 파일은 수정할 필요가 없습니다.
    ═══════════════════════════════════════════════════ */
 
-const PAD_VERSION="출결패드 v2.2 Supabase+Auth";
+const PAD_VERSION="출결패드 v2.3 Supabase+Auth";
 
 /* 저장된 Supabase URL·키 (localStorage) */
 let GAS = (function(){try{return localStorage.getItem("jei_pad_supa_url")||"";}catch(e){return "";}})();
@@ -68,6 +68,7 @@ let ATTENDANCE=[];    // 출결 기록 (관리자 모드에서 오늘 현황 보
 let ui={input:"",msg:"",choices:null,action:null,screen:"kiosk",adminPwInput:""};
 let loaded=false;
 let SB=null,AUTH_TOKEN="",AUTH_EMAIL="",AUTHED=false;
+let PADLOADING=false, PAD_FAILS=0; // 동시실행 잠금·재시도 카운터
 function initAuthClient(){if(SB||!GAS||!SUPA_KEY||typeof supabase==="undefined")return;try{SB=supabase.createClient(GAS,SUPA_KEY);}catch(e){SB=null;}}
 
 /* ───── 공통 헬퍼 ───── */
@@ -370,9 +371,8 @@ async function saveAtt(rec,_try){
 }
 
 /* ───── 수강생 명단·설정·출결 불러오기 (Supabase 3개 테이블 병렬) ───── */
-async function supaFetch(table,query){
-  const q=query||"select=*";
-  const url=GAS.replace(/\/+$/,'')+"/rest/v1/"+table+"?"+q;
+async function supaFetch(table, filter){
+  const url=GAS.replace(/\/+$/,'')+"/rest/v1/"+table+"?select=*"+(filter?("&"+filter):"");
   const h={"apikey":SUPA_KEY,"Authorization":"Bearer "+(AUTH_TOKEN||SUPA_KEY)};
   const res=await fetch(url,{headers:h});
   if(!res.ok)throw new Error(table+" "+res.status);
@@ -380,21 +380,25 @@ async function supaFetch(table,query){
 }
 async function loadStudents(_retry){
   if(!GAS||!SUPA_KEY)return;
+  if(PADLOADING)return; // 동시 실행 잠금
+  PADLOADING=true;
   try{
     const [students,settings,attendance]=await Promise.all([
       supaFetch("students"),
       supaFetch("settings"),
-      supaFetch("attendance","select=*&date=eq."+todayStr())
+      supaFetch("attendance","date=eq."+todayStr()) // 출결은 오늘치만 조회 (egress 대폭 절감)
     ]);
     STUDENTS=students||[];
     SETTINGS=settings||[];
     ATTENDANCE=attendance||[];
     loaded=true;
+    PAD_FAILS=0;
     render();
   }catch(e){
-    setTimeout(()=>loadStudents(true),3000);
+    PAD_FAILS=(PAD_FAILS||0)+1;
+    if(PAD_FAILS<=2)setTimeout(()=>loadStudents(true),4000); // 재시도 2회 제한 (무한 루프 제거)
     if(!loaded)$("app").innerHTML=`<div style="text-align:center;margin-top:30vh;color:var(--sub)">⟳ 연결 지연 — 다시 시도 중…<br><span style="font-size:12px">계속 안 되면 관리자 모드에서 연결 정보를 확인하세요</span></div>`;
-  }
+  }finally{ PADLOADING=false; }
 }
 function reconnect(){ loadStudents(); }
 
@@ -402,8 +406,8 @@ function reconnect(){ loadStudents(); }
 setInterval(()=>{
   const el=$("kClock");if(el)el.textContent=nowTime();
 }, 10000);
-// 15분마다 조용히 갱신 (새 수강생·출결 반영) — 단, 야간 0~6시에는 멈춤
-setInterval(()=>{ const hh=new Date().getHours(); if(GAS&&loaded&&!ui.action&&document.visibilityState==="visible"&&hh>=6)loadStudents(true); }, 900000);
+// 5분마다 수강생 명단만 조용히 갱신 (새 수강생 반영)
+setInterval(()=>{ if(GAS&&loaded&&!ui.action&&document.visibilityState==="visible")loadStudents(true); }, 300000);
 
 /* ───── 화면 꺼짐 방지 (Wake Lock) ───── */
 let wakeLock=null;
