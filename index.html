@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.41 (2026-08-31) Supabase+Auth";
+const APP_VERSION="v6.42 (2026-09-04) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -578,11 +578,70 @@ function supaHeaders(){
     "Prefer": "return=minimal"
   };
 }
+let LAST_SYNC={};        // 테이블별 마지막 동기화 시각(updated_at)
+let INCR_OK=false;       // updated_at 사용 가능(증분 조회 가능)
+let POLL_SINCE_FULL=0;   // 마지막 전체조회 이후 증분 폴링 횟수
+const FULL_EVERY=40;     // 이 횟수마다 전체 재조회(삭제 반영, 약 1시간)
+const CACHE_KEY="jei_dbcache_v1";
+
+// localStorage 캐시에서 DB 복원 (앱을 다시 열어도 전체 재다운로드 안 하도록)
+function restoreCache(){
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);
+    if(!raw)return false;
+    const c=JSON.parse(raw);
+    if(!c||!c.db||c.url!==GAS)return false; // 다른 프로젝트면 무시
+    Object.keys(DB).forEach(t=>{ if(Array.isArray(c.db[t]))DB[t]=c.db[t]; });
+    LAST_SYNC=c.sync||{};
+    INCR_OK=!!c.incr;
+    Object.keys(DB).forEach(t=>{ SERVER_IDS[t]=new Set((DB[t]||[]).map(r=>String(r.id))); });
+    LOADED_OK=true;
+    return true;
+  }catch(e){ return false; }
+}
+let _cacheTimer=null;
+function saveCache(){
+  clearTimeout(_cacheTimer);
+  _cacheTimer=setTimeout(()=>{
+    try{ localStorage.setItem(CACHE_KEY, JSON.stringify({url:GAS, sync:LAST_SYNC, incr:INCR_OK, db:DB})); }
+    catch(e){ /* 용량 초과 등 → 캐시 생략(다음엔 전체조회) */ }
+  }, 800);
+}
+// 증분 조회: updated_at이 since 이후인 행만
+async function supaFetchIncr(table){
+  const since=LAST_SYNC[table]||"1970-01-01T00:00:00+00:00";
+  const all=[]; let maxU=since; const pageSize=1000; let from=0;
+  while(true){
+    const url=GAS.replace(/\/+$/,'')+"/rest/v1/"+table+"?select=*&order=updated_at.asc&updated_at=gt."+encodeURIComponent(since);
+    const h={...supaHeaders(), "Range-Unit":"items", "Range":`${from}-${from+pageSize-1}`};
+    delete h["Content-Type"]; delete h["Prefer"];
+    const res=await fetch(url, {headers:h});
+    if(res.status===404) return {ok:true, rows:[]};      // 테이블 없음
+    if(res.status===400) return {ok:false, rows:null};    // updated_at 컬럼 없음 → 증분 불가
+    if(!res.ok) throw new Error(table+" "+res.status);
+    const rows=await res.json();
+    rows.forEach(r=>{ if(r.updated_at&&r.updated_at>maxU)maxU=r.updated_at; all.push(fromSupaRow(table,r)); });
+    if(rows.length<pageSize)break;
+    from+=pageSize;
+    if(from>50000)break;
+  }
+  if(maxU&&maxU!==since)LAST_SYNC[table]=maxU;
+  return {ok:true, rows:all};
+}
+// 변경 행 병합 (id 기준 upsert)
+function mergeRows(table, rows){
+  if(!rows||!rows.length)return 0;
+  const arr=DB[table]||(DB[table]=[]);
+  const idx={}; arr.forEach((r,i)=>idx[String(r.id)]=i);
+  const sset=SERVER_IDS[table]=SERVER_IDS[table]||new Set();
+  rows.forEach(r=>{ const id=String(r.id); if(idx[id]!=null)arr[idx[id]]=r; else {arr.push(r); idx[id]=arr.length-1;} sset.add(id); });
+  return rows.length;
+}
 async function supaFetchTable(table){
   // 최대 10000행씩 페이지네이션 (Supabase 기본 상한 1000이지만 range로 확장)
   const all=[];
   const pageSize=1000;
-  let from=0;
+  let from=0; let maxU=null;
   while(true){
     const url=GAS.replace(/\/+$/,'')+"/rest/v1/"+table+"?select=*&order=created_at.asc";
     const h={...supaHeaders(), "Range-Unit":"items", "Range":`${from}-${from+pageSize-1}`};
@@ -591,34 +650,56 @@ async function supaFetchTable(table){
     if(res.status===404) return all; // 아직 안 만든 테이블은 빈 목록 처리 (SQL 실행 전에도 동작)
     if(!res.ok) throw new Error(table+" "+res.status);
     const rows=await res.json();
-    rows.forEach(r=>all.push(fromSupaRow(table,r)));
+    rows.forEach(r=>{ if(r.updated_at&&(!maxU||r.updated_at>maxU))maxU=r.updated_at; all.push(fromSupaRow(table,r)); });
     if(rows.length<pageSize)break;
     from+=pageSize;
     if(from>50000)break; // 안전 상한
   }
+  if(maxU){ LAST_SYNC[table]=maxU; INCR_OK=true; }
   return all;
 }
 
 /* ───────────── 동기화 ───────────── */
 function setSync(t,err){const b=document.getElementById("syncBadge");if(b){b.textContent=t;b.style.background=err?"rgba(192,57,43,.5)":"rgba(255,255,255,.18)";}}
-async function loadCloud(silent, _retry){
+async function loadCloud(silent, _retry, forceFull){
   if(!GAS||!SUPA_KEY)return;
   if(LOADING)return; // 동시 실행 잠금: 이전 조회가 안 끝났으면 건너뜀 (여러 기기·느린 조회 시 중복 다운로드 방지)
   LOADING=true;
   Object.keys(CAL_CACHE).forEach(k=>delete CAL_CACHE[k]);
-  if(!silent)setSync("⟳ 불러오는 중…");
+  const tables=Object.keys(DB);
+  // 전체조회 조건: 강제 / 아직 로드 안됨 / 증분 불가 / 주기적 전체(삭제반영)
+  const doFull = forceFull || !LOADED_OK || !INCR_OK || (POLL_SINCE_FULL>=FULL_EVERY);
+  if(!silent && doFull)setSync("⟳ 불러오는 중…");
   try{
-    const tables=Object.keys(DB);
-    // 병렬로 모든 테이블 로드 (Supabase는 빠르게 처리)
-    const results=await Promise.all(tables.map(t=>supaFetchTable(t)));
-    tables.forEach((t,i)=>{ DB[t]=results[i]; SERVER_IDS[t]=new Set((results[i]||[]).map(r=>String(r.id))); });
-    LOADED_OK=true;
-    LOAD_FAILS=0;
-    ["sales","students","income","expense","attendance"].forEach(k=>{LOADED_COUNTS[k]=(DB[k]||[]).length;});
-    VERSION_MATCH=true; // Supabase 방식은 버전 개념 없음
-    normalizeIds();
-    setSync("✓ 동기화됨 "+nowTime()+" (매출 "+(DB.sales||[]).length+"건)");
-    render();
+    if(doFull){
+      const results=await Promise.all(tables.map(t=>supaFetchTable(t)));
+      tables.forEach((t,i)=>{ DB[t]=results[i]; SERVER_IDS[t]=new Set((results[i]||[]).map(r=>String(r.id))); });
+      POLL_SINCE_FULL=0;
+      LOADED_OK=true;
+      LOAD_FAILS=0;
+      ["sales","students","income","expense","attendance"].forEach(k=>{LOADED_COUNTS[k]=(DB[k]||[]).length;});
+      VERSION_MATCH=true;
+      normalizeIds();
+      saveCache();
+      setSync("✓ 동기화됨 "+nowTime()+" (매출 "+(DB.sales||[]).length+"건)");
+      render();
+    } else {
+      // 증분: 바뀐 행만 조회 (egress 대폭 절감)
+      const results=await Promise.all(tables.map(t=>supaFetchIncr(t)));
+      let anyBad=false, changed=0;
+      results.forEach((res,i)=>{ if(!res.ok){anyBad=true;return;} changed+=mergeRows(tables[i], res.rows); });
+      if(anyBad){ INCR_OK=false; POLL_SINCE_FULL=FULL_EVERY; LOAD_FAILS=0; return; } // 다음 폴링에서 전체로 전환
+      POLL_SINCE_FULL++;
+      LOAD_FAILS=0;
+      if(changed>0){
+        ["sales","students","income","expense","attendance"].forEach(k=>{LOADED_COUNTS[k]=(DB[k]||[]).length;});
+        normalizeIds(); saveCache();
+        setSync("✓ 동기화됨 "+nowTime()+" (변경 "+changed+"건)");
+        render();
+      } else {
+        setSync("✓ 최신 상태 "+nowTime());
+      }
+    }
   }catch(e){
     LOAD_FAILS=(LOAD_FAILS||0)+1;
     if(LOAD_FAILS<=2){
@@ -1095,7 +1176,7 @@ function renderHeader(){
   document.getElementById("hbtns").innerHTML=GAS?`
     <span id="syncBadge">—</span>
     ${roleBadge}
-    <button class="hbtn ghost" onclick="loadCloud()">⟳ 새로고침</button>
+    <button class="hbtn ghost" onclick="loadCloud(false,false,true)">⟳ 새로고침</button>
     ${ROLE!=="부원장"?`<button class="hbtn" onclick="exportExcel()">⬇ 엑셀 백업</button>
     <button class="hbtn ghost" onclick="document.getElementById('restoreFile').click()">⬆ 백업 복원</button>
     <input type="file" id="restoreFile" accept=".xlsx,.xls" style="display:none" onchange="restoreExcel(this)">`:""}
@@ -6378,6 +6459,7 @@ initAuthClient();
     try{ const {data}=await SB.auth.getSession(); if(data&&data.session){AUTH_TOKEN=data.session.access_token;AUTH_EMAIL=(data.session.user&&data.session.user.email)||"";AUTHED=true;} }catch(e){}
     try{ SB.auth.onAuthStateChange((ev,session)=>{ if(session){AUTH_TOKEN=session.access_token;AUTH_EMAIL=(session.user&&session.user.email)||AUTH_EMAIL;} else {AUTH_TOKEN="";AUTHED=false;} }); }catch(e){}
   }
+  if(GAS&&SUPA_KEY)restoreCache(); // 캐시 복원 → 재오픈 시 전체 재다운로드 방지
   render();
   if(GAS&&AUTHED){ await loadCloud(); applyRoleFromEmail(); render(); resetIdleTimer(); }
   if(KIOSK)requestWakeLock(); // 재실행 시 키오스크면 화면 꺼짐 방지
