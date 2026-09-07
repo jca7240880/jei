@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.46 (2026-09-07) Supabase+Auth";
+const APP_VERSION="v6.47 (2026-09-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -4473,13 +4473,17 @@ function delInc(id){if(confirm("이 수입 기록을 삭제할까요?")){DB.inco
 
 function viewExp(){
   const EXPC=getExpCat();
-  const list=DB.expense.filter(l=>String(l.date).startsWith(ui.expMonth)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const _q=(ui.expSearch||"").trim();
+  const _match=l=>((l.vendor||"")+" "+(l.desc||"")+" "+(l.memo||"")+" "+(l.acct||"")+" "+(l.big||"")).includes(_q);
+  const list=(_q?DB.expense.filter(_match):DB.expense.filter(l=>String(l.date).startsWith(ui.expMonth))).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   const sum=list.reduce((a,l)=>a+(Number(l.paidAmount)||Number(l.amount)),0);
   const firstBig=Object.keys(EXPC)[0];
   return `
   <div class="toolbar">
     <label class="fld">조회 월<input type="month" value="${ui.expMonth}" onchange="ui.expMonth=this.value;render()"></label>
-    <div class="card" style="padding:10px 14px"><span class="lab">${ui.expMonth} 지출 합계 </span><b style="color:var(--red)">${won(sum)}원</b></div>
+    <label class="fld">🔍 검색<input value="${esc(ui.expSearch||'')}" placeholder="지출처·적요 (전 기간)" onchange="ui.expSearch=this.value.trim();ui.expSel=[];render()" style="width:150px"></label>
+    ${_q?`<button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="expSelectSearch()">✓ 검색결과 전체선택</button><button class="btn sm" onclick="ui.expSearch='';ui.expSel=[];render()">✕ 검색해제</button>`:""}
+    <div class="card" style="padding:10px 14px"><span class="lab">${_q?`🔍 '${esc(ui.expSearch)}' ${list.length}건`:ui.expMonth+" 지출"} 합계 </span><b style="color:var(--red)">${won(sum)}원</b></div>
     <button class="btn sm" onclick="document.getElementById('bankFileE').click()">🏦 은행 거래내역 가져오기</button>
     <input type="file" id="bankFileE" accept=".xls,.xlsx" style="display:none" onchange="importBank(this)">
     <button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="ui.expCleanup=!ui.expCleanup;render()">🧹 미분류 정리 (${DB.expense.filter(l=>l.big==="기타지출"&&l.acct==="기타").length}건)</button>
@@ -4538,7 +4542,7 @@ function expEditAcct(){
 function expBulkBar(EXPC){
   const sel=ui.expSel||[];
   const bigs=Object.keys(EXPC);
-  if(!sel.length)return `<p class="note" style="margin:4px 0">※ 행 앞 체크박스로 여러 건을 선택하면, 대분류·계정과목을 한 번에 바꿀 수 있습니다.</p>`;
+  if(!sel.length)return `<p class="note" style="margin:4px 0">※ 행 앞 체크박스로 여러 건 선택 → 대분류·계정과목을 한 번에 변경. <b>여러 달에 흩어진 항목은 위 🔍검색으로 찾아 [검색결과 전체선택]</b>하면 전 기간을 한 번에 바꿀 수 있습니다. (예: "다이소" 검색 → 전부 선택 → 복리후생비)</p>`;
   const selBigs=[...new Set(sel.map(id=>{const l=DB.expense.find(x=>String(x.id)===String(id));return l?l.big:"";}))];
   const acctBig=selBigs.length===1?selBigs[0]:bigs[0];
   return `<div class="toolbar" style="background:var(--green-light);padding:10px 12px;border-radius:10px;align-items:center">
@@ -4558,8 +4562,15 @@ function expToggle(id,on){
   render();
 }
 function expToggleAll(on){
-  const list=DB.expense.filter(l=>String(l.date).startsWith(ui.expMonth));
+  const q=(ui.expSearch||"").trim();
+  const list=q?DB.expense.filter(l=>((l.vendor||"")+" "+(l.desc||"")+" "+(l.memo||"")+" "+(l.acct||"")+" "+(l.big||"")).includes(q))
+              :DB.expense.filter(l=>String(l.date).startsWith(ui.expMonth));
   ui.expSel=on?list.map(l=>l.id):[];
+  render();
+}
+function expSelectSearch(){
+  const q=(ui.expSearch||"").trim(); if(!q)return;
+  ui.expSel=DB.expense.filter(l=>((l.vendor||"")+" "+(l.desc||"")+" "+(l.memo||"")+" "+(l.acct||"")+" "+(l.big||"")).includes(q)).map(l=>l.id);
   render();
 }
 function expBulkAcctFill(){
