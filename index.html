@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.43 (2026-09-07) Supabase+Auth";
+const APP_VERSION="v6.44 (2026-09-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -4399,17 +4399,24 @@ function viewExp(){
     <button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="ui.expCleanup=!ui.expCleanup;render()">🧹 미분류 한번에 정리</button>
   </div>
   ${ui.expCleanup?cleanupPanelHtml("exp"):""}
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+    <span style="font-size:13px;color:var(--sub);font-weight:700">⭐ 자주 쓰는 지출:</span>
+    ${getExpPresets().map((pp,i)=>`<span style="display:inline-flex;align-items:center;background:var(--green-light);border-radius:14px;padding:1px 3px 1px 4px"><button class="btn sm" style="background:none;border:none" onclick="applyExpPreset(${i})">${esc(pp.label)}${pp.amount?` <span style="color:var(--sub);font-size:11px">${won(pp.amount)}원</span>`:""}</button><button style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:12px;padding:0 4px" onclick="delExpPreset(${i})" title="삭제">✕</button></span>`).join("")||`<span style="font-size:12px;color:var(--sub)">아래 폼을 채우고 [＋현재 입력 저장]을 누르면 버튼으로 등록됩니다</span>`}
+    <button class="btn sm" onclick="addExpPreset()">＋ 현재 입력 저장</button>
+  </div>
   <div class="formbox">
     <label class="fld">일자<input type="date" id="e_dt" value="${todayStr()}"></label>
     <label class="fld">대분류<select id="e_big" onchange="fillAcct('e',getExpCat())">${catOptions(EXPC)}</select></label>
     <label class="fld">계정과목<select id="e_acct">${EXPC[firstBig].map(a=>`<option>${a}</option>`).join("")}</select></label>
-    <label class="fld">적요<input id="e_desc"></label>
-    <label class="fld">지출처<input id="e_vd"></label>
+    <label class="fld">적요<input id="e_desc" list="expDescs"></label>
+    <label class="fld">지출처<input id="e_vd" list="expVendors" oninput="expAutoCat(this.value)" onchange="expAutoCat(this.value)"></label>
     <label class="fld">금액(원)<input type="number" id="e_am"></label>
     <label class="fld">할인(원)<input type="number" id="e_dc" value="0"></label>
     <label class="fld">수단<select id="e_md">${methodOptions("")}</select></label>
     <label class="fld">메모<input id="e_mm"></label>
     <button class="btn" onclick="addExp()">지출 기록</button>
+    <datalist id="expVendors">${[...new Set(DB.expense.map(x=>x.vendor).filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join("")}</datalist>
+    <datalist id="expDescs">${[...new Set(DB.expense.map(x=>x.desc).filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join("")}</datalist>
   </div>
   ${expBulkBar(EXPC)}
   <div class="twrap"><table><thead><tr><th><input type="checkbox" onchange="expToggleAll(this.checked)" title="전체 선택"></th><th>일자</th><th>대분류</th><th>계정과목</th><th>적요</th><th>지출처</th><th>금액</th><th>할인</th><th>결제금액</th><th>수단</th><th>메모</th><th>작업</th></tr></thead><tbody>
@@ -4491,6 +4498,33 @@ function saveExpEdit(id){
   const am=num("ee_am"),dc=num("ee_dc");
   l.date=val("ee_dt");l.big=val("ee_big");l.acct=val("ee_acct");l.desc=val("ee_desc");l.vendor=val("ee_vd");l.amount=am;l.discount=dc;l.paidAmount=am-dc;l.method=val("ee_md");l.memo=val("ee_mm");
   ui.expEditId=null;save();render();
+}
+function getExpPresets(){ const r=DB.settings.find(x=>x.key==="expPresets"); try{return r&&r.value?JSON.parse(r.value):[];}catch(e){return [];} }
+function saveExpPresets(arr){ let r=DB.settings.find(x=>x.key==="expPresets"); const v=JSON.stringify(arr); if(r)r.value=v; else DB.settings.push({id:uid(),key:"expPresets",value:v}); save(); }
+function applyExpPreset(i){
+  const p=getExpPresets()[i]; if(!p)return;
+  const set=(id,vv)=>{const e=document.getElementById(id); if(e)e.value=vv;};
+  if(p.big){ set("e_big",p.big); fillAcct("e",getExpCat()); if(p.acct)set("e_acct",p.acct); }
+  set("e_vd",p.vendor||""); set("e_desc",p.desc||""); if(p.method)set("e_md",p.method);
+  if(p.amount)set("e_am",p.amount);
+  const am=document.getElementById("e_am"); if(am)am.focus();
+}
+function addExpPreset(){
+  const label=prompt("자주 쓰는 지출 이름을 입력하세요. (예: 월세, 인터넷요금, 정수기렌탈)");
+  if(!label||!label.trim())return;
+  const p={label:label.trim(), big:val("e_big"), acct:val("e_acct"), vendor:val("e_vd"), desc:val("e_desc"), method:val("e_md"), amount:num("e_am")||""};
+  const arr=getExpPresets(); arr.push(p); saveExpPresets(arr); render();
+  alert("‘"+p.label+"’ 자주쓰기로 저장했습니다. 이제 버튼 한 번으로 입력됩니다.");
+}
+function delExpPreset(i){ const arr=getExpPresets(); const nm=arr[i]?arr[i].label:""; if(!confirm("‘"+nm+"’ 자주쓰기를 삭제할까요?"))return; arr.splice(i,1); saveExpPresets(arr); render(); }
+function expAutoCat(v){
+  v=(v||"").trim(); if(!v)return;
+  const hit=[...DB.expense].reverse().find(x=>String(x.vendor)===v);
+  if(!hit)return;
+  const set=(id,vv)=>{const e=document.getElementById(id); if(e)e.value=vv;};
+  if(hit.big){ set("e_big",hit.big); fillAcct("e",getExpCat()); if(hit.acct)set("e_acct",hit.acct); }
+  if(hit.method)set("e_md",hit.method);
+  const d=document.getElementById("e_desc"); if(d&&!d.value&&hit.desc)d.value=hit.desc;
 }
 function addExp(){
   const am=num("e_am"),dc=num("e_dc");
