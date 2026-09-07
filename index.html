@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.44 (2026-09-07) Supabase+Auth";
+const APP_VERSION="v6.46 (2026-09-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -502,7 +502,8 @@ const EXP_CAT={
   "차량·출장":["차량유지비","여비교통비","출장비","주차비"],
   "수수료·세금":["지급수수료","금융수수료","세금과공과","협회비/회비"],
   "자산구입":["시설장비구입비","교육장비구입비","집기비품","감가상각비"],
-  "기타운영":["접대비","회의비","교육훈련비","보험료","잡비"]
+  "기타운영":["접대비","회의비","교육훈련비","보험료","잡비"],
+  "개인·사업무관":["개인지출","가족지출","사업무관"]
 };
 
 const pad2=n=>String(n).padStart(2,"0");
@@ -1239,6 +1240,7 @@ function render(){
     if(sub==="sales")body=viewSales();
     else if(sub==="byname")body=viewSalesByName();
     else if(sub==="loan")body=viewLoan();
+    else if(sub==="biz")body=viewBizAnalysis();
     else if(sub==="sms")body=viewPaySms();
     else if(sub==="inc")body=viewInc();
     else if(sub==="exp")body=viewExp();
@@ -1434,6 +1436,90 @@ function viewDash(){
     <td style="white-space:nowrap"><button class="btn sm" onclick="markNoRenew('${x.s.id}',false)">↩ 재등록</button> <button class="btn sm" onclick="quitStudent('${x.s.id}')" style="color:#c0392b;border-color:#c0392b">퇴원 처리</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">퇴소 예정 수강생이 없습니다.</div>`}
   </div>
   <p class="note">※ 장부 상세(연간 매출·수입·지출 현황과 차트, 수강생 추이)는 수납관리·장비관리 등 각 탭에서 확인하세요.</p>`;
+}
+function viewBizAnalysis(){
+  const EXCLUDE_BIG=["개인·사업무관","사업무관","개인"]; // 손익에서 제외
+  const CAPITAL_BIG="자산구입";                          // 일회성 투자 → 운영손익과 분리
+  const amtIn=l=>Number(l.amount)||0;
+  const amtEx=l=>Number(l.paidAmount)||Number(l.amount)||0;
+  // 월 목록 (수입·지출에 실제 데이터가 있는 달)
+  const monthsSet=new Set();
+  DB.income.forEach(l=>{const m=String(l.date).slice(0,7); if(m.length===7)monthsSet.add(m);});
+  DB.expense.forEach(l=>{const m=String(l.date).slice(0,7); if(m.length===7&&!EXCLUDE_BIG.includes(l.big))monthsSet.add(m);});
+  const months=[...monthsSet].sort();
+  if(!months.length)return `<div class="panel" style="margin-top:0"><h2>📈 경영분석</h2><div class="empty">수입·지출 데이터가 쌓이면 손익분기·수익률이 자동 계산됩니다.</div></div>`;
+  const N=months.length;
+  // 월별 집계
+  const per={}; months.forEach(m=>per[m]={rev:0,opx:0,labor:0,cap:0});
+  DB.income.forEach(l=>{const m=String(l.date).slice(0,7); if(per[m])per[m].rev+=amtIn(l);});
+  DB.expense.forEach(l=>{const m=String(l.date).slice(0,7); if(!per[m])return; if(EXCLUDE_BIG.includes(l.big))return;
+    if(l.big===CAPITAL_BIG){per[m].cap+=amtEx(l);return;}
+    per[m].opx+=amtEx(l); if(l.big==="인건비")per[m].labor+=amtEx(l);});
+  const sum=k=>months.reduce((a,m)=>a+per[m][k],0);
+  const totRev=sum("rev"), totOpx=sum("opx"), totLabor=sum("labor"), totCap=sum("cap");
+  const avgRev=totRev/N, avgOpx=totOpx/N, avgLabor=totLabor/N, avgProfit=avgRev-avgOpx;
+  const margin=avgRev?avgProfit/avgRev*100:0;
+  const bep=avgOpx; // 손익분기 매출 ≈ 월평균 운영지출
+  const safety=avgRev?(avgRev-bep)/avgRev*100:0; // 안전마진
+  const laborRatio=avgRev?avgLabor/avgRev*100:0;
+  // 인건비 여력 (목표 이익률 유지 시)
+  const t=(ui.bizTargetMargin!=null?ui.bizTargetMargin:20)/100;
+  const otherOpx=avgOpx-avgLabor; // 인건비 외 운영지출
+  const laborMax=avgRev*(1-t)-otherOpx; // 목표이익률 유지하며 쓸 수 있는 최대 인건비
+  const laborRoom=laborMax-avgLabor;
+  // 예비비 권장 (월 운영지출 기준)
+  const reserve3=avgOpx*3, reserve6=avgOpx*6;
+  // 지출 구성(대분류별 월평균)
+  const bigSum={};
+  DB.expense.forEach(l=>{const m=String(l.date).slice(0,7); if(!per[m])return; if(EXCLUDE_BIG.includes(l.big)||l.big===CAPITAL_BIG)return; bigSum[l.big]=(bigSum[l.big]||0)+amtEx(l);});
+  const bigRows=Object.keys(bigSum).sort((a,b)=>bigSum[b]-bigSum[a]).map(b=>{
+    const avg=bigSum[b]/N; const pct=avgRev?avg/avgRev*100:0;
+    return `<tr><td>${esc(b)}</td><td style="text-align:right">${won(Math.round(avg))}원</td><td style="text-align:right">${pct.toFixed(1)}%</td></tr>`;
+  }).join("");
+  // 월별 추이
+  const trendRows=months.map(m=>{const x=per[m]; const pf=x.rev-x.opx; return `<tr><td>${m}</td><td style="text-align:right">${won(Math.round(x.rev))}</td><td style="text-align:right">${won(Math.round(x.opx))}</td><td style="text-align:right;font-weight:700;color:${pf>=0?'var(--green-dark)':'var(--red)'}">${won(Math.round(pf))}</td><td style="text-align:right">${x.rev?((pf/x.rev*100).toFixed(0)):"-"}%</td>${x.cap?`<td style="text-align:right;color:var(--sub)">투자 ${won(Math.round(x.cap))}</td>`:'<td></td>'}</tr>`;}).join("");
+  const money=v=>won(Math.round(v))+"원";
+  const roomMsg = laborRoom>=0
+    ? `목표 이익률 ${(t*100).toFixed(0)}%를 지키면서 <b style="color:var(--green-dark)">인건비를 월 ${money(laborRoom)}까지 더</b> 쓸 수 있습니다.`
+    : `현재 인건비가 목표 이익률 ${(t*100).toFixed(0)}% 기준보다 <b style="color:var(--red)">월 ${money(-laborRoom)} 초과</b>입니다. 매출을 늘리거나 다른 비용을 줄여야 합니다.`;
+  return `<div class="panel" style="margin-top:0">
+    <h2>📈 경영분석 <span style="font-size:13px;color:var(--sub)">최근 ${N}개월 (${months[0]} ~ ${months[N-1]}) · 개인·사업무관 지출 제외</span></h2>
+    <div class="cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px">
+      <div class="card"><div class="lab">월평균 매출</div><div class="val">${money(avgRev)}</div></div>
+      <div class="card"><div class="lab">월평균 지출</div><div class="val" style="color:var(--red)">${money(avgOpx)}</div></div>
+      <div class="card"><div class="lab">월평균 순이익</div><div class="val" style="color:${avgProfit>=0?'var(--green-dark)':'var(--red)'}">${money(avgProfit)}</div></div>
+      <div class="card"><div class="lab">영업이익률</div><div class="val" style="color:${margin>=0?'var(--green-dark)':'var(--red)'}">${margin.toFixed(1)}%</div></div>
+    </div>
+    <div class="panel" style="margin-top:0;border:1px solid var(--line)">
+      <h3 style="margin:0 0 6px">📌 손익분기 · 안전마진</h3>
+      <p style="margin:4px 0">· <b>손익분기 매출</b>(본전 매출): 월 <b>${money(bep)}</b> — 매달 이만큼은 벌어야 적자를 면합니다.</p>
+      <p style="margin:4px 0">· 현재 월평균 매출 ${money(avgRev)} → 손익분기 대비 <b style="color:${safety>=0?'var(--green-dark)':'var(--red)'}">${safety>=0?"+":""}${safety.toFixed(1)}% 여유(안전마진)</b>.</p>
+    </div>
+    <div class="panel" style="margin-top:10px;border:1px solid var(--line)">
+      <h3 style="margin:0 0 6px">👥 인건비 여력</h3>
+      <p style="margin:4px 0">현재 월평균 인건비 <b>${money(avgLabor)}</b> (매출의 ${laborRatio.toFixed(1)}%)</p>
+      <p style="margin:4px 0">목표 이익률
+        <select onchange="ui.bizTargetMargin=Number(this.value);render()" style="padding:3px">
+          ${[10,15,20,25,30].map(v=>`<option value="${v}" ${Math.round(t*100)===v?'selected':''}>${v}%</option>`).join("")}
+        </select>
+        기준 → ${roomMsg}
+      </p>
+    </div>
+    <div class="panel" style="margin-top:10px;border:1px solid var(--line)">
+      <h3 style="margin:0 0 6px">🛟 예비비 권장</h3>
+      <p style="margin:4px 0">갑작스러운 매출 감소·비상 상황 대비, 월 운영지출의 <b>3~6개월치</b>를 통장에 확보하는 것을 권장합니다.</p>
+      <p style="margin:4px 0">· 최소(3개월): <b>${money(reserve3)}</b> &nbsp; · 안정(6개월): <b>${money(reserve6)}</b></p>
+    </div>
+    <div class="panel" style="margin-top:10px;border:1px solid var(--line)">
+      <h3 style="margin:0 0 6px">💸 지출 구성 (월평균, 매출 대비 비중)</h3>
+      <div class="twrap" style="border:none"><table><thead><tr><th>대분류</th><th style="text-align:right">월평균</th><th style="text-align:right">매출 대비</th></tr></thead><tbody>${bigRows||'<tr><td colspan="3" class="empty">-</td></tr>'}</tbody></table></div>
+    </div>
+    <div class="panel" style="margin-top:10px;border:1px solid var(--line)">
+      <h3 style="margin:0 0 6px">📅 월별 추이</h3>
+      <div class="twrap" style="border:none"><table><thead><tr><th>월</th><th style="text-align:right">매출</th><th style="text-align:right">운영지출</th><th style="text-align:right">순이익</th><th style="text-align:right">이익률</th><th></th></tr></thead><tbody>${trendRows}</tbody></table></div>
+    </div>
+    <p class="note">※ <b>개인·사업무관</b>으로 분류한 지출은 제외됩니다(개인·가족 지출은 그 대분류로 분류하세요). <b>자산구입</b>(장비 등 일회성 투자)은 운영손익과 분리해 별도(투자)로 표시됩니다. 손익분기 매출은 월평균 운영지출 기준의 근사치입니다.</p>
+  </div>`;
 }
 function viewLedger(){
   const mo=thisMonth();const d=new Date(todayStr()+"T00:00:00");
@@ -2256,7 +2342,7 @@ function stuSubBar(){
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.stuSub||"list")===k?'on':''}" onclick="ui.stuSub='${k}';ui.detailId=null;render()">${l}</button>`).join("")}</div>`;
 }
 function paySubBar(){
-  let subs=[["dash","📊 대시보드"],["sales","💳 수강료 납입내역"],["byname","🔎 수강생별 조회"],["sms","📱 결제안내 문자"],["inc","📥 수입내역"],["exp","📤 지출내역"],["loan","🏦 대출관리"]];
+  let subs=[["dash","📊 대시보드"],["sales","💳 수강료 납입내역"],["byname","🔎 수강생별 조회"],["sms","📱 결제안내 문자"],["inc","📥 수입내역"],["exp","📤 지출내역"],["biz","📈 경영분석"],["loan","🏦 대출관리"]];
   if(ROLE==="부원장")subs=subs.filter(([k])=>STAFF_PAY_ALLOWED.includes(k));
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.paySub||"dash")===k?'on':''}" onclick="ui.paySub='${k}';render()">${l}</button>`).join("")}</div>`;
 }
@@ -4278,7 +4364,7 @@ function viewInc(){
     <div class="card" style="padding:10px 14px"><span class="lab">${ui.incMonth} 수입 합계 </span><b style="color:var(--green)">${won(sum)}원</b></div>
     <button class="btn sm" onclick="document.getElementById('bankFile').click()">🏦 은행 거래내역 가져오기</button>
     <input type="file" id="bankFile" accept=".xls,.xlsx" style="display:none" onchange="importBank(this)">
-    <button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="ui.incCleanup=!ui.incCleanup;render()">🧹 미분류 한번에 정리</button>
+    <button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="ui.incCleanup=!ui.incCleanup;render()">🧹 미분류 정리 (${DB.income.filter(l=>l.big==="기타수입"&&l.acct==="기타").length}건)</button>
   </div>
   ${ui.incCleanup?cleanupPanelHtml("inc"):""}
   <div class="formbox">
@@ -4396,7 +4482,7 @@ function viewExp(){
     <div class="card" style="padding:10px 14px"><span class="lab">${ui.expMonth} 지출 합계 </span><b style="color:var(--red)">${won(sum)}원</b></div>
     <button class="btn sm" onclick="document.getElementById('bankFileE').click()">🏦 은행 거래내역 가져오기</button>
     <input type="file" id="bankFileE" accept=".xls,.xlsx" style="display:none" onchange="importBank(this)">
-    <button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="ui.expCleanup=!ui.expCleanup;render()">🧹 미분류 한번에 정리</button>
+    <button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="ui.expCleanup=!ui.expCleanup;render()">🧹 미분류 정리 (${DB.expense.filter(l=>l.big==="기타지출"&&l.acct==="기타").length}건)</button>
   </div>
   ${ui.expCleanup?cleanupPanelHtml("exp"):""}
   <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
@@ -6155,14 +6241,16 @@ function cleanupPanelHtml(kind){
       <td style="text-align:right">${won(total)}원</td>
       <td><select id="cln_big_${i}" onchange="cleanFillAcct('${kind}',${i})">${bigs.map(b=>`<option>${esc(b)}</option>`).join("")}</select></td>
       <td><select id="cln_acct_${i}">${(CAT[bigs[0]]||[]).map(a=>`<option>${esc(a)}</option>`).join("")}</select></td>
+      <td><input id="cln_kw_${i}" value="${esc(guessKeyword(g.vendor))}" style="width:100px;padding:3px" title="이 단어가 포함된 거래는 다음부터 자동분류됩니다"></td>
       <td><button class="btn sm" onclick="cleanApply(${i})">✓ 적용</button></td>
     </tr>`;
   }).join("");
   return `<div class="panel" style="border:2px solid var(--green)"><h2><span>🧹 미분류 한번에 정리 <span style="font-size:13px;color:var(--sub)">— 전체 기간 미분류 ${un.length}건을 거래처별로 묶었습니다. 한 줄씩 분류하면 그 거래처의 모든 건이 한번에 바뀝니다.</span></span>
     <button class="btn sm" onclick="ui.${kind}Cleanup=false;render()">닫기</button></h2>
-    <div class="twrap" style="border:none"><table><thead><tr><th style="text-align:left">거래처 (건수·기간)</th><th>합계</th><th>대분류</th><th>계정과목</th><th></th></tr></thead>
+    <div class="twrap" style="border:none"><table><thead><tr><th style="text-align:left">거래처 (건수·기간)</th><th>합계</th><th>대분류</th><th>계정과목</th><th>자동분류 키워드</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <p class="note">※ 건수 많은 거래처가 위에 있습니다. ✓ 적용을 누르면 즉시 저장되고, 다음 은행 가져오기부터 그 거래처는 자동 분류됩니다.</p>
+    <p class="note">※ ✓ 적용을 누르면 그 거래의 분류가 저장되고, <b>‘자동분류 키워드’에 적은 단어가 포함된 거래는 다음 은행 가져오기부터 자동 분류</b>됩니다. (예: 키워드 "네이버" → 이름에 네이버가 들어간 모든 거래 자동분류)</p>
+    <div style="font-size:12px;color:var(--sub);margin-top:6px">🏷 저장된 자동분류 키워드 (${getClassRules().length}개): ${getClassRules().map((r,i)=>`<span style="display:inline-flex;align-items:center;background:var(--green-light);border-radius:10px;padding:1px 3px 1px 9px;margin:2px">${esc(r.kw)} → ${esc(r.acct)}<button style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:12px;padding:0 5px" onclick="delClassRule(${i})" title="규칙 삭제">✕</button></span>`).join("")||"아직 없음 — 위에서 ✓ 적용하면 자동 등록됩니다"}</div>
   </div>`;
 }
 function cleanFillAcct(kind,i){
@@ -6176,9 +6264,16 @@ function cleanApply(i){
   const big=val("cln_big_"+i),acct=val("cln_acct_"+i);
   const list=g.kind==="inc"?DB.income:DB.expense;
   g.ids.forEach(id=>{const l=list.find(x=>String(x.id)===String(id));if(l){l.big=big;l.acct=acct;}});
+  const kw=(val("cln_kw_"+i)||"").trim();
+  if(kw){ const rules=getClassRules(); const ex=rules.find(r=>r.kw===kw); if(ex){ex.big=big;ex.acct=acct;} else rules.push({kw,big,acct}); saveClassRules(rules); }
   save();render();
 }
 
+/* 키워드 자동분류 규칙 (부분 일치) — 은행 거래처 이름이 매번 달라도 잡히도록 */
+function getClassRules(){ const r=DB.settings.find(x=>x.key==="classRules"); try{return r&&r.value?JSON.parse(r.value):[];}catch(e){return [];} }
+function saveClassRules(arr){ let r=DB.settings.find(x=>x.key==="classRules"); const v=JSON.stringify(arr); if(r)r.value=v; else DB.settings.push({id:uid(),key:"classRules",value:v}); }
+function delClassRule(i){ const arr=getClassRules(); arr.splice(i,1); saveClassRules(arr); save(); render(); }
+function guessKeyword(v){ const g=String(v||"").replace(/\d/g,"").replace(/[()_\-.\/\[\]|]+/g," ").replace(/\s+/g," ").trim(); return g||String(v||"").trim(); }
 /* 과거 내역에서 거래처·적요 → 대분류·계정과목 학습 (최근 분류 우선) */
 function classMapOf(list, defBig){
   const byVendor={},byDesc={};
@@ -6217,7 +6312,12 @@ function importBank(input){
       let incCnt=0,expCnt=0,dupCnt=0,autoCnt=0;const newInc=[],newExp=[];
       // 과거 분류 학습 (같은 거래처·적요면 자동으로 같은 분류 적용)
       const incMap=classMapOf(DB.income,"기타수입"), expMap=classMapOf(DB.expense,"기타지출");
-      const autoClass=(map,who,d)=>map.byVendor[String(who||"").trim()]||map.byDesc[String(d||"").trim()]||null;
+      const _rules=getClassRules().slice().sort((a,b)=>(b.kw||"").length-(a.kw||"").length);
+      const autoClass=(map,who,d,memo)=>{
+        const text=(String(who||"")+" "+String(d||"")+" "+String(memo||""));
+        for(const r of _rules){ if(r.kw && text.includes(r.kw)) return {big:r.big,acct:r.acct}; }
+        return map.byVendor[String(who||"").trim()]||map.byDesc[String(d||"").trim()]||null;
+      };
       // 중복 판정용 키: 날짜|적요|거래처|금액 (기존 데이터 + 이번에 추가될 데이터 모두 비교)
       const keyOf=(date,desc,vendor,amount)=>`${normDate(date)}|${String(desc).trim()}|${String(vendor).trim()}|${amount}`;
       const existIncKeys=new Set(DB.income.map(l=>keyOf(l.date,l.desc,l.vendor,Number(l.amount))));
@@ -6271,7 +6371,7 @@ function importBank(input){
           const k=keyOf(dt,d,who,inAmt);
           if(existIncKeys.has(k)){dupCnt++;continue;} // 이미 있는 항목 건너뜀
           existIncKeys.add(k);
-          const ac=autoClass(incMap,who,d);if(ac)autoCnt++;
+          const ac=autoClass(incMap,who,d,memo);if(ac)autoCnt++;
           newInc.push({id:uid(),date:dt,big:ac?ac.big:"기타수입",acct:ac?ac.acct:"기타",desc:d,vendor:who,memo:memo,amount:inAmt,method:"계좌이체",note:"은행내역 자동등록"});incCnt++;
         }
         else if(outAmt>0){
@@ -6279,7 +6379,7 @@ function importBank(input){
           const k=keyOf(dt,d,who,outAmt);
           if(existExpKeys.has(k)){dupCnt++;continue;}
           existExpKeys.add(k);
-          const ac=autoClass(expMap,who,d);if(ac)autoCnt++;
+          const ac=autoClass(expMap,who,d,memo);if(ac)autoCnt++;
           newExp.push({id:uid(),date:dt,big:ac?ac.big:"기타지출",acct:ac?ac.acct:"기타",desc:d,vendor:who,memo:memo,amount:outAmt,discount:0,paidAmount:outAmt,method:"계좌이체",note:"은행내역 자동등록"});expCnt++;
         }
       }
