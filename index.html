@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>제이컴퓨터학원 통합관리시스템 v4</title>
+<title>제이컴퓨터학원 통합관리시스템</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.42 (2026-09-02) Supabase+Auth";
+const APP_VERSION="v6.43 (2026-09-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -546,7 +546,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours", "classTimes", "noRenew"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle", "cashReceipt"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name", "gubun"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"],checks:["id","kind","assetId","name","code","month","date","result","note"],loans:["id","name","method","principal","rate","startDate","endDate","termMonths","graceMonths","rateType","intCycle","prinCycle","earlyFee","earlyFeeRate","interestDay","account","note"],loanpays:["id","loanId","date","kind","amount","note"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours", "classTimes", "noRenew"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle", "cashReceipt"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "publisher", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name", "gubun"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"],checks:["id","kind","assetId","name","code","month","date","result","note"],loans:["id","name","method","principal","rate","startDate","endDate","termMonths","graceMonths","rateType","intCycle","prinCycle","earlyFee","earlyFeeRate","interestDay","account","note"],loanpays:["id","loanId","date","kind","amount","note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -4502,6 +4502,7 @@ function delExp(id){if(confirm("이 지출 기록을 삭제할까요?")){DB.expe
 
 /* ───── 도서관리 ───── */
 function bookTitles(){return [...new Set(DB.bookin.map(b=>b.title))].sort((a,b)=>String(a).localeCompare(String(b),"ko"));}
+function bookPubs(){return [...new Set(DB.bookin.map(b=>b.publisher).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"ko"));}
 function latestBuyPrice(title){
   const list=DB.bookin.filter(b=>b.title===title).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   return list.length?Number(list[0].buyPrice):0;
@@ -4510,26 +4511,26 @@ function printStock(){
   const V=_bookStockView();
   const stock=V.stock, subjF=V.subjF, venF=V.venF, hideZero=V.hideZero;
   const titles=[...V.fTitles].sort((a,b)=>String(a).localeCompare(String(b),"ko"));
-  const rows=titles.map((t,i)=>{const x=stock[t],rem=x.inQ-x.outQ;return `<tr><td style="text-align:center">${i+1}</td><td>${esc(t)}</td><td>${esc(x.subject)||"-"}</td><td>${esc((x.vendors||[]).join(", "))||"-"}</td><td style="text-align:center">${x.inQ}</td><td style="text-align:center">${x.outQ}</td><td style="text-align:center;font-weight:bold">${rem}</td><td></td><td></td></tr>`;}).join("");
-  const fparts=["과목: "+(subjF==="전체"?"전체":subjF), "구입처: "+(venF==="전체"?"전체":venF)];
+  const rows=titles.map((t,i)=>{const x=stock[t],rem=x.inQ-x.outQ;return `<tr><td style="text-align:center">${i+1}</td><td>${esc(t)}</td><td>${esc(x.subject)||"-"}</td><td>${esc((x.vendors||[]).join(", "))||"-"}</td><td>${esc((x.publishers||[]).join(", "))||"-"}</td><td style="text-align:center">${x.inQ}</td><td style="text-align:center">${x.outQ}</td><td style="text-align:center;font-weight:bold">${rem}</td><td></td><td></td></tr>`;}).join("");
+  const fparts=["과목: "+(subjF==="전체"?"전체":subjF), "구입처: "+(venF==="전체"?"전체":venF), "출판사: "+((V.pubF||"전체")==="전체"?"전체":V.pubF)];
   if(hideZero)fparts.push("재고 있는 것만");
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>도서 재고조사표</title>
   <style>
-    @page{size:A4 landscape;margin:12mm}
+    @page{size:A4 portrait;margin:10mm}
     body{font-family:'Malgun Gothic',sans-serif;color:#000}
-    h1{text-align:center;font-size:20px;margin:0 0 4px}
+    h1{text-align:center;font-size:18px;margin:0 0 4px}
     .info{text-align:right;font-size:12px;margin-bottom:4px}
     .filt{font-size:12px;margin-bottom:10px;padding:5px 8px;background:#f2f2f2;border:1px solid #ccc;border-radius:4px}
-    table{width:100%;border-collapse:collapse;font-size:12.5px}
-    th,td{border:1px solid #000;padding:6px 5px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th,td{border:1px solid #000;padding:4px 3px}
     th{background:#eee}
     .sign{margin-top:20px;text-align:right;font-size:13px}
   </style></head><body>
   <h1>제이컴퓨터학원 도서 재고조사표</h1>
   <div class="info">조사일: ${todayStr()} &nbsp;&nbsp; 조사자: ____________</div>
   <div class="filt"><b>조회조건</b> — ${fparts.join(" / ")} &nbsp;&nbsp;(${titles.length}종)</div>
-  <table><thead><tr><th style="width:5%">No</th><th>교재명</th><th style="width:11%">과목</th><th style="width:14%">구입처</th><th style="width:8%">입고</th><th style="width:8%">출고</th><th style="width:10%">전산재고</th><th style="width:10%">실재고</th><th style="width:12%">비고</th></tr></thead>
-  <tbody>${rows||'<tr><td colspan="9" style="text-align:center">조건에 맞는 재고가 없습니다</td></tr>'}</tbody></table>
+  <table><thead><tr><th style="width:5%">No</th><th>교재명</th><th style="width:9%">과목</th><th style="width:12%">구입처</th><th style="width:12%">출판사</th><th style="width:7%">입고</th><th style="width:7%">출고</th><th style="width:9%">전산</th><th style="width:9%">실재고</th><th style="width:10%">비고</th></tr></thead>
+  <tbody>${rows||'<tr><td colspan="10" style="text-align:center">조건에 맞는 재고가 없습니다</td></tr>'}</tbody></table>
   <p style="font-size:12px;margin-top:8px">※ 전산재고 = 입고−출고. ‘실재고’ 칸에 실제 조사 수량을 적고 차이를 비고에 기록하세요.</p>
   <div class="sign">확인: 원장 ____________ (인)</div>
   <script>window.onload=function(){window.print();}<\/script>
@@ -4549,8 +4550,8 @@ function viewBookSub(sub){
 }
 function _bookStock(){
   const stock={};
-  DB.bookin.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,inA:0,outQ:0,outA:0,subject:"",vendors:[]};stock[t].inQ+=Number(b.qty);stock[t].inA+=Number(b.amount);if(b.subject)stock[t].subject=b.subject;if(b.vendor&&!stock[t].vendors.includes(b.vendor))stock[t].vendors.push(b.vendor);});
-  DB.bookout.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,inA:0,outQ:0,outA:0,subject:"",vendors:[]};stock[t].outQ+=Number(b.qty);stock[t].outA+=Number(b.amount);});
+  DB.bookin.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,inA:0,outQ:0,outA:0,subject:"",vendors:[],publishers:[]};stock[t].inQ+=Number(b.qty);stock[t].inA+=Number(b.amount);if(b.subject)stock[t].subject=b.subject;if(b.vendor&&!stock[t].vendors.includes(b.vendor))stock[t].vendors.push(b.vendor);if(b.publisher&&!stock[t].publishers.includes(b.publisher))stock[t].publishers.push(b.publisher);});
+  DB.bookout.forEach(b=>{const t=b.title;stock[t]=stock[t]||{inQ:0,inA:0,outQ:0,outA:0,subject:"",vendors:[],publishers:[]};stock[t].outQ+=Number(b.qty);stock[t].outA+=Number(b.amount);});
   return stock;
 }
 function _bookStockView(){
@@ -4558,15 +4559,17 @@ function _bookStockView(){
   const allTitles=Object.keys(stock).sort();
   const subjects=[...new Set(DB.bookin.map(b=>b.subject).filter(Boolean))].sort();
   const vendors=[...new Set(DB.bookin.map(b=>b.vendor).filter(Boolean))].sort();
-  const subjF=ui.bookFilterSubject||"전체", venF=ui.bookFilterVendor||"전체", hideZero=ui.bookHideZero||false;
+  const publishers=[...new Set(DB.bookin.map(b=>b.publisher).filter(Boolean))].sort();
+  const subjF=ui.bookFilterSubject||"전체", venF=ui.bookFilterVendor||"전체", pubF=ui.bookFilterPub||"전체", hideZero=ui.bookHideZero||false;
   const fTitles=allTitles.filter(t=>{
     const x=stock[t];
     if(subjF!=="전체" && (x.subject||"")!==subjF) return false;
     if(venF!=="전체" && !(x.vendors||[]).includes(venF)) return false;
+    if(pubF!=="전체" && !(x.publishers||[]).includes(pubF)) return false;
     if(hideZero && (x.inQ-x.outQ)<=0) return false;
     return true;
   });
-  return {stock,titles:allTitles,fTitles,subjects,vendors,subjF,venF,hideZero};
+  return {stock,titles:allTitles,fTitles,subjects,vendors,publishers,subjF,venF,pubF,hideZero};
 }
 function bookDetailHtml(title){
   const ins=DB.bookin.filter(b=>b.title===title).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
@@ -4613,7 +4616,7 @@ function bookDetailHtml(title){
 function viewBookQuick(){
   const V=_bookStockView();
   const stock=V.stock, titles=V.titles, fTitles=V.fTitles;
-  const subjF=V.subjF, venF=V.venF, hideZero=V.hideZero;
+  const subjF=V.subjF, venF=V.venF, pubF=V.pubF, hideZero=V.hideZero;
   const sel=ui.bookSel&&stock[ui.bookSel]?ui.bookSel:"";
   const q=sel?stock[sel]:null;
   const quick=`<div class="panel" style="margin-top:0"><h2>🔍 도서 빠른 조회</h2>
@@ -4655,7 +4658,7 @@ function viewBookQuick(){
     const rate=x.inQ?Math.round(x.outQ/x.inQ*100):0; // 소진율(참고 수치)
     return `<tr>
       <td><b>${esc(t)}</b></td>
-      <td>${esc(x.subject)||"-"}</td><td>${esc((x.vendors||[]).join(", "))||"-"}</td>
+      <td>${esc(x.subject)||"-"}</td><td>${esc((x.vendors||[]).join(", "))||"-"}</td><td>${esc((x.publishers||[]).join(", "))||"-"}</td>
       <td>${x.inQ}</td><td>${won(x.inA)}원</td>
       <td>${x.outQ}</td><td>${x.outA?won(x.outA)+"원":"-"}</td>
       <td style="text-align:center">${x.inQ?rate+"%":"-"}</td>
@@ -4673,6 +4676,10 @@ function viewBookQuick(){
         <option value="전체" ${venF==='전체'?'selected':''}>구입처: 전체</option>
         ${V.vendors.map(x=>`<option value="${esc(x)}" ${venF===x?'selected':''}>${esc(x)}</option>`).join("")}
       </select>
+      <select onchange="ui.bookFilterPub=this.value;ui.bookPage.stock=1;render()" style="padding:5px">
+        <option value="전체" ${pubF==='전체'?'selected':''}>출판사: 전체</option>
+        ${V.publishers.map(x=>`<option value="${esc(x)}" ${pubF===x?'selected':''}>${esc(x)}</option>`).join("")}
+      </select>
       <label style="font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap"><input type="checkbox" ${hideZero?'checked':''} onchange="ui.bookHideZero=this.checked;ui.bookPage.stock=1;render()">재고 있는 것만</label>
       <select onchange="ui.bookStockSort=this.value;ui.bookPage.stock=1;render()" style="padding:5px">
         <option value="title" ${sMode==='title'?'selected':''}>교재명순</option>
@@ -4683,11 +4690,11 @@ function viewBookQuick(){
         <option value="inAsc" ${sMode==='inAsc'?'selected':''}>입고 적은순</option>
         <option value="inDesc" ${sMode==='inDesc'?'selected':''}>입고 많은순</option>
       </select>
-      <button class="btn sm" onclick="printStock()">🖨 재고조사표 인쇄 (A4)</button>
+      <button class="btn sm" onclick="printStock()">🖨 재고조사표 인쇄 (A4 세로)</button>
     </span></h2>
-    <div style="overflow:auto"><table><thead><tr><th>교재명</th><th>과목</th><th>구입처</th><th>입고수량</th><th>입고금액</th><th>출고수량</th><th>출고금액</th><th>소진율</th><th>잔여재고</th></tr></thead>
-    <tbody>${stockRows||`<tr><td colspan="9" class="empty">‘입고 기록’ 탭에서 교재를 등록하면 재고가 자동 집계됩니다.</td></tr>`}
-    ${titles.length?`<tr style="background:var(--green-light)"><td><b>전체 합계</b></td><td></td><td></td><td><b>${tot.inQ}</b></td><td><b>${won(tot.inA)}원</b></td><td><b>${tot.outQ}</b></td><td><b>${won(tot.outA)}원</b></td><td style="text-align:center"><b>${tot.inQ?Math.round(tot.outQ/tot.inQ*100)+"%":"-"}</b></td><td><b>${tot.rem}권</b></td></tr>`:""}
+    <div style="overflow:auto"><table><thead><tr><th>교재명</th><th>과목</th><th>구입처</th><th>출판사</th><th>입고수량</th><th>입고금액</th><th>출고수량</th><th>출고금액</th><th>소진율</th><th>잔여재고</th></tr></thead>
+    <tbody>${stockRows||`<tr><td colspan="10" class="empty">‘입고 기록’ 탭에서 교재를 등록하면 재고가 자동 집계됩니다.</td></tr>`}
+    ${titles.length?`<tr style="background:var(--green-light)"><td><b>전체 합계</b></td><td></td><td></td><td></td><td><b>${tot.inQ}</b></td><td><b>${won(tot.inA)}원</b></td><td><b>${tot.outQ}</b></td><td><b>${won(tot.outA)}원</b></td><td style="text-align:center"><b>${tot.inQ?Math.round(tot.outQ/tot.inQ*100)+"%":"-"}</b></td><td><b>${tot.rem}권</b></td></tr>`:""}
     </tbody></table></div>
     ${pagerHtml('stock',pgS)}
     <p class="note">※ <b>소진율</b> = 출고÷입고 (참고 수치). 잔여가 음수인 경우만 빨간색으로 표시됩니다(입출고 기록 확인용). 화면은 10행씩 표시되며, 인쇄 시 전체가 출력됩니다.</p>
@@ -4701,19 +4708,21 @@ function viewBookIn(){
       <label class="fld">입고일<input type="date" id="b_dt" value="${todayStr()}"></label>
       <label class="fld">과목<select id="b_sj"><option>OA</option><option>CAD</option><option>디자인</option><option>기타</option></select></label>
       <label class="fld">구입처<select id="b_vd"><option>북메이커</option><option>교보문고</option><option>성안당</option><option>기타</option></select></label>
+      <label class="fld">출판사<input id="b_pub" list="bkPubs" placeholder="예: 영진, 길벗"><datalist id="bkPubs">${bookPubs().map(pp=>`<option value="${esc(pp)}">`).join("")}</datalist></label>
       <label class="fld" style="grid-column:span 2">교재명<input id="b_tt" list="bkTitles"><datalist id="bkTitles">${bookTitles().map(t=>`<option value="${esc(t)}">`).join("")}</datalist></label>
       <label class="fld">정가(원)<input type="number" id="b_lp" value="0"></label>
       <label class="fld">구입가(원)<input type="number" id="b_bp" value="0"></label>
       <label class="fld">권수<input type="number" id="b_q" value="1"></label>
       <button class="btn" onclick="addBookIn()">입고 기록</button>
     </div>
-    <div class="twrap"><table><thead><tr><th>입고일</th><th>과목</th><th>구입처</th><th>교재명</th><th>정가</th><th>구입가</th><th>할인율</th><th>권수</th><th>입고금액</th><th></th></tr></thead><tbody>
+    <div class="twrap"><table><thead><tr><th>입고일</th><th>과목</th><th>구입처</th><th>출판사</th><th>교재명</th><th>정가</th><th>구입가</th><th>할인율</th><th>권수</th><th>입고금액</th><th></th></tr></thead><tbody>
     ${pgI.rows.length?pgI.rows.map(b=>{
       if(String(ui.bookInEditId)===String(b.id)){
         return `<tr style="background:var(--green-light)">
           <td><input type="date" id="bi_dt" value="${esc(b.date)}" style="padding:4px"></td>
           <td><select id="bi_sj" style="padding:4px">${["OA","CAD","디자인","기타"].map(x=>`<option ${b.subject===x?'selected':''}>${x}</option>`).join("")}</select></td>
           <td><select id="bi_vd" style="padding:4px">${["북메이커","교보문고","성안당","기타"].map(x=>`<option ${b.vendor===x?'selected':''}>${x}</option>`).join("")}</select></td>
+          <td><input id="bi_pub" value="${esc(b.publisher||"")}" list="bkPubs" style="padding:4px;width:90px"></td>
           <td><input id="bi_tt" value="${esc(b.title)}" style="padding:4px;width:130px"></td>
           <td><input type="number" id="bi_lp" value="${Number(b.listPrice)||0}" style="padding:4px;width:80px"></td>
           <td><input type="number" id="bi_bp" value="${Number(b.buyPrice)||0}" style="padding:4px;width:80px"></td>
@@ -4723,9 +4732,9 @@ function viewBookIn(){
           <td style="white-space:nowrap"><button class="btn sm" onclick="saveBookIn('${b.id}')">저장</button> <button class="btn sm" onclick="ui.bookInEditId=null;render()">취소</button></td></tr>`;
       }
       const dr=b.listPrice?Math.round((1-b.buyPrice/b.listPrice)*100):0;
-      return `<tr><td>${esc(b.date)}</td><td>${esc(b.subject)}</td><td>${esc(b.vendor)}</td><td>${esc(b.title)}</td><td>${won(b.listPrice)}</td><td>${won(b.buyPrice)}</td><td>${dr?dr+"%":"-"}</td><td>${b.qty}</td><td><b>${won(b.amount)}원</b></td>
+      return `<tr><td>${esc(b.date)}</td><td>${esc(b.subject)}</td><td>${esc(b.vendor)}</td><td>${esc(b.publisher||"")}</td><td>${esc(b.title)}</td><td>${won(b.listPrice)}</td><td>${won(b.buyPrice)}</td><td>${dr?dr+"%":"-"}</td><td>${b.qty}</td><td><b>${won(b.amount)}원</b></td>
       <td style="white-space:nowrap"><button class="btn sm" onclick="ui.bookInEditId='${b.id}';render()">수정</button> <button class="btn sm" onclick="delBookIn('${b.id}')">삭제</button></td></tr>`;
-    }).join(""):`<tr><td colspan="10" class="empty">입고 기록이 없습니다.</td></tr>`}
+    }).join(""):`<tr><td colspan="11" class="empty">입고 기록이 없습니다.</td></tr>`}
     </tbody></table></div>
     ${pagerHtml('bin',pgI)}
     <p class="note">※ 입고금액 = 구입가 × 권수, 할인율 = 정가 대비 (자동 계산).</p>
@@ -4738,7 +4747,7 @@ function viewBookOut(){
     <div class="formbox" style="margin-bottom:10px">
       <label class="fld">출고일<input type="date" id="o_dt" value="${todayStr()}"></label>
       <label class="fld">성명<input id="o_nm" list="stuNames2" placeholder="수강생명 또는 ‘견본’"><datalist id="stuNames2">${[...DB.students].sort((a,b)=>String(a.name).localeCompare(String(b.name),"ko")).map(st=>`<option value="${esc(st.name)}">`).join("")}<option value="견본"></datalist></label>
-      <label class="fld" style="grid-column:span 2">교재명<select id="o_tt">${bookTitles().map(t=>`<option>${esc(t)}</option>`).join("")}</select></label>
+      <label class="fld" style="grid-column:span 2">교재명<input id="o_tt" list="bkTitlesOut" placeholder="입력하면 검색됩니다"></label>
       <label class="fld">권수<input type="number" id="o_q" value="1"></label>
       <label class="fld">비고<input id="o_no" placeholder="예: 견본, 무상지급"></label>
       <button class="btn" onclick="addBookOut()">출고 기록</button>
@@ -4770,7 +4779,7 @@ function viewBook(){
 function addBookIn(){
   const tt=val("b_tt").trim(),bp=num("b_bp"),q=num("b_q");
   if(!tt||!q){alert("교재명과 권수는 필수입니다. (견본은 정가·구입가 0원으로 입력)");return;}
-  DB.bookin.push({id:uid(),date:val("b_dt"),subject:val("b_sj"),vendor:val("b_vd"),title:tt,listPrice:num("b_lp"),buyPrice:bp,qty:q,amount:bp*q,note:bp===0?"견본":""});
+  DB.bookin.push({id:uid(),date:val("b_dt"),subject:val("b_sj"),vendor:val("b_vd"),publisher:val("b_pub"),title:tt,listPrice:num("b_lp"),buyPrice:bp,qty:q,amount:bp*q,note:bp===0?"견본":""});
   save();render();
 }
 function delBookIn(id){if(confirm("이 입고 기록을 삭제할까요? (재고에 반영됩니다)")){DB.bookin=DB.bookin.filter(x=>String(x.id)!==String(id));save();render();}}
@@ -4787,7 +4796,7 @@ function saveBookIn(id){
   const b=DB.bookin.find(x=>String(x.id)===String(id));if(!b)return;
   const tt=val("bi_tt").trim(),q=num("bi_q");
   if(!tt||!q){alert("교재명과 권수는 필수입니다.");return;}
-  b.date=val("bi_dt");b.subject=val("bi_sj");b.vendor=val("bi_vd");b.title=tt;
+  b.date=val("bi_dt");b.subject=val("bi_sj");b.vendor=val("bi_vd");b.publisher=val("bi_pub");b.title=tt;
   b.listPrice=num("bi_lp");b.buyPrice=num("bi_bp");b.qty=q;b.amount=b.buyPrice*q;
   ui.bookInEditId=null;save();render();
 }
@@ -6358,7 +6367,7 @@ function restoreExcel(input){
 
       // 도서 관리 (시트명 띄어쓰기 유무 모두 인식)
       const bookin=get("도서구입내역")||get("도서 구입내역"),bookout=get("도서지급내역")||get("도서 지급내역");
-      if(bookin)DB.bookin=bookin.filter(r=>r.교재명).map(r=>({id:uid(),date:exDate(r.입고일),subject:r.과목,vendor:r.구입처,title:r.교재명,listPrice:Number(r.정가)||0,buyPrice:Number(r.구입가)||0,qty:Number(r.권수)||0,amount:Number(r.입고금액)||0,note:r.비고}));
+      if(bookin)DB.bookin=bookin.filter(r=>r.교재명).map(r=>({id:uid(),date:exDate(r.입고일),subject:r.과목,vendor:r.구입처,publisher:r.출판사||"",title:r.교재명,listPrice:Number(r.정가)||0,buyPrice:Number(r.구입가)||0,qty:Number(r.권수)||0,amount:Number(r.입고금액)||0,note:r.비고}));
       if(bookout)DB.bookout=bookout.filter(r=>r.교재명).map(r=>({id:uid(),date:exDate(r.출고일),name:r.성명,title:r.교재명,price:Number(r.단가)||0,qty:Number(r.권수)||0,amount:Number(r.출고금액)||0,note:r.비고}));
 
       // 업무·상담·과정·이력·시간표·보강·회의
@@ -6427,8 +6436,8 @@ function exportExcel(){
   DB.bookout.forEach(b=>{bkStock[b.title]=bkStock[b.title]||{inQ:0,inA:0,outQ:0,outA:0};bkStock[b.title].outQ+=Number(b.qty);bkStock[b.title].outA+=Number(b.amount);});
   sheetOf(Object.keys(bkStock).sort().map(t=>({교재명:t,입고수량:bkStock[t].inQ,입고금액:bkStock[t].inA,출고수량:bkStock[t].outQ,출고금액:bkStock[t].outA,잔여수량:bkStock[t].inQ-bkStock[t].outQ})),
     {교재명:"",입고수량:"",입고금액:"",출고수량:"",출고금액:"",잔여수량:""},"도서 재고");
-  sheetOf(DB.bookin.map(b=>({입고일:b.date,과목:b.subject,구입처:b.vendor,교재명:b.title,정가:b.listPrice,구입가:b.buyPrice,할인율:b.listPrice?Math.round((1-b.buyPrice/b.listPrice)*100)+"%":"",권수:b.qty,입고금액:b.amount})),
-    {입고일:"",과목:"",구입처:"",교재명:"",정가:"",구입가:"",할인율:"",권수:"",입고금액:""},"도서 구입내역");
+  sheetOf(DB.bookin.map(b=>({입고일:b.date,과목:b.subject,구입처:b.vendor,출판사:b.publisher||"",교재명:b.title,정가:b.listPrice,구입가:b.buyPrice,할인율:b.listPrice?Math.round((1-b.buyPrice/b.listPrice)*100)+"%":"",권수:b.qty,입고금액:b.amount})),
+    {입고일:"",과목:"",구입처:"",출판사:"",교재명:"",정가:"",구입가:"",할인율:"",권수:"",입고금액:""},"도서 구입내역");
   sheetOf(DB.bookout.map(b=>({출고일:b.date,성명:b.name,교재명:b.title,단가:b.price,권수:b.qty,출고금액:b.amount,비고:b.note})),
     {출고일:"",성명:"",교재명:"",단가:"",권수:"",출고금액:"",비고:""},"도서 지급내역");
   sheetOf(DB.worklogs.map(w=>({일자:w.date,작성자:w.writer,내용:w.text,완료:w.done||"",반복:w.repeat||""})),{일자:"",작성자:"",내용:"",완료:"",반복:""},"업무일지");
