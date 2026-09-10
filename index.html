@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.50 (2026-09-07) Supabase+Auth";
+const APP_VERSION="v6.51 (2026-09-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -4252,7 +4252,7 @@ function salesRowsHtml(list){
         <td><input id="fe_cc" value="${esc(l.cardCo)}" style="padding:4px;width:60px"></td>
         <td><input id="fe_ap" value="${esc(l.approval)}" style="padding:4px;width:80px"></td>
         <td>${esc(l.depositDate)||"-"}</td><td>${l.depositAmount?won(l.depositAmount):"-"}</td><td>${l.fee?won(l.fee):"-"}</td>
-        <td><input id="fe_no" value="${esc(l.note)}" style="padding:4px;width:80px"><label style="font-size:10.5px;display:flex;align-items:center;gap:3px;margin-top:2px"><input type="checkbox" id="fe_cr" ${l.cashReceipt?"checked":""}>현금영수증</label></td></tr>`;
+        <td><input id="fe_no" value="${esc(l.note)}" style="padding:4px;width:80px"><label style="font-size:10.5px;display:flex;align-items:center;gap:3px;margin-top:2px"><input type="checkbox" id="fe_cr" ${l.cashReceipt?"checked":""}>현금영수증</label><label style="font-size:10.5px;display:flex;align-items:center;gap:3px"><input type="checkbox" id="fe_vc" ${l.voucher?"checked":""}>🎫이용권</label></td></tr>`;
     }
     const depCell=editing?`
       <td><input type="date" id="ed_dd" value="${esc(l.depositDate)}" style="padding:5px"></td>
@@ -4303,7 +4303,7 @@ function saveSalesFull(id){
   const tu=num("fe_tu"),dc=num("fe_dc");
   l.date=val("fe_dt");l.method=val("fe_md");l.gubun=val("fe_gb");l.name=val("fe_nm").trim();
   l.course=val("fe_co");l.payType=val("fe_pt");l.payCycle=val("fe_pc");
-  l.tuition=tu;l.discount=dc;l.paidAmount=tu-dc;l.cardCo=val("fe_cc");l.approval=val("fe_ap");l.note=val("fe_no");l.cashReceipt=(document.getElementById("fe_cr")&&document.getElementById("fe_cr").checked)||false;
+  l.tuition=tu;l.discount=dc;l.paidAmount=tu-dc;l.cardCo=val("fe_cc");l.approval=val("fe_ap");l.note=val("fe_no");l.cashReceipt=(document.getElementById("fe_cr")&&document.getElementById("fe_cr").checked)||false;l.voucher=(document.getElementById("fe_vc")&&document.getElementById("fe_vc").checked)||false;
   ui.salesFullEditId=null;ui.salesSel=[];save();render();
 }
 function refreshSalesTable(){
@@ -4573,7 +4573,70 @@ function addInc(){
 }
 function delInc(id){if(confirm("이 수입 기록을 삭제할까요?")){DB.income=DB.income.filter(x=>String(x.id)!==String(id));save();render();}}
 
+function expQuickStart(scope){ ui.expQuick={on:true,scope:scope||"미분류",q:(ui.expQuick&&ui.expQuick.q)||"",idx:0}; render(); }
+function expQuickClose(){ ui.expQuick={on:false}; render(); }
+function expQuickList(){
+  const Q=ui.expQuick||{};
+  let list;
+  if(Q.scope==="전체") list=DB.expense.slice();
+  else if(Q.scope==="검색"){ const q=(Q.q||"").trim(); list=q?DB.expense.filter(l=>((l.vendor||"")+" "+(l.desc||"")+" "+(l.memo||"")+" "+(l.acct||"")).includes(q)):[]; }
+  else list=DB.expense.filter(l=>l.big==="기타지출"&&l.acct==="기타"); // 미분류
+  return list.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+}
+function expQuickTopAccts(){
+  const cnt={};
+  DB.expense.forEach(l=>{ if(l.big==="기타지출"&&l.acct==="기타")return; if(!l.acct||!l.big)return; const k=l.big+"|"+l.acct; cnt[k]=(cnt[k]||0)+1; });
+  return Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).slice(0,6).map(k=>{const a=k.split("|");return {big:a[0],acct:a[1]};});
+}
+function expQuickApply(big,acct){
+  const list=expQuickList(); const l=list[Math.min(ui.expQuick.idx||0,list.length-1)]; if(!l)return;
+  l.big=big; l.acct=acct; save();
+  if(ui.expQuick.scope!=="미분류") ui.expQuick.idx=(ui.expQuick.idx||0)+1;
+  const nl=expQuickList(); if((ui.expQuick.idx||0)>=nl.length) ui.expQuick.idx=Math.max(0,nl.length-1);
+  render();
+}
+function expQuickSaveSelect(){ expQuickApply(val("eq_big"),val("eq_acct")); }
+function expQuickNav(d){ const list=expQuickList(); ui.expQuick.idx=Math.max(0,Math.min(list.length-1,(ui.expQuick.idx||0)+d)); render(); }
+function eqAcctFill(){ const EXPC=getExpCat(); const big=val("eq_big"); const sel=document.getElementById("eq_acct"); if(sel&&EXPC[big])sel.innerHTML=EXPC[big].map(a=>`<option>${esc(a)}</option>`).join(""); }
+function viewExpQuickPanel(){
+  const Q=ui.expQuick; const list=expQuickList(); const total=list.length;
+  const idx=Math.max(0,Math.min(Q.idx||0,total-1)); const l=total?list[idx]:null;
+  const EXPC=getExpCat(); const bigs=Object.keys(EXPC); const curBig=l?(l.big||bigs[0]):bigs[0];
+  const tops=expQuickTopAccts();
+  const scopeBtn=(k,label)=>`<button class="btn sm" style="${Q.scope===k?'background:var(--green);color:#fff;border:none':''}" onclick="expQuickStart('${k}')">${label}</button>`;
+  return `<div class="panel" style="margin-top:0">
+    <h2><span>⚡ 지출 빠른 분류·검토</span><button class="btn sm" onclick="expQuickClose()">✕ 닫기</button></h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <span style="font-size:13px;color:var(--sub);font-weight:700">대상:</span> ${scopeBtn("미분류","미분류만")} ${scopeBtn("전체","전체 검토")} ${scopeBtn("검색","검색")}
+      ${Q.scope==="검색"?`<input value="${esc(Q.q||"")}" placeholder="지출처·적요" onchange="ui.expQuick.q=this.value.trim();ui.expQuick.idx=0;render()" style="width:150px">`:""}
+    </div>
+    ${total&&l?`
+    <div style="text-align:center;font-size:13px;color:var(--sub);margin-bottom:6px"><b>${idx+1}</b> / ${total}건</div>
+    <div style="border:1px solid var(--green-mid);border-radius:12px;padding:16px;background:var(--green-light);max-width:560px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;font-size:15px"><b>${esc(l.date)}</b><b style="color:var(--red)">${won(l.paidAmount||l.amount)}원</b></div>
+      <div style="margin:6px 0;font-size:16px"><b>${esc(l.vendor)||"(지출처 없음)"}</b> <span style="color:var(--sub);font-size:14px">${esc(l.desc)||""}</span></div>
+      ${l.memo?`<div style="font-size:12px;color:var(--sub)">메모: ${esc(l.memo)}</div>`:""}
+      <div style="margin-top:8px;font-size:13px">현재 분류: <span class="tag">${esc(l.big)} &gt; ${esc(l.acct)}</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0;align-items:center">
+        <span style="font-size:12px;color:var(--sub)">빠른선택:</span>
+        ${tops.map(t=>`<button class="btn sm" style="background:#fff" onclick="expQuickApply('${esc(t.big)}','${esc(t.acct)}')">${esc(t.acct)}</button>`).join("")||'<span style="font-size:12px;color:var(--sub)">분류 이력이 쌓이면 자주 쓴 계정이 여기 뜹니다</span>'}
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label class="fld">대분류<select id="eq_big" onchange="eqAcctFill()">${bigs.map(b=>`<option ${b===curBig?'selected':''}>${esc(b)}</option>`).join("")}</select></label>
+        <label class="fld">계정과목<select id="eq_acct">${(EXPC[curBig]||[]).map(a=>`<option ${a===l.acct?'selected':''}>${esc(a)}</option>`).join("")}</select></label>
+        <button class="btn" onclick="expQuickSaveSelect()">저장 후 다음 ▶</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:space-between">
+        <button class="btn sm" onclick="expQuickNav(-1)">◀ 이전</button>
+        <button class="btn sm" onclick="expQuickNav(1)">건너뛰기 ▶</button>
+      </div>
+    </div>
+    <p class="note" style="text-align:center">※ 빠른선택은 <b>자주 쓴 계정 순</b>으로 자동 표시. ‘미분류만’은 분류하면 목록에서 자동으로 빠집니다. ‘전체 검토’는 이미 분류된 것도 확인·수정할 수 있습니다.</p>
+    `:`<div class="empty">${Q.scope==="미분류"?"미분류 지출이 모두 정리됐습니다. 🎉":"대상이 없습니다."}</div>`}
+  </div>`;
+}
 function viewExp(){
+  if(ui.expQuick&&ui.expQuick.on)return viewExpQuickPanel();
   const EXPC=getExpCat();
   const _q=(ui.expSearch||"").trim();
   const _match=l=>((l.vendor||"")+" "+(l.desc||"")+" "+(l.memo||"")+" "+(l.acct||"")+" "+(l.big||"")).includes(_q);
@@ -4589,6 +4652,7 @@ function viewExp(){
     <button class="btn sm" onclick="document.getElementById('bankFileE').click()">🏦 은행 거래내역 가져오기</button>
     <input type="file" id="bankFileE" accept=".xls,.xlsx" style="display:none" onchange="importBank(this)">
     <button class="btn sm" style="background:var(--green);color:#fff;border:none" onclick="ui.expCleanup=!ui.expCleanup;render()">🧹 미분류 정리 (${DB.expense.filter(l=>l.big==="기타지출"&&l.acct==="기타").length}건)</button>
+    <button class="btn sm" onclick="expQuickStart('미분류')">⚡ 빠른 분류·검토</button>
   </div>
   ${ui.expCleanup?cleanupPanelHtml("exp"):""}
   <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
