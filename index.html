@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.49 (2026-09-07) Supabase+Auth";
+const APP_VERSION="v6.50 (2026-09-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2368,9 +2368,13 @@ function setVoucherField(id,field,value){ const l=DB.sales.find(x=>String(x.id)=
 function bulkVoucher(field,value){ const y=ui.vYear||thisYear(); DB.sales.filter(l=>l.voucher&&String(l.date).startsWith(y)).forEach(l=>{l[field]=value;}); save();render(); }
 function voucherRate(sale){
   const stu=DB.students.find(s=>String(s.name)===String(sale.name));
-  if(!stu||!Number(stu.totalSessions))return null;
-  const att=DB.attendance.filter(a=>String(a.sid)===String(stu.id)&&a.inTime).length;
-  return Math.round(att/Number(stu.totalSessions)*100);
+  if(!stu)return null;
+  const info=nextDueInfo(stu);
+  let used, total=Number(stu.totalSessions)||0;
+  if(info&&info.type==="count"){ used=info.used; if(!total)total=info.charged||0; } // 회차제: 사용 회차(결석 포함)
+  else { used=DB.attendance.filter(a=>String(a.sid)===String(stu.id)&&a.inTime).length; } // 기간제: 출석 기준(결석 제외)
+  if(!total)return null;
+  return Math.round(used/total*100);
 }
 function viewVoucher(){
   const y=ui.vYear||thisYear();
@@ -2431,7 +2435,7 @@ function viewVoucher(){
       <button class="btn sm" onclick="bulkVoucher('vreceipt',true)">영수증 전체</button>
     </div>
     <div class="twrap"><table><thead><tr><th>성명</th><th>과정</th><th>결제일</th><th style="text-align:right">금액</th><th>이용권유형</th><th>생년월일</th><th>등록</th><th>신분증</th><th>영수증</th><th>이수율</th><th>상태</th></tr></thead><tbody>${body}</tbody></table></div>
-    <p class="note">※ 이수율 = <b>출석횟수 ÷ 등록 시 총 수업횟수</b>(참고용, 80% 기준 색 표시). <b>이수/미이수 판정은 상태 칸에서 직접 선택</b>하세요. 성명·과정목록·유형이 안 맞으면 수강생 이름/총회차, 신고과정을 확인하세요.</p>
+    <p class="note">※ 이수율 = <b>진행 회차 ÷ 총 수업횟수</b> (<b>회차제</b>는 결석 포함한 <b>사용 회차</b> 기준, <b>기간제</b>는 출석 기준 · 참고용, 80% 색 표시). <b>이수/미이수 판정은 상태 칸에서 직접 선택</b>하세요.</p>
   </div>`;
 }
 function stuSubBar(){
