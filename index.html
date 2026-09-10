@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.48 (2026-09-07) Supabase+Auth";
+const APP_VERSION="v6.49 (2026-09-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -547,7 +547,7 @@ let BASE_STAMP=""; // 로드 시점의 서버 저장 시각 (동시편집 충돌
 
 /* ───────────── Supabase 통신 헬퍼 ───────────── */
 // 지금 시스템의 필드명(desc) → Supabase 컬럼(desc_txt) 매핑
-const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours", "classTimes", "noRenew"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle", "cashReceipt"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "publisher", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name", "gubun"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"],checks:["id","kind","assetId","name","code","month","date","result","note"],loans:["id","name","method","principal","rate","startDate","endDate","termMonths","graceMonths","rateType","intCycle","prinCycle","earlyFee","earlyFeeRate","interestDay","account","note"],loanpays:["id","loanId","date","kind","amount","note"]};
+const SUPA_COLS={students:["id", "name", "phone", "gubun", "guardian", "birth", "school", "grade", "gender", "teacher", "course", "start", "tuition", "payCycle", "cycleMonths", "totalSessions", "lastPaid", "status", "note", "charged", "classDays", "quitDate", "addr", "email", "dailyHours", "classTimes", "noRenew"],attendance:["id", "sid", "name", "date", "inTime", "outTime", "memo"],sales:["id", "date", "method", "paidAmount", "gubun", "name", "course", "tuition", "discount", "cardCo", "approval", "depositDate", "depositAmount", "fee", "note", "payType", "payCycle", "cashReceipt", "voucher", "vtype", "vbirth", "vreg", "vidcopy", "vreceipt", "vstatus", "vcourse"],income:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "method", "note"],expense:["id", "date", "big", "acct", "desc_txt", "vendor", "memo", "amount", "discount", "paidAmount", "method", "note"],bookin:["id", "date", "subject", "vendor", "publisher", "title", "listPrice", "buyPrice", "qty", "amount", "note"],bookout:["id", "date", "name", "title", "price", "qty", "amount", "note"],courses:["id", "name", "gubun"],methods:["id", "type", "name"],worklogs:["id", "date", "writer", "text", "done", "repeat"],consults:["id", "sid", "date", "text"],settings:["id", "key", "value"],courselogs:["id", "sid", "date", "from", "to"],facilities:["id", "date", "name", "area", "use", "cycle", "result", "repair", "manager"],supplies:["id", "date", "name", "model", "qty", "unit", "buyDate", "price", "location", "code", "result", "dispose", "manager", "note"],materials:["id", "date", "name", "code", "maker", "model", "qty", "unit", "buyDate", "price", "location", "life", "result", "repair", "dispose", "note"],equipments:["id", "date", "name", "code", "maker", "model", "cpu", "ram", "disk", "gpu", "os", "buyDate", "price", "seat", "result", "repair", "dispose", "note"],inspections:["id", "date", "kind", "target", "code", "content", "inspector", "cost", "result", "nextDate", "note"],lessons:["id", "date", "course", "student", "text", "session"],leads:["id", "date", "name", "phone", "source", "course", "content", "status", "recallDate", "visitTime", "staff", "convertedSid", "note"],schedules:["id", "day", "start", "end", "course", "teacher", "room", "note"],makeups:["id", "absentDate", "student", "course", "makeupDate", "makeupTime", "teacher", "status", "note"],meetings:["id", "date", "title", "members", "content", "decision", "writer"],bookbuy:["id", "date", "title", "qty", "price", "total", "vendor", "note"],certs:["id", "no", "date", "sid", "name", "kind", "purpose", "payload"],exams:["id", "org", "item", "round", "regStart", "regEnd", "examDate", "resultDate", "fee", "note"],examapps:["id", "examId", "sid", "name", "subject", "status", "kpcId", "photo", "regDone", "smsSent", "feePaid", "ticketGiven", "myDate", "result", "note"],subs:["id","category","plan","software","amount","payDate","term","nextDate","renew","card","devices","note","currency","startDate","status"],seats:["id","vendor","product","student","assignDate","releaseDate","releaseReason","note"],subpays:["id","subId","date","amount","currency","auto","note"],fees:["id","target","method","gubun","course","perweek","sessions","minutes","fee"],checks:["id","kind","assetId","name","code","month","date","result","note"],loans:["id","name","method","principal","rate","startDate","endDate","termMonths","graceMonths","rateType","intCycle","prinCycle","earlyFee","earlyFeeRate","interestDay","account","note"],loanpays:["id","loanId","date","kind","amount","note"]};
 function toSupaRow(table, r){
   const o={...r};
   if((table==="income"||table==="expense") && "desc" in o){ o.desc_txt=o.desc; delete o.desc; }
@@ -1231,6 +1231,7 @@ function render(){
     else if(ui.stuSub==="cert"){m.innerHTML=stuSubBar()+viewCert();}
     else if(ui.stuSub==="att"){m.innerHTML=stuSubBar()+viewAtt();}
     else if(ui.stuSub==="les"){m.innerHTML=stuSubBar()+viewLes();}
+    else if(ui.stuSub==="voucher"){m.innerHTML=stuSubBar()+viewVoucher();}
     else{m.innerHTML=stuSubBar()+viewStu();}
   }
   if(tab==="pay"){
@@ -2357,8 +2358,84 @@ function setQuitDate(id,v){
   st.quitDate=v||"";
   save();render();
 }
+const V_DEFAULT_COURSES=["디자인 기초 플러스","ITQ OA마스터 플러스","건축 CAD 기초","GTQ 그래픽마스터 플러스","컴퓨터활용능력 2급","OA기초 플러스"];
+function getVCourses(){ const a=DB.settings.filter(x=>x.key==="voucherCourse").map(x=>x.value); return a.length?a:V_DEFAULT_COURSES.slice(); }
+function vCoursesStored(){ return DB.settings.filter(x=>x.key==="voucherCourse").map(x=>x.value); }
+function seedVCourses(){ if(vCoursesStored().length)return; V_DEFAULT_COURSES.forEach(c=>DB.settings.push({id:uid(),key:"voucherCourse",value:c})); save();render(); }
+function addVCourse(){ const n=prompt("추가할 신고과정명을 입력하세요"); if(!n||!n.trim())return; if(!vCoursesStored().length)V_DEFAULT_COURSES.forEach(c=>DB.settings.push({id:uid(),key:"voucherCourse",value:c})); DB.settings.push({id:uid(),key:"voucherCourse",value:n.trim()}); save();render(); }
+function delVCourse(name){ if(!confirm("‘"+name+"’ 과정을 목록에서 뺄까요?"))return; DB.settings=DB.settings.filter(x=>!(x.key==="voucherCourse"&&x.value===name)); save();render(); }
+function setVoucherField(id,field,value){ const l=DB.sales.find(x=>String(x.id)===String(id)); if(!l)return; l[field]=value; save();render(); }
+function bulkVoucher(field,value){ const y=ui.vYear||thisYear(); DB.sales.filter(l=>l.voucher&&String(l.date).startsWith(y)).forEach(l=>{l[field]=value;}); save();render(); }
+function voucherRate(sale){
+  const stu=DB.students.find(s=>String(s.name)===String(sale.name));
+  if(!stu||!Number(stu.totalSessions))return null;
+  const att=DB.attendance.filter(a=>String(a.sid)===String(stu.id)&&a.inTime).length;
+  return Math.round(att/Number(stu.totalSessions)*100);
+}
+function viewVoucher(){
+  const y=ui.vYear||thisYear();
+  const years=[...new Set(DB.sales.filter(l=>l.voucher).map(l=>String(l.date).slice(0,4)).filter(Boolean))].sort();
+  if(!years.includes(y)&&years.length)ui.vYear=years[years.length-1];
+  const yy=ui.vYear||thisYear();
+  const VC=getVCourses(), stored=vCoursesStored();
+  const cf=ui.vFilterCourse||"전체", tf=ui.vFilterType||"전체", sf=ui.vFilterStatus||"전체";
+  let rows=DB.sales.filter(l=>l.voucher&&String(l.date).startsWith(yy));
+  const all=rows.slice();
+  rows=rows.filter(l=>(cf==="전체"||(l.vcourse||"")===cf)&&(tf==="전체"||(l.vtype||"")===tf)&&(sf==="전체"||((l.vstatus||"진행중")===sf)));
+  rows.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const stCount=st=>all.filter(l=>(l.vstatus||"진행중")===st).length;
+  const totMoney=all.reduce((a,l)=>a+Number(l.paidAmount||0),0);
+  const TYPES=["일반(지역특화)","AI·디지털","노인"];
+  const STATUS=["진행중","이수","미이수"];
+  const body=rows.length?rows.map(l=>{
+    const rate=voucherRate(l);
+    const rateHtml=rate==null?`<span style="color:var(--sub)">-</span>`:`<b style="color:${rate>=80?'var(--green-dark)':'#e67e22'}">${rate}%</b>`;
+    return `<tr style="font-size:11.5px">
+      <td><b>${esc(l.name)}</b></td>
+      <td><select onchange="setVoucherField('${l.id}','vcourse',this.value)" style="padding:2px;font-size:11px"><option value="">과정 선택</option>${VC.map(c=>`<option ${(l.vcourse||"")===c?'selected':''}>${esc(c)}</option>`).join("")}</select></td>
+      <td>${esc(l.date)}</td>
+      <td style="text-align:right">${won(l.paidAmount)}</td>
+      <td><select onchange="setVoucherField('${l.id}','vtype',this.value)" style="padding:2px;font-size:11px"><option value="">-</option>${TYPES.map(t=>`<option ${(l.vtype||"")===t?'selected':''}>${esc(t)}</option>`).join("")}</select></td>
+      <td><input value="${esc(l.vbirth||"")}" onchange="setVoucherField('${l.id}','vbirth',this.value)" placeholder="YY.MM.DD" style="width:78px;padding:2px;font-size:11px"></td>
+      <td style="text-align:center"><select onchange="setVoucherField('${l.id}','vreg',this.value)" style="padding:2px;font-size:11px"><option ${(l.vreg||"")==="-"||!l.vreg?'selected':''}>-</option><option ${(l.vreg||"")==="O"?'selected':''}>O</option></select></td>
+      <td style="text-align:center"><input type="checkbox" ${l.vidcopy?"checked":""} onchange="setVoucherField('${l.id}','vidcopy',this.checked)"></td>
+      <td style="text-align:center"><input type="checkbox" ${l.vreceipt?"checked":""} onchange="setVoucherField('${l.id}','vreceipt',this.checked)"></td>
+      <td style="text-align:center">${rateHtml}</td>
+      <td><select onchange="setVoucherField('${l.id}','vstatus',this.value)" style="padding:2px;font-size:11px">${STATUS.map(st=>`<option ${(l.vstatus||"진행중")===st?'selected':''}>${esc(st)}</option>`).join("")}</select></td>
+    </tr>`;
+  }).join(""):`<tr><td colspan="11" class="empty">${all.length?"조건에 맞는 학습자가 없습니다.":"수납관리에서 결제 입력 시 ‘🎫 평생교육이용권’을 체크하면 여기로 자동 수집됩니다."}</td></tr>`;
+  return `<div class="panel" style="margin-top:0">
+    <h2><span>🎫 평생교육이용권 <span style="font-size:12px;color:var(--sub);font-weight:400">수납에서 체크한 결제가 자동 수집됩니다</span></span>
+      <select onchange="ui.vYear=this.value;render()" style="padding:4px">${(years.length?years:[thisYear()]).map(v=>`<option ${v===yy?'selected':''}>${v}</option>`).join("")}</select></h2>
+    <div style="font-size:12px;margin:6px 0 10px;padding:8px 10px;background:var(--green-light);border-radius:8px">
+      <b>신고과정:</b> ${VC.map(c=>`<span class="tag" style="margin:2px">${esc(c)}${stored.includes(c)?` <b style="cursor:pointer;color:var(--red)" onclick="delVCourse('${esc(c)}')">✕</b>`:""}</span>`).join("")}
+      <button class="btn sm" onclick="addVCourse()">＋ 과정 추가</button>
+      ${!stored.length?`<button class="btn sm" onclick="seedVCourses()">기본 6과정 등록(관리)</button>`:""}
+    </div>
+    <div class="toolbar" style="border:none;padding:0;margin-bottom:8px">
+      <label class="fld">과정<select onchange="ui.vFilterCourse=this.value;render()"><option>전체</option>${VC.map(c=>`<option ${cf===c?'selected':''}>${esc(c)}</option>`).join("")}</select></label>
+      <label class="fld">유형<select onchange="ui.vFilterType=this.value;render()"><option>전체</option>${TYPES.map(t=>`<option ${tf===t?'selected':''}>${esc(t)}</option>`).join("")}</select></label>
+      <label class="fld">이수<select onchange="ui.vFilterStatus=this.value;render()"><option>전체</option>${STATUS.map(st=>`<option ${sf===st?'selected':''}>${esc(st)}</option>`).join("")}</select></label>
+    </div>
+    <div class="toolbar" style="gap:8px;margin-bottom:10px">
+      <div class="card" style="padding:8px 12px"><span class="lab">총 인원 </span><b>${all.length}명</b></div>
+      <div class="card" style="padding:8px 12px"><span class="lab">이용권매출 </span><b style="color:var(--green)">${won(totMoney)}원</b></div>
+      <div class="card" style="padding:8px 12px"><span class="lab">이수 </span><b>${stCount("이수")}명</b></div>
+      <div class="card" style="padding:8px 12px"><span class="lab">미이수 </span><b style="color:var(--red)">${stCount("미이수")}명</b></div>
+      <div class="card" style="padding:8px 12px"><span class="lab">진행중 </span><b style="color:#e67e22">${stCount("진행중")}명</b></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12px;background:#f6f6f6;padding:8px 10px;border-radius:8px">
+      <span style="color:var(--sub);font-weight:700">⚡ ${yy}년 전체 일괄:</span>
+      <button class="btn sm" onclick="bulkVoucher('vreg','O')">등록 O 전체</button>
+      <button class="btn sm" onclick="bulkVoucher('vidcopy',true)">신분증 전체</button>
+      <button class="btn sm" onclick="bulkVoucher('vreceipt',true)">영수증 전체</button>
+    </div>
+    <div class="twrap"><table><thead><tr><th>성명</th><th>과정</th><th>결제일</th><th style="text-align:right">금액</th><th>이용권유형</th><th>생년월일</th><th>등록</th><th>신분증</th><th>영수증</th><th>이수율</th><th>상태</th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="note">※ 이수율 = <b>출석횟수 ÷ 등록 시 총 수업횟수</b>(참고용, 80% 기준 색 표시). <b>이수/미이수 판정은 상태 칸에서 직접 선택</b>하세요. 성명·과정목록·유형이 안 맞으면 수강생 이름/총회차, 신고과정을 확인하세요.</p>
+  </div>`;
+}
 function stuSubBar(){
-  const subs=[["dash","📊 대시보드"],["list","📋 수강생 목록"],["quit","🚪 퇴원생"],["att","✅ 출결"],["les","📝 학습관리"],["cert","📜 증명서"]];
+  const subs=[["dash","📊 대시보드"],["list","📋 수강생 목록"],["quit","🚪 퇴원생"],["att","✅ 출결"],["les","📝 학습관리"],["voucher","🎫 평생교육이용권"],["cert","📜 증명서"]];
   return `<div class="subtabs">${subs.map(([k,l])=>`<button class="subtab ${(ui.stuSub||"list")===k?'on':''}" onclick="ui.stuSub='${k}';ui.detailId=null;render()">${l}</button>`).join("")}</div>`;
 }
 function paySubBar(){
@@ -4138,6 +4215,7 @@ function viewSales(){
     <label class="fld">승인번호<input id="m_ap"></label>
     <label class="fld">비고<input id="m_no"></label>
     <label class="fld" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="m_cr" style="width:auto">🧾 현금영수증 발행</label>
+    <label class="fld" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="m_vc" style="width:auto">🎫 평생교육이용권</label>
     <button class="btn" onclick="addSales()">납입 기록</button>
   </div>
   <div class="twrap"><table><thead><tr><th><input type="checkbox" onchange="salesToggleAll(this.checked)" title="전체 선택"></th><th>날짜</th><th>결제수단</th><th>결제금액</th><th>대상</th><th>성명</th><th>과정명</th><th>방식</th><th>수강료</th><th>할인</th><th>카드사</th><th>승인번호</th><th>입금일</th><th>입금액</th><th>수수료</th><th>비고</th></tr></thead><tbody id="salesBody">
@@ -4236,7 +4314,7 @@ function addSales(){
   const paid=tu-dc;
   // 카드는 입금일 비워두고 나중에 입력, 그 외(계좌이체·현금·휴대폰)는 결제일=입금일 즉시 처리
   const isCard=method==="카드";
-  DB.sales.push({id:uid(),date,method,paidAmount:paid,gubun:val("m_gb"),name:nm,course:val("m_co"),tuition:tu,discount:dc,cardCo:isCard?val("m_cc"):"",approval:val("m_ap"),depositDate:isCard?"":date,depositAmount:isCard?0:paid,fee:0,note:val("m_no"),payType,payCycle:payCycleVal,cashReceipt:(document.getElementById("m_cr")&&document.getElementById("m_cr").checked)||false});
+  DB.sales.push({id:uid(),date,method,paidAmount:paid,gubun:val("m_gb"),name:nm,course:val("m_co"),tuition:tu,discount:dc,cardCo:isCard?val("m_cc"):"",approval:val("m_ap"),depositDate:isCard?"":date,depositAmount:isCard?0:paid,fee:0,note:val("m_no"),payType,payCycle:payCycleVal,cashReceipt:(document.getElementById("m_cr")&&document.getElementById("m_cr").checked)||false,voucher:(document.getElementById("m_vc")&&document.getElementById("m_vc").checked)||false});
   // 성명 기준 수강생 연동: 최근납부일 갱신 + 횟수제 충전
   if(nm&&nm!==ui.salesLinkDone){
     let matches=DB.students.filter(st=>st.name===nm&&st.status!=="퇴원");
