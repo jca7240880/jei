@@ -466,7 +466,7 @@ function out(obj){
 
 <script>
 /* ───────────── 기준 정보 ───────────── */
-const APP_VERSION="v6.47 (2026-09-07) Supabase+Auth";
+const APP_VERSION="v6.48 (2026-09-07) Supabase+Auth";
 document.getElementById("verLabel").textContent=APP_VERSION;
 const SALE_METHODS=["계좌이체","카드","현금","휴대폰"];
 const CARD_COS_DEFAULT=["KB카드","현대카드","BC카드","삼성카드","NH카드","신한카드","롯데카드"];
@@ -2185,6 +2185,13 @@ function viewExamApply(){
     <div class="card"><div class="lab">응시료 합계</div><div class="val">${won((Number(sel.fee)||0)*apps.filter(a=>a.status!=="미응시").length)}원</div></div>`:""}
   </div>
   <div class="panel"><h2><span>응시자 명단 (${apps.length}건)</span><button class="btn sm" onclick="printExamList('${sel.id}')">🖨 명단 인쇄</button></h2>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12px;background:var(--green-light);padding:8px 10px;border-radius:8px">
+      <span style="color:var(--green-dark);font-weight:700">⚡ 일괄 체크(응시자 전원):</span>
+      ${grp?`<button class="btn sm" onclick="bulkApp('${sel.id}','kpcId','Y')">아이디</button><button class="btn sm" onclick="bulkApp('${sel.id}','photo','Y')">사진</button><button class="btn sm" onclick="bulkApp('${sel.id}','regDone','Y')">접수</button><button class="btn sm" onclick="bulkApp('${sel.id}','smsSent','Y')">문자</button><button class="btn sm" onclick="bulkApp('${sel.id}','feePaid','Y')">입금</button><button class="btn sm" onclick="bulkApp('${sel.id}','ticketGiven','Y')">수험표</button>`:`<button class="btn sm" onclick="bulkApp('${sel.id}','regDone','Y')">접수 전체</button>`}
+      <span style="color:var(--line)">|</span>
+      <button class="btn sm" style="color:var(--red);border-color:var(--red)" onclick="bulkAppClear('${sel.id}')">전체 해제</button>
+      <span style="color:var(--sub)">※ ‘미응시’는 제외됩니다</span>
+    </div>
     <div class="twrap"><table><thead><tr>
       <th>성명</th><th>과목</th><th>응시여부</th>
       ${grp?`<th>사전준비</th><th>접수·입금</th><th>수험표</th>`:`<th>접수</th><th>개인 시험일</th>`}
@@ -2224,6 +2231,19 @@ function viewExamApply(){
     }).join("")||`<span style="color:var(--sub);font-size:13px">추가할 수강생이 없습니다.</span>`}</div>
   </div>`
   :`<div class="panel"><div class="empty">시험을 선택하면 응시자 관리가 시작됩니다.</div></div>`}`;
+}
+function bulkApp(examId,field,val){
+  const apps=examAppsOf(examId).filter(a=>a.status!=="미응시");
+  if(!apps.length)return;
+  apps.forEach(a=>{a[field]=val;});
+  save();render();
+}
+function bulkAppClear(examId){
+  const apps=examAppsOf(examId);
+  if(!apps.length)return;
+  if(!confirm("응시자 전원의 체크(아이디·사진·접수·문자·입금·수험표)를 모두 해제할까요?"))return;
+  apps.forEach(a=>{a.kpcId="";a.photo="";a.regDone="";a.smsSent="";a.feePaid="";a.ticketGiven="";});
+  save();render();
 }
 function addRecoAll(examId){
   const e=examById(examId);if(!e)return;
